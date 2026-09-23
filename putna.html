@@ -536,6 +536,7 @@ const lvlPill=l=>l==='crit'?'<span class="pill crit">Критично</span>':l=
 /* ============ sheet ============ */
 let sheetSubmit=null;
 function openSheet(title,html,onSubmit,label='Запази'){
+  {const of=$('#sheetForm'),nf=of.cloneNode(false);of.parentNode.replaceChild(nf,of);nf.addEventListener('submit',onSheetSubmit)}
   $('#sheetTitle').textContent=title;
   $('#sheetForm').innerHTML=html+`<div class="err" id="formErr" hidden></div>`+
     (onSubmit?`<div class="sheet-actions"><button type="button" class="btn ghost" data-act="closeSheet">Отказ</button><button type="submit" class="btn go" id="sheetOk">${esc(label)}</button></div>`
@@ -543,7 +544,7 @@ function openSheet(title,html,onSubmit,label='Запази'){
   sheetSubmit=onSubmit;$('#sheet').hidden=false;document.body.classList.add('noscroll');$('#sheetForm').scrollTop=0;
 }
 function closeSheet(){$('#sheet').hidden=true;sheetSubmit=null;document.body.classList.remove('noscroll');$('#sheetForm').innerHTML=''}
-$('#sheetForm').addEventListener('submit',async ev=>{
+const onSheetSubmit=async ev=>{
   ev.preventDefault();if(!sheetSubmit)return;
   const form=ev.currentTarget,f={};
   for(const el of form.elements){if(!el.name)continue;if(el.type==='checkbox')f[el.name]=el.checked;else if(el.type==='file')f[el.name]=el.files;else f[el.name]=el.value}
@@ -551,7 +552,8 @@ $('#sheetForm').addEventListener('submit',async ev=>{
   try{const r=await sheetSubmit(f,form);if(r!==false)closeSheet()}
   catch(e){err.textContent=e?.code?dbMsg(e):(e?.message||dbMsg(e));err.hidden=false;err.scrollIntoView({block:'nearest'})}
   finally{if(btn)btn.disabled=false}
-});
+};
+$('#sheetForm').addEventListener('submit',onSheetSubmit);
 $('#sheet').addEventListener('click',e=>{if(e.target.id==='sheet')closeSheet()});
 const fail=m=>{throw new Error(m)};
 
@@ -1557,15 +1559,31 @@ function mapErr(e){const m=String(e&&e.message||e||'').replace(/^(Exception|Erro
   if(m.includes('AUTH')){logoutLocal();return new Error('Сесията изтече. Влез отново.')}
   return new Error(m||'Връзката със сървъра прекъсна. Опитай отново.')}
 const LISTEN={};let CACHE=null;
+let saveT=0;
 function applyData(d){
   CACHE=d;if(d.me)meId=d.me;
+  clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem('pk_cache',JSON.stringify({t:TOKEN,d:CACHE}))}catch(e){}},800);
   S.notif=d.notif||{};S.messages=Object.fromEntries(Object.entries(d.messages||{}).map(([k,v])=>[k,{...v,id:k}]));
   for(const c of ['users','depts','cars','logs','problems','tasks']){const m=d[c]||{};
     const docs=Object.entries(m).map(([id,v])=>({id,exists:true,data:()=>v,metadata:{fromCache:false}}));
     const snap={docs,size:docs.length,empty:!docs.length,metadata:{fromCache:false}};(LISTEN[c]||[]).forEach(f=>f(snap))}
   (LISTEN['meta/settings']||[]).forEach(f=>f({id:'settings',exists:!!d.settings,data:()=>d.settings,metadata:{fromCache:false}}));
 }
-async function apiWrite(ops){try{applyData(await gs('write',TOKEN,ops))}catch(e){throw mapErr(e)}}
+function mergeDeep(a,b){const o=Object.assign({},a||{});for(const k of Object.keys(b||{})){const v=b[k];o[k]=(v&&typeof v==='object'&&!Array.isArray(v)&&o[k]&&typeof o[k]==='object'&&!Array.isArray(o[k]))?mergeDeep(o[k],v):v}return o}
+function localApply(ops){
+  const d=CACHE||{};
+  for(const op of ops){const[c,id]=op.path.split('/');const set=op.op==='set';
+    if(c==='logs'){const i=id.lastIndexOf('_');d.logs=d.logs||{};const ex=d.logs[id]||{carId:id.slice(0,i),month:id.slice(i+1),e:{}};const nd=set?op.data:mergeDeep(ex,op.data);nd.carId=nd.carId||ex.carId;nd.month=nd.month||ex.month;d.logs[id]=nd}
+    else if(c==='meta')d.settings=set?op.data:mergeDeep(d.settings,op.data);
+    else if(c==='notif'){if(id===meId)d.notif=set?op.data:mergeDeep(d.notif,op.data)}
+    else{d[c]=d[c]||{};const v=set?Object.assign({},op.data):mergeDeep(d[c][id],op.data);if(c==='users'){delete v.salt;delete v.hash}d[c][id]=v}}
+  applyData(d);
+}
+async function apiWrite(ops){
+  for(const op of ops){if(op.path.startsWith('logs/')&&op.data&&op.data.e){const ex=(CACHE&&CACHE.logs&&CACHE.logs[op.path.slice(5)])||{e:{}};if(Object.keys(op.data.e).every(k=>!(ex.e||{})[k]))op.isNew=true}}
+  try{await gs('write',TOKEN,ops)}catch(e){throw mapErr(e)}
+  localApply(ops);
+}
 const gasDb={
   doc(path){return{
     get:async()=>{const[c,id]=path.split('/');const v=c==='meta'?CACHE?.settings:CACHE?.[c]?.[id];return{id,exists:!!v,data:()=>v}},
@@ -1574,7 +1592,7 @@ const gasDb={
     onSnapshot(fn){(LISTEN[path]=LISTEN[path]||[]).push(fn);return()=>{}}}},
   collection(c){return{doc:id=>gasDb.doc(c+'/'+id),onSnapshot(fn){(LISTEN[c]=LISTEN[c]||[]).push(fn);return()=>{}}}}
 };
-function logoutLocal(){TOKEN=null;meId=null;try{localStorage.removeItem('pk_token')}catch(e){}
+function logoutLocal(){TOKEN=null;meId=null;try{localStorage.removeItem('pk_token');localStorage.removeItem('pk_cache')}catch(e){}
   for(const c of ['users','depts','cars','logs','problems','tasks'])S[c]={};S.loaded.clear();invalidate();R.tab='home';closeSheet();showLogin()}
 async function refresh(){if(!TOKEN)return;try{applyData(await gs('getAll',TOKEN))}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
@@ -1614,7 +1632,12 @@ $('#loginForm').addEventListener('submit',async e=>{
   }
   db.doc('meta/settings').onSnapshot(s=>{S.settings={...DEFAULTS,...(s.exists?s.data():{})};schedule()});
   if(PREFILL)$('#lu').value=PREFILL;
-  if(TOKEN){
+  let local=null;try{local=JSON.parse(localStorage.getItem('pk_cache')||'null')}catch(e){}
+  if(TOKEN&&local&&local.t===TOKEN&&local.d&&local.d.me){
+    applyData(local.d);render();
+    gs('getAll',TOKEN).then(d=>{applyData(d)}).catch(e=>{const m=String(e&&e.message||e);if(/AUTH/.test(m)){logoutLocal();toast('Сесията изтече. Влез отново.')}});
+  }
+  else if(TOKEN){
     const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('TIMEOUT')),45000));
     try{applyData(await Promise.race([gs('getAll',TOKEN),timeout]));render()}
     catch(e){const m=String(e&&e.message||e);logoutLocal();if(!/AUTH/.test(m)){const er=$('#loginErr');er.textContent=m==='TIMEOUT'?'Сървърът не отговори навреме. Влез отново.':'Грешка от сървъра: '+m.replace(/^(Exception|Error):\s*/,'');er.hidden=false}}
