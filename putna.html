@@ -1584,12 +1584,17 @@ function openUserLink(id){
   const u=S.users[id];if(!u)return;
   const url=APP_URL+'?u='+encodeURIComponent(u.username);
   const cars=Object.values(S.cars).filter(c=>c.driverId===u.id&&c.active!==false);
-  const msg=`Здравей, ${u.name.split(' ')[0]}! Това е линкът за електронната пътна книжка:\n${url}\n\nПотребител: ${u.username}\nПарола: `;
+  const build=pw=>`Здравей, ${u.name.split(' ')[0]}! Това е линкът за електронната пътна книжка:\n${url}\n\nПотребител: ${u.username}\nПарола: ${pw||''}`;
   openSheet('Линк за вход',`<div class="row" style="flex-wrap:nowrap">${avatar(u)}<div class="sec" style="gap:2px"><b>${esc(u.name)}</b><span class="small muted">${esc(u.username)} · ${ROLES[u.role]}</span></div></div>
   ${cars.length?`<div class="tip">След вход вижда директно: ${cars.map(c=>esc(carName(c)+' '+regText(c.reg))).join(', ')}</div>`:(u.role==='driver'?`<div class="note">Няма назначен автомобил. Задай го от автомобила → Редактирай → Постоянен шофьор.</div>`:'')}
-  ${fld('Съобщение за изпращане','<textarea id="f_msg" rows="6" readonly>'+esc(msg)+'</textarea>','Допиши паролата в края. Потребителското име е попълнено в линка.')}
+  ${fld('Парола',`<input id="f_pw" type="text" autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Напиши паролата на шофьора">`,'Паролата се добавя автоматично в съобщението.')}
+  ${fld('Съобщение за изпращане','<textarea id="f_msg" rows="6">'+esc(build(''))+'</textarea>','Можеш да промениш текста, ако искаш.')}
   <button type="button" class="btn primary wide" data-act="copyText">Копирай съобщението</button>
-  <div class="grid2"><a class="btn" href="viber://forward?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">Viber</a><a class="btn" href="sms:?&body=${encodeURIComponent(msg)}" target="_blank" rel="noopener">SMS</a></div>`,null);
+  <div class="grid2"><a class="btn" id="lnkViber" href="#" target="_blank" rel="noopener">Viber</a><a class="btn" id="lnkSms" href="#" target="_blank" rel="noopener">SMS</a></div>`,null);
+  const pw=$('#f_pw'),msg=$('#f_msg');
+  const links=()=>{const t=encodeURIComponent(msg.value);$('#lnkViber').href='viber://forward?text='+t;$('#lnkSms').href='sms:?&body='+t};
+  pw.addEventListener('input',()=>{msg.value=build(pw.value.trim());links()});
+  msg.addEventListener('input',links);links();
 }
 
 $('#loginForm').addEventListener('submit',async e=>{
