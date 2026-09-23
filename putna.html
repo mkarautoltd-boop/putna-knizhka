@@ -214,6 +214,11 @@ button.li{width:100%;font:inherit;color:inherit;border-left:0;border-right:0;bor
 .date-h{padding:7px 14px;background:var(--surface2);font-size:12.5px;font-weight:700;color:var(--muted);border-bottom:1px solid var(--line)}
 .av{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0}
 .li.ua{align-items:center}
+.li.staff{flex-direction:column;align-items:stretch;gap:10px}
+.li.staff .srow{display:flex;align-items:center;gap:12px;min-width:0}
+.li.staff .srow .l{flex:1;min-width:0}
+.li.staff .sbtns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.li.staff .sbtns .btn{width:100%;padding:6px 4px}
 .li.ua .l{flex:1}
 
 .empty{padding:22px 16px;text-align:center;color:var(--muted);background:var(--surface);border-radius:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;align-items:center}
@@ -1418,8 +1423,9 @@ function vStaff(){
   if(!us.length)return `<div class="empty">Няма шофьори. Добави ги с + горе вдясно.</div>`;
   return `<div class="list">${us.map(u=>{const cars=Object.values(S.cars).filter(c=>c.driverId===u.id&&c.active!==false);
     const km=entries().filter(e=>e.t==='trip'&&e.driver===u.id&&e.date.startsWith(ym)).reduce((s,e)=>s+(e.km||0),0);
-    return `<div class="li ua">${avatar(u)}<div class="l"><b>${esc(u.name)}</b><span>${ROLES[u.role]}${u.dept?' · '+esc(dname(u.dept)):''}${u.active===false?' · <b style="color:var(--crit)">неактивен</b>':''}</span><span>${cars.length?cars.map(c=>esc(carName(c)+' '+regText(c.reg))).join(', '):'Без постоянен автомобил'}</span></div>
-    <div class="r"><b class="num">${fint(km)} км</b><span class="small muted">този месец</span><div class="row" style="gap:6px"><button class="btn sm" data-act="userLink" data-id="${u.id}">Линк</button><button class="btn sm" data-act="editUser" data-id="${u.id}">Редактирай</button><button class="btn sm" data-act="driverRep" data-id="${u.id}">Справка</button></div></div></div>`}).join('')}</div>`;
+    return `<div class="li staff"><div class="srow">${avatar(u)}<div class="l"><b>${esc(u.name)}</b><span>${ROLES[u.role]}${u.dept?' · '+esc(dname(u.dept)):''}${u.active===false?' · <b style="color:var(--crit)">неактивен</b>':''}</span><span>${cars.length?cars.map(c=>esc(carName(c)+' · '+regText(c.reg))).join(', '):'Без постоянен автомобил'}</span></div>
+    <div class="r"><b class="num">${fint(km)} км</b><span class="small muted">този месец</span></div></div>
+    <div class="sbtns"><button class="btn sm" data-act="userLink" data-id="${u.id}">Линк</button><button class="btn sm" data-act="editUser" data-id="${u.id}">Редактирай</button><button class="btn sm" data-act="driverRep" data-id="${u.id}">Справка</button></div></div>`}).join('')}</div>`;
 }
 function docPill(d){if(!d)return '<span class="pill">—</span>';const left=daysBetween(today(),d);const l=left<0?'crit':left<=S.settings.warnDays?'warn':'ok';return `<span class="pill ${l}">${fd(d)}</span>`}
 function carCell(c){return {html:`<button class="linkbtn" data-act="openCar" data-car="${c.id}">${esc(regText(c.reg))}</button><br><span class="small muted">${esc(carName(c))}</span>`,csv:c.reg}}
