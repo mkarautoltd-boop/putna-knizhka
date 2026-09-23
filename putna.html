@@ -63,7 +63,7 @@ p{margin:0}
 .ic{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 
 /* header */
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--navy);color:var(--navy-ink)}
+.top{position:relative;z-index:5;background:var(--navy);color:var(--navy-ink);padding-top:env(safe-area-inset-top,0px)}
 .top-in{max-width:680px;margin:0 auto;padding:14px 16px 16px;display:flex;align-items:center;gap:12px;min-height:64px}
 .greet{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .greet b{font-size:19px;font-weight:700;letter-spacing:-.01em;line-height:1.2}
@@ -477,10 +477,11 @@ function carAlerts(car){
     if(st.days!=null)parts.push(st.days<0?`просрочен от ${fd(st.nextDate)}`:`до ${fd(st.nextDate)}`);
     out.push({lvl:st.lvl,kind:'svc',key:k,car,text:`${l}${st.lvl==='crit'?': просрочен':''}`,sub:parts.join(' · ')});}
   const tgt=tyreTarget(td);
-  if(car.tyreSeason&&car.tyreSeason!=='all'&&car.tyreSeason!==tgt)
+  const tm=+td.slice(5,7);
+  if(car.tyreSeason!=='all'&&(car.tyreSeason?car.tyreSeason!==tgt:(tm===10||tm===4)))
     out.push({lvl:'warn',kind:'tyres',car,text:tgt==='winter'?'Смяна на гуми: летни → зимни':'Смяна на гуми: зимни → летни',sub:'Сезонно напомняне'});
-  if(car.pressure&&(car.pressure.front||car.pressure.rear)){const lc=lastOf(car.id,'check');const age=lc?daysBetween(lc.date,td):null;
-    if(!lc||age>=s.pressureDays)out.push({lvl:'warn',kind:'pressure',car,text:'Проверка на налягането на гумите',sub:lc?`Последна преди ${age} дни (${fd(lc.date)})`:'Още няма отбелязана проверка'});}
+  {const lc=lastOf(car.id,'check');const age=lc?daysBetween(lc.date,td):null;
+    if(!lc||age>=s.pressureDays)out.push({lvl:'warn',kind:'pressure',car,text:'Периодична проверка: масло, антифриз, гуми',sub:lc?`Последна преди ${age} дни (${fd(lc.date)})`:'Още няма отбелязана проверка'});}
   for(const p of Object.values(S.problems)){if(p.carId!==car.id||p.status==='resolved')continue;
     out.push({lvl:p.priority==='high'?'crit':'warn',kind:'problem',id:p.id,car,text:`Ремонт: ${p.cat}${p.desc?' – '+p.desc.slice(0,60):''}`,sub:`${PSTAT[p.status]||'Нов'} · сигнал от ${uname(p.by)} на ${fd(p.date)}`});}
   return out.sort((a,b)=>(a.lvl==='crit'?0:1)-(b.lvl==='crit'?0:1));
@@ -697,8 +698,8 @@ function vHome(){
       [T('tyresAll'),'blue','tyre','Гуми'],[T('fuelAll'),'orange','fuel','Гориво'],[T('tripsAll'),'purple','road','Километри'],[T('reports'),'green','reports','Отчети'],
       [T('messages'),'blue','bell','Съобщения'],['takeover','navy','wheel','Ще управлявам'],['trip','grey','doc','Пътен запис'],[T('settings'),'grey','gear','Настройки']]
     :[[T('cars'),'blue','car','Автомобили'],[T('tasks'),'purple','tasks','Задачи'],[T('reports'),'green','reports','Отчети'],
-      [T('staff'),'grey','users','Служители'],[T('messages'),'orange','bell','Съобщения'],[T('docsAll'),'grey','doc','Документи'],
-      ['fuel','blue','fuel','Зареждане'],['morning','purple','road','Километраж'],['takeover','navy','wheel','Ще управлявам']];
+      [T('staff'),'grey','users','Шофьори'],[T('messages'),'orange','bell','Съобщения'],[T('docsAll'),'grey','doc','Документи'],
+      ['fuel','blue','fuel','Зареждане'],[T('serviceAll'),'orange','wrench','Сервиз'],['takeover','navy','wheel','Ще управлявам']];
   h+=`<div class="sec"><h3>Бързи действия</h3><div class="qa${isAdmin()?'':' three'}">${qa.map(([a,c,i,l])=>`<button class="qt ${c}" data-act="${a}">${icon(i)}${l}</button>`).join('')}</div></div>`;
   const al=allAlerts();
   const worst=cars.slice().sort((a,b)=>({crit:0,warn:1,ok:2}[carLevel(a)])-({crit:0,warn:1,ok:2}[carLevel(b)]));
@@ -837,7 +838,7 @@ function secTyres(c,m){
   const hist=entries().filter(e=>e.carId===c.id&&(e.t==='tyres'||e.t==='check')).slice().reverse().slice(0,40);
   return `<div class="kv"><div><span>Монтирани гуми</span><b style="font-family:var(--sans)">${ts[c.tyreSeason]||'—'}</b></div><div><span>Сезон сега</span><b style="font-family:var(--sans)">${tgt==='winter'?'Зимен':'Летен'}</b></div><div><span>Налягане предни</span><b>${p.front?fnum(+p.front,1)+' bar':'—'}</b></div><div><span>Налягане задни</span><b>${p.rear?fnum(+p.rear,1)+' bar':'—'}</b></div></div>
   <div class="row"><button class="btn" data-act="tyres" data-car="${c.id}">Гумите са сменени</button><button class="btn" data-act="check" data-car="${c.id}">Проверка на налягането</button></div>
-  <div class="sec"><h3>История на гумите</h3>${hist.length?`<div class="list">${hist.map(e=>`<div class="li"><div class="l"><b>${e.t==='tyres'?(e.kind==='winter'?'Летни → зимни':e.kind==='summer'?'Зимни → летни':'Смяна на гуми'):'Проверка на налягането'}</b><span>${fd(e.date)} · ${fint(e.km)} км · ${esc(uname(e.driver||e.by))}${e.t==='check'&&e.inflated?' · надути':''}</span></div></div>`).join('')}</div>`:'<div class="empty">Няма записи.</div>'}</div>`;
+  <div class="sec"><h3>История на гумите</h3>${hist.length?`<div class="list">${hist.map(e=>`<div class="li"><div class="l"><b>${e.t==='tyres'?(e.kind==='winter'?'Летни → зимни':e.kind==='summer'?'Зимни → летни':'Смяна на гуми'):'Периодична проверка'}</b><span>${fd(e.date)} · ${fint(e.km)} км · ${esc(uname(e.driver||e.by))}${e.t==='check'&&e.oilAdd?' · долято масло':''}${e.t==='check'&&e.afAdd?' · долят антифриз':''}${e.t==='check'&&e.inflated?' · надути':''}</span></div></div>`).join('')}</div>`:'<div class="empty">Няма записи.</div>'}</div>`;
 }
 function problemLi(p){const c=S.cars[p.carId];return `<div class="li"><div class="l"><b>${esc(p.cat)}${p.desc?' – '+esc(p.desc.slice(0,70)):''}</b><span>${fd(p.date)} · ${fint(p.km)} км · ${esc(uname(p.by))}${R.tab!=='car'?' · '+esc(c?.reg||''):''}</span></div><div class="r"><span class="pill ${p.status==='resolved'?'ok':p.priority==='high'?'crit':'warn'}">${PSTAT[p.status]||'Нов'}</span><span class="small muted">${PRIO[p.priority]||''} приоритет</span><button class="linkbtn small" data-act="viewProblem" data-id="${p.id}">Отвори</button></div></div>`}
 function secProblems(c){
@@ -860,7 +861,7 @@ function entryText(e){
     case 'service':return `Сервиз: ${e.what||''}${e.cost?' · '+eur(e.cost):''}`;
     case 'expense':return `Разход: ${e.cat} · ${eur(e.sum)}`;
     case 'tyres':return `Гумите са сменени: ${e.kind==='winter'?'летни → зимни':'зимни → летни'} при ${fint(e.km)} км`;
-    case 'check':return `Проверка на налягането при ${fint(e.km)} км${e.inflated?' · надути':''}`;
+    case 'check':return `Проверка (${e.oil===undefined?'гуми':'масло, антифриз, гуми'}) при ${fint(e.km)} км${e.oilAdd?' · долято масло':''}${e.afAdd?' · долят антифриз':''}${e.inflated?' · надути гуми':''}${e.note?' · '+e.note:''}`;
     case 'session':return e.phase==='start'?`Поемане на автомобила: ${uname(e.user)} при ${fint(e.km)} км${e.note?' · '+e.note:''}`:`Приключено управление: ${uname(e.user)} при ${fint(e.km)} км`;
     case 'edit':return e.text||'Промяна';
     default:return e.text||e.t;
@@ -1027,7 +1028,7 @@ function vSettings(){
   const s=S.settings;
   HEAD={title:'Настройки',back:'more'};
   return `<button class="btn primary wide" data-act="editSettings">Промени настройките</button>
-  <div class="kv"><div><span>Зимна надбавка</span><b>+${s.winterPct}%</b></div><div><span>Зимни месеци</span><b>${(s.winterMonths||[]).join(', ')}</b></div><div><span>Лятна надбавка</span><b>+${s.summerPct}%</b></div><div><span>Летни месеци</span><b>${(s.summerMonths||[]).join(', ')||'—'}</b></div><div><span>Известие за срок</span><b>${s.warnDays} дни</b></div><div><span>Известие за сервиз</span><b>${fint(s.serviceWarnKm)} км</b></div><div><span>Проверка на гуми на</span><b>${s.pressureDays} дни</b></div></div>
+  <div class="kv"><div><span>Зимна надбавка</span><b>+${s.winterPct}%</b></div><div><span>Зимни месеци</span><b>${(s.winterMonths||[]).join(', ')}</b></div><div><span>Лятна надбавка</span><b>+${s.summerPct}%</b></div><div><span>Летни месеци</span><b>${(s.summerMonths||[]).join(', ')||'—'}</b></div><div><span>Известие за срок</span><b>${s.warnDays} дни</b></div><div><span>Известие за сервиз</span><b>${fint(s.serviceWarnKm)} км</b></div><div><span>Периодична проверка на</span><b>${s.pressureDays} дни</b></div></div>
   <p class="small muted">Зимната норма = основна норма × (1 + надбавка). Пример: 7.5 × 1.10 = 8.25 л/100 км. Всеки автомобил може да има своя зимна надбавка.</p>`;
 }
 
@@ -1150,13 +1151,16 @@ function viewProblem(id){
 
 const openCheck=guard(carId=>{
   const cf=carField(carId),car=S.cars[cf.id];const p=car.pressure||{};
-  openSheet('Проверка на налягането',cf.html+`<div class="kv" id="presRec"><div><span>Предни гуми</span><b>${p.front?fnum(+p.front,1)+' bar':'—'}</b></div><div><span>Задни гуми</span><b>${p.rear?fnum(+p.rear,1)+' bar':'—'}</b></div></div>
-  <p class="small muted">Препоръчително налягане, зададено от администратора. Не въвеждаш измерените стойности.</p>
-  ${chk('checked','Проверих налягането на гумите')}${chk('inflated','Надути при необходимост')}
+  openSheet('Периодична проверка',cf.html+`<p class="small muted">Проверява се на всеки ${S.settings.pressureDays} дни. Отбележи какво си проверил.</p>
+  <fieldset><legend>Масло и антифриз</legend>${chk('oil','Проверих нивото на маслото')}${chk('oilAdd','Долях масло')}${chk('antifreeze','Проверих нивото на антифриза')}${chk('afAdd','Долях антифриз')}</fieldset>
+  <fieldset><legend>Гуми</legend><div class="kv" id="presRec"><div><span>Предни гуми</span><b>${p.front?fnum(+p.front,1)+' bar':'—'}</b></div><div><span>Задни гуми</span><b>${p.rear?fnum(+p.rear,1)+' bar':'—'}</b></div></div>
+  <p class="small muted">Препоръчително налягане. Не въвеждаш измерените стойности.</p>
+  ${chk('checked','Проверих налягането на гумите')}${chk('inflated','Надути при необходимост')}</fieldset>
   <div class="grid2">${fld('Дата',inp('date',today(),'date'))}${fld('Километраж',ninp('km',car.odo||''))}</div>
+  ${fld('Бележка',inp('note','','text','placeholder="напр. маслото е близо до MIN"'))}
   <div id="dz">${driverField(car)}</div>`,async f=>{
-    if(!f.checked)fail('Отбележи „Проверих налягането на гумите“.');
-    await addEntry(f.car,{t:'check',date:f.date,km:num(f.km),driver:f.driver,inflated:!!f.inflated});toast('Проверката е отбелязана');
+    if(!f.oil||!f.antifreeze||!f.checked)fail('Отбележи и трите проверки: масло, антифриз и налягане на гумите.');
+    await addEntry(f.car,{t:'check',date:f.date,km:num(f.km),driver:f.driver,oil:true,antifreeze:true,tyresOk:true,oilAdd:!!f.oilAdd,afAdd:!!f.afAdd,inflated:!!f.inflated,note:f.note.trim()});toast('Проверката е отбелязана');
   },'Проверката е извършена');
 });
 const openTyres=guard(carId=>{
@@ -1311,13 +1315,16 @@ function delEntry(carId,id){
   },'Изтрий');
 }
 function openEditUser(id){
-  const u=id?S.users[id]:null;const ds=Object.values(S.depts);
+  const u=id?S.users[id]:null;
+  if(isMgr()&&u&&(u.role!=='driver'||u.dept!==me().dept)){toast('Можеш да редактираш само шофьорите от своя отдел.');return}
+  const ds=isMgr()?Object.values(S.depts).filter(d=>d.id===me().dept):Object.values(S.depts);
   openSheet(u?'Редактирай потребител':'Нов потребител',`${fld('Име и фамилия',inp('name',u?.name,'text','placeholder="Николай Георгиев"'))}${fld('Потребителско име',inp('username',u?.username,'text','autocapitalize="none" placeholder="nikolay"'))}
-  <div class="grid2">${fld('Роля',sel('role',Object.entries(ROLES),u?.role||'driver',u?.id===meId?'disabled':''))}${fld('Отдел',sel('dept',[['','—'],...ds.map(d=>[d.id,d.name])],u?.dept||''))}</div>
+  <div class="grid2">${fld('Роля',sel('role',isMgr()?[['driver','Шофьор']]:Object.entries(ROLES),u?.role||'driver',(u?.id===meId||isMgr())?'disabled':''))}${fld('Отдел',sel('dept',isMgr()?ds.map(d=>[d.id,d.name]):[['','—'],...ds.map(d=>[d.id,d.name])],isMgr()?me().dept:(u?.dept||''),isMgr()?'disabled':''))}</div>
   ${fld(u?'Нова парола':'Парола',inp('pass','','text',`autocomplete="new-password" placeholder="${u?'Остави празно, за да не се сменя':'Минимум 4 символа'}"`))}
   ${u&&u.id!==meId?chk('active','Активен',u.active!==false):''}`,async f=>{
     const un=f.username.trim().toLowerCase();if(!f.name.trim()||!un)fail('Въведи име и потребителско име.');
     if(Object.values(S.users).some(x=>x.id!==u?.id&&x.username?.toLowerCase()===un))fail('Потребителското име е заето.');
+    if(isMgr()){f.role='driver';f.dept=me().dept}
     const role=u?.id===meId?u.role:f.role;
     if(role!=='admin'&&!f.dept)fail('Избери отдел за шофьор или мениджър.');
     if(!u&&f.pass.length<4)fail('Паролата трябва да е поне 4 символа.');
@@ -1345,7 +1352,7 @@ function openSettings(){
   const s=S.settings;
   openSheet('Настройки',`<fieldset><legend>Сезонни норми</legend><div class="grid2">${fld('Зимна надбавка, %',ninp('winterPct',s.winterPct))}${fld('Зимни месеци',inp('winterMonths',(s.winterMonths||[]).join(', ')),'Номера на месеци, напр. 11, 12, 1, 2, 3')}</div>
   <div class="grid2">${fld('Лятна надбавка, %',ninp('summerPct',s.summerPct),'Напр. за климатик')}${fld('Летни месеци',inp('summerMonths',(s.summerMonths||[]).join(', ')))}</div></fieldset>
-  <fieldset><legend>Известия</legend><div class="grid3">${fld('Срок, дни',ninp('warnDays',s.warnDays))}${fld('Сервиз, км',ninp('serviceWarnKm',s.serviceWarnKm))}${fld('Гуми на, дни',ninp('pressureDays',s.pressureDays))}</div></fieldset>`,async f=>{
+  <fieldset><legend>Известия</legend><div class="grid3">${fld('Срок, дни',ninp('warnDays',s.warnDays))}${fld('Сервиз, км',ninp('serviceWarnKm',s.serviceWarnKm))}${fld('Проверка на, дни',ninp('pressureDays',s.pressureDays),'Масло, антифриз, гуми')}</div></fieldset>`,async f=>{
     const ms=v=>String(v).split(/[,\s]+/).map(Number).filter(n=>n>=1&&n<=12);
     const w=ms(f.winterMonths),su=ms(f.summerMonths);if(w.some(m=>su.includes(m)))fail('Един месец не може да е едновременно зимен и летен.');
     await withRetry(()=>db.doc('meta/settings').set({winterPct:num(f.winterPct)||0,summerPct:num(f.summerPct)||0,winterMonths:w,summerMonths:su,warnDays:num(f.warnDays)||30,serviceWarnKm:num(f.serviceWarnKm)||500,pressureDays:num(f.pressureDays)||14}));toast('Настройките са запазени');
@@ -1405,14 +1412,14 @@ function openNewMsg(){
 async function delMsg(id){try{await db.doc('messages/'+id).update({del:true});toast('Съобщението е изтрито')}catch(e){toast(e.message)}}
 
 function vStaff(){
-  HEAD={title:isAdmin()?'Шофьори':'Служители',back:'home',plus:isAdmin()?'editUser':null};
+  HEAD={title:isAdmin()?'Шофьори':'Шофьори в отдела',back:'home',plus:isStaff()?'editUser':null};
   const ym=today().slice(0,7);
-  const us=Object.values(S.users).filter(u=>u.active!==false&&(isAdmin()?u.role==='driver':u.dept===me().dept)).sort((a,b)=>a.name.localeCompare(b.name,'bg'));
-  if(!us.length)return `<div class="empty">Няма ${isAdmin()?'шофьори':'служители'}.${isAdmin()?' Добави ги с + горе вдясно.':''}</div>`;
+  const us=Object.values(S.users).filter(u=>u.role==='driver'&&(isAdmin()||u.dept===me().dept)).sort((a,b)=>a.name.localeCompare(b.name,'bg'));
+  if(!us.length)return `<div class="empty">Няма шофьори. Добави ги с + горе вдясно.</div>`;
   return `<div class="list">${us.map(u=>{const cars=Object.values(S.cars).filter(c=>c.driverId===u.id&&c.active!==false);
     const km=entries().filter(e=>e.t==='trip'&&e.driver===u.id&&e.date.startsWith(ym)).reduce((s,e)=>s+(e.km||0),0);
-    return `<div class="li ua">${avatar(u)}<div class="l"><b>${esc(u.name)}</b><span>${ROLES[u.role]}${u.dept?' · '+esc(dname(u.dept)):''}</span><span>${cars.length?cars.map(c=>esc(carName(c)+' '+regText(c.reg))).join(', '):'Без постоянен автомобил'}</span></div>
-    <div class="r"><b class="num">${fint(km)} км</b><span class="small muted">този месец</span><div class="row" style="gap:6px">${isAdmin()?`<button class="btn sm" data-act="userLink" data-id="${u.id}">Линк</button>`:''}<button class="btn sm" data-act="driverRep" data-id="${u.id}">Справка</button></div></div></div>`}).join('')}</div>`;
+    return `<div class="li ua">${avatar(u)}<div class="l"><b>${esc(u.name)}</b><span>${ROLES[u.role]}${u.dept?' · '+esc(dname(u.dept)):''}${u.active===false?' · <b style="color:var(--crit)">неактивен</b>':''}</span><span>${cars.length?cars.map(c=>esc(carName(c)+' '+regText(c.reg))).join(', '):'Без постоянен автомобил'}</span></div>
+    <div class="r"><b class="num">${fint(km)} км</b><span class="small muted">този месец</span><div class="row" style="gap:6px"><button class="btn sm" data-act="userLink" data-id="${u.id}">Линк</button><button class="btn sm" data-act="editUser" data-id="${u.id}">Редактирай</button><button class="btn sm" data-act="driverRep" data-id="${u.id}">Справка</button></div></div></div>`}).join('')}</div>`;
 }
 function docPill(d){if(!d)return '<span class="pill">—</span>';const left=daysBetween(today(),d);const l=left<0?'crit':left<=S.settings.warnDays?'warn':'ok';return `<span class="pill ${l}">${fd(d)}</span>`}
 function carCell(c){return {html:`<button class="linkbtn" data-act="openCar" data-car="${c.id}">${esc(regText(c.reg))}</button><br><span class="small muted">${esc(carName(c))}</span>`,csv:c.reg}}
@@ -1430,9 +1437,9 @@ function vProblemsAll(){
 function svcPill(st){if(!st)return {html:'<span class="pill">—</span>',csv:''};const t=st.remKm!=null?fint(st.remKm)+' км':fd(st.nextDate);return {html:`<span class="pill ${st.lvl}">${t}</span>${st.nextDate&&st.remKm!=null?`<br><span class="small muted">${fd(st.nextDate)}</span>`:''}`,csv:t}}
 function vServiceAll(){
   HEAD={title:'Сервиз',back:'home'};const cars=scopeCars();if(!cars.length)return '<div class="empty">Няма автомобили.</div>';
-  const rows=cars.map(c=>[carCell(c),{html:fint(c.odo),csv:c.odo},...SVC.map(([k])=>svcPill(svcStatus(c.service?.[k],c.odo)))]);
+  const rows=cars.map(c=>[carCell(c),{html:fint(c.odo),csv:c.odo},...SVC.map(([k])=>svcPill(svcStatus(c.service?.[k],c.odo))),{html:canManage(c)?`<button class="btn sm" data-act="svcIntervals" data-car="${c.id}">Интервали</button> <button class="btn sm" data-act="service" data-car="${c.id}">+ Сервиз</button>`:'',csv:''}]);
   const recs=entries().filter(e=>(e.t==='service'||e.t==='expense')&&scopeIds().has(e.carId)).slice().reverse().slice(0,30);
-  return `<p class="small muted">Остават км до следващото обслужване (или дата). Следващото е което настъпи първо.</p>`+tableHtml(['Автомобил','Пробег',...SVC.map(x=>x[1])],rows,null,[1],[])+
+  return `<p class="small muted">Остават км до следващото обслужване (или дата). Следващото е което настъпи първо.</p>`+tableHtml(['Автомобил','Пробег',...SVC.map(x=>x[1]),''],rows,null,[1],[])+
     `<div class="sec"><h3>Последни сервизи и разходи</h3>${recs.length?`<div class="list">${recs.map(e=>`<div class="li"><div class="l"><b>${e.t==='service'?esc(e.what||'Сервиз'):esc(e.cat||'Разход')}</b><span>${fd(e.date)} · ${esc(regText(S.cars[e.carId]?.reg))}${e.km?' · '+fint(e.km)+' км':''}</span></div><div class="r"><b class="num">${eur(e.t==='service'?e.cost:e.sum)}</b></div></div>`).join('')}</div>`:'<div class="empty">Няма записи.</div>'}</div>`;
 }
 function vTyresAll(){
