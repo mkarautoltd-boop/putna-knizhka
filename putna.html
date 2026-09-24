@@ -385,6 +385,8 @@ body{background:linear-gradient(180deg,#E4ECF6 0,#EEF3F9 320px,#F2F5FA 100%) fix
 #shell>.tabs{position:relative;flex:0 0 auto;bottom:auto}
 #scroller .wrap{padding-block:16px 24px}
 .drvlist{display:flex;flex-direction:column;gap:6px;margin:4px 0}
+/* iPhone иконка на началния екран: Safari дава по-малка височина — ползваме цялата височина на екрана */
+html.sa #shell:not([hidden]),html.sa #sheet{bottom:auto;height:var(--apph,100%)}
 </style>
 </head>
 <body>
@@ -444,6 +446,10 @@ const APP_URL=location.origin+location.pathname;
 <script>
 /* ============ utils ============ */
 const $=s=>document.querySelector(s);
+(function(){const sa=window.navigator.standalone===true||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches);if(!sa)return;
+  const d=document.documentElement;d.classList.add('sa');
+  const fit=()=>{const land=Math.abs(window.orientation||0)===90;const h=land?Math.min(screen.width,screen.height):Math.max(screen.width,screen.height);d.style.setProperty('--apph',Math.max(h,window.innerHeight)+'px')};
+  fit();window.addEventListener('orientationchange',()=>setTimeout(fit,250));window.addEventListener('resize',fit);})();
 const toTop=()=>{const sc=document.getElementById('scroller');if(sc)sc.scrollTop=0;window.scrollTo(0,0)};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
