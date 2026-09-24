@@ -367,6 +367,16 @@ body{background:linear-gradient(180deg,#E4ECF6 0,#EEF3F9 320px,#F2F5FA 100%) fix
 .lvl .q{width:22px;height:34px;display:grid;place-items:center;font-size:22px;font-weight:800;line-height:1}
 .fl-warn2{font-size:13px;font-weight:600;color:#E08A00;display:none}
 .fluid:has(input[value=no]:checked) .fl-warn2{display:block}
+.shops{display:flex;flex-direction:column;gap:10px}
+.shop{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:14px;display:flex;flex-direction:column;gap:12px}
+.shop-h{display:flex;gap:12px;align-items:flex-start}
+.shop-ic{width:44px;height:44px;border-radius:13px;background:linear-gradient(145deg,#FFB547,#E07B00);display:grid;place-items:center;flex-shrink:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}
+.shop-ic .ic{width:24px;height:24px;stroke:#fff;fill:rgba(255,255,255,.28)}
+.shop-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;align-items:flex-start}.shop-t b{font-size:16px}
+.shop-t small{display:flex;gap:4px;align-items:flex-start;color:var(--muted);font-size:13.5px}.shop-t small .ic{width:16px;height:16px;flex-shrink:0;margin-top:1px}
+.shop-b{display:grid;grid-template-columns:1fr 1fr;gap:8px}.shop-b .btn{justify-content:center;text-decoration:none;gap:6px}
+.shop-b .btn:only-child{grid-column:1/-1}
+.shop-b .btn .ic{width:18px;height:18px}
 </style>
 </head>
 <body>
@@ -660,6 +670,9 @@ const fail=m=>{throw new Error(m)};
 <script>
 /* ============ views ============ */
 const IC={
+  edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+  nav:'<path d="M12 2.5 20 21l-8-4.2L4 21z"/>',
+  pin:'<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.6"/>',
   phone:'<path d="M5 4h3.5l1.8 4.5-2.3 1.4a11 11 0 0 0 6.1 6.1l1.4-2.3L20 15.5V19a1.5 1.5 0 0 1-1.6 1.5A16.5 16.5 0 0 1 3.5 5.6 1.5 1.5 0 0 1 5 4z"/>',
   home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
   car:'<path d="M5 17h14M4 17v-4l2-5.2A1.5 1.5 0 0 1 7.4 7h9.2a1.5 1.5 0 0 1 1.4.8L20 13v4"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/><path d="M4 13h16"/>',
@@ -866,7 +879,7 @@ function tripLi(e){
   const c=S.cars[e.carId],desc=e.route||[e.from,e.to].filter(Boolean).join(' – ')||(e.morning?'Сутрешен километраж':'Без маршрут');
   const tags=[e.temp?'<span class="pill acc">Временно</span>':'',e.by&&e.by!==e.driver?`<span class="small muted">въвел: ${esc(uname(e.by))}</span>`:''].join(' ');
   return `<div class="li"><div class="l"><b>${esc(desc)}</b><span>${fd(e.date)}${e.time?' '+esc(e.time):''} · ${esc(uname(e.driver))}${R.tab!=='car'?' · '+esc(regText(c?.reg)):''}${e.purpose?' · '+esc(e.purpose):''}</span><span class="num">${fint(e.startKm)} → ${fint(e.endKm)}</span></div>
-  <div class="r"><b class="num">${fint(e.km)} км</b>${tags}${isAdmin()||(canManage(c)&&isMgr())?`<button class="linkbtn small" data-act="delEntry" data-car="${e.carId}" data-id="${e.id}">Изтрий</button>`:''}</div></div>`;
+  <div class="r"><b class="num">${fint(e.km)} км</b>${tags}${isAdmin()||(isMgr()&&canManage(c))?`<button class="linkbtn small" data-act="delEntry" data-car="${e.carId}" data-id="${e.id}">Изтрий</button>`:''}</div></div>`;
 }
 
 /* ---- cars ---- */
@@ -944,11 +957,36 @@ function secFuel(c){
   return `${tk!=null?`<div class="calc">Приблизителен остатък: <span class="num">${fnum(tk,1)} л</span> от ${fint(c.tankCap)} л <span class="small">(изчислен по норма, не е измерване)</span></div>`:''}
   ${list.length?`<div class="list">${list.slice(0,100).map(fuelLi).join('')}</div>`:'<div class="empty">Още няма зареждания.</div>'}`;
 }
+
+/* ---- сервизи (локации) ---- */
+const shops=()=>(S.settings.shops||[]).filter(x=>x&&x.name);
+const mapsUrl=sh=>{const a=String(sh.addr||'').trim();if(/^https?:\/\//i.test(a))return a;return 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(a||sh.name)};
+function shopsBlock(){
+  const L=shops();
+  const head=`<div class="sec-head"><h3>Сервизи</h3>${isAdmin()?`<button class="btn sm primary" data-act="editShop">+ Добави сервиз</button>`:''}</div>`;
+  if(!L.length)return `<div class="sec">${head}<div class="empty" style="padding:18px">${icon('pin')}<b>Още няма добавени сервизи.</b>${isAdmin()?'Добави сервизите, с които работите, и шофьорите ще могат да стигнат до тях с един бутон.':'Администраторът още не е добавил сервизи.'}</div></div>`;
+  return `<div class="sec">${head}<div class="shops">${L.map(sh=>`<div class="shop"><div class="shop-h"><span class="shop-ic">${icon('wrench')}</span><div class="shop-t"><b>${esc(sh.name)}</b>${sh.note?`<span class="pill">${esc(sh.note)}</span>`:''}${sh.addr&&!/^https?:/i.test(sh.addr)?`<small>${icon('pin')}${esc(sh.addr)}</small>`:''}</div>${isAdmin()?`<button class="btn sm ghost" data-act="editShop" data-id="${sh.id}" aria-label="Редактирай">${icon('edit')}</button>`:''}</div>
+    <div class="shop-b"><a class="btn go" href="${esc(mapsUrl(sh))}" target="_blank" rel="noopener">${icon('nav')} Заведи ме</a></div></div>`).join('')}</div></div>`;
+}
+function openEditShop(id){
+  if(!isAdmin())return;const L=shops(),sh=id?L.find(x=>x.id===id):null;
+  openSheet(sh?'Редактирай сервиз':'Нов сервиз',`${fld('Име на сервиза',inp('name',sh?.name,'text','placeholder="напр. Автосервиз Иванов"'))}
+    ${fld('Адрес или линк от Google Maps',inp('addr',sh?.addr,'text','placeholder="ул. Девня 12, Варна"'),'Може адрес или линк: в Google Maps натисни „Сподели“ → „Копирай връзката“ и я постави тук.')}
+    ${fld('За какво',inp('note',sh?.note,'text','placeholder="напр. ремонт, гуми"'))}
+    ${sh?`<button type="button" class="btn wide" style="color:#E5484D" id="shopDel">Изтрий сервиза</button>`:''}`,async f=>{
+    if(!f.name.trim())fail('Въведи име на сервиза.');if(!f.addr.trim())fail('Въведи адрес или линк от Google Maps.');
+    const item={id:sh?.id||uid(),name:f.name.trim(),addr:f.addr.trim(),note:f.note.trim()};
+    const next=sh?L.map(x=>x.id===sh.id?item:x):[...L,item];
+    await withRetry(()=>db.doc('meta/settings').update({shops:next}));toast(sh?'Сервизът е обновен':'Сервизът е добавен');
+  },sh?'Запази':'Добави сервиза');
+  const d=$('#shopDel');if(d)d.addEventListener('click',async()=>{if(!confirm('Да изтрия ли „'+sh.name+'“?'))return;
+    await withRetry(()=>db.doc('meta/settings').update({shops:L.filter(x=>x.id!==sh.id)}));closeSheet();toast('Сервизът е изтрит')});
+}
 function secService(c,m){
   const rows=SVC.map(([k,l])=>{const sv=c.service?.[k]||{},st=svcStatus(sv,c.odo);
     return `<tr><td><b>${l}</b></td><td>${fd(sv.lastDate)}</td><td class="num r">${fint(sv.lastKm)}</td><td>${sv.intKm?fint(sv.intKm)+' км':''}${sv.intKm&&sv.intMonths?' / ':''}${sv.intMonths?sv.intMonths+' мес.':''}</td><td class="num r">${st?.nextKm!=null?fint(st.nextKm):'—'}</td><td>${fd(st?.nextDate)}</td><td class="num r">${st?.remKm!=null?fint(st.remKm):'—'}</td><td>${st?lvlPill(st.lvl):'<span class="pill">Няма данни</span>'}</td></tr>`}).join('');
   const recs=entries().filter(e=>e.carId===c.id&&(e.t==='service'||e.t==='expense')).slice().reverse();
-  return `<div class="sec"><div class="sec-head"><h3>Сервизни интервали</h3>${m?`<div class="row"><button class="btn sm" data-act="svcIntervals" data-car="${c.id}">Интервали</button><button class="btn sm primary" data-act="service" data-car="${c.id}">+ Сервиз</button></div>`:''}</div>
+  return shopsBlock()+`<div class="sec"><div class="sec-head"><h3>Сервизни интервали</h3>${m?`<div class="row"><button class="btn sm" data-act="svcIntervals" data-car="${c.id}">Интервали</button><button class="btn sm primary" data-act="service" data-car="${c.id}">+ Сервиз</button></div>`:''}</div>
   <div class="tablewrap"><table><thead><tr><th>Елемент</th><th>Последно</th><th class="r">Км</th><th>Интервал</th><th class="r">Следващ км</th><th>Следваща дата</th><th class="r">Остават км</th><th>Статус</th></tr></thead><tbody>${rows}</tbody></table></div>
   <p class="small muted">Следващият сервиз е което настъпи първо: километрите или датата.</p></div>
   <div class="sec"><div class="sec-head"><h3>Сервизи и разходи</h3>${m?`<button class="btn sm" data-act="expense" data-car="${c.id}">+ Друг разход</button>`:''}</div>
@@ -976,7 +1014,7 @@ function secProblems(c){
 }
 function histItems(filterFn){
   const out=[];
-  for(const e of allEntriesRaw()){if(!filterFn(e))continue;out.push({ts:e.ts,date:e.date,carId:e.carId,by:e.by,del:e.del,kind:e.t,text:entryText(e)})}
+  for(const e of allEntriesRaw()){if(!filterFn(e))continue;out.push({ts:e.ts,date:e.date,carId:e.carId,by:e.by,del:e.del,delBy:e.delBy,delTs:e.delTs,kind:e.t,text:entryText(e)})}
   for(const p of Object.values(S.problems)){if(!filterFn({...p,t:'problem'}))continue;out.push({ts:p.ts,date:p.date,carId:p.carId,by:p.by,kind:'problem',text:`Сигнал за проблем: ${p.cat}${p.desc?' – '+p.desc:''}`});
     for(const s of p.statusHist||[])out.push({ts:s.ts,date:s.ts?.slice(0,10),carId:p.carId,by:s.by,text:`Проблем „${p.cat}“ → ${PSTAT[s.status]}${s.note?': '+s.note:''}`});}
   for(const t of Object.values(S.tasks)){if(!filterFn({...t,t:'task',date:t.ts?.slice(0,10)}))continue;out.push({ts:t.ts,date:t.ts?.slice(0,10),carId:t.carId,by:t.by,text:`Задача създадена: ${t.title}`});
@@ -999,7 +1037,7 @@ function entryText(e){
 }
 function histList(items){
   if(!items.length)return '<div class="empty">Няма история.</div>';
-  return `<div class="list">${items.slice(0,200).map(i=>`<div class="li"><div class="l"><b style="font-weight:500${i.del?';text-decoration:line-through':''}">${esc(i.text)}</b><span>${fts(i.ts)} · ${esc(uname(i.by))}${R.tab!=='car'?' · '+esc(S.cars[i.carId]?.reg||''):''}${i.del?' · изтрит':''}</span></div></div>`).join('')}</div>`;
+  return `<div class="list">${items.slice(0,200).map(i=>`<div class="li"><div class="l"><b style="font-weight:500${i.del?';text-decoration:line-through':''}">${esc(i.text)}</b><span>${fts(i.ts)} · ${esc(uname(i.by))}${R.tab!=='car'?' · '+esc(S.cars[i.carId]?.reg||''):''}${i.del?`</span><span class="small" style="color:#E5484D;font-weight:600">Изтрит${i.delBy?' от '+esc(uname(i.delBy))+(S.users[i.delBy]?' ('+(ROLES[S.users[i.delBy].role]||'').toLowerCase()+')':''):''}${i.delTs?' на '+fts(i.delTs):''}`:''}</span></div></div>`).join('')}</div>`;
 }
 function secHistory(c){return `<p class="small muted">Какво е направено, кога и от кого. Изтритите записи остават видими като зачеркнати.</p>`+histList(histItems(e=>e.carId===c.id))}
 
@@ -1395,7 +1433,7 @@ function openEditCar(id){
     ${fld('VIN номер',inp('vin',c?.vin,'text','placeholder="17 знака, напр. VF1RJA00X12345678" autocapitalize="characters" maxlength="17" style="font-family:ui-monospace,Menlo,monospace;letter-spacing:.5px"'),'Намира се в талона, поле E')}
     ${fld('Отдел',sel('dept',depts.map(d=>[d.id,d.name]),dep,isMgr()?'disabled':''))}
     <div id="drvz">${fld('Постоянен шофьор',sel('driverId',drv(dep),c?.driverId||''),'Само шофьори от избрания отдел')}</div></fieldset>
-  ${isAdmin()?`<fieldset><legend>Снимка на автомобила</legend>
+  ${isStaff()?`<fieldset><legend>Снимка на автомобила</legend>
     <div id="phz" class="sec" style="gap:10px">${c?.photo?`<img class="phprev" src="${c.photo}" alt="">`:'<span class="small muted">Няма снимка – показва се рисунка.</span>'}</div>
     <div class="grid2"><label class="btn" style="text-align:center">${c?.photo?'Смени снимката':'Добави снимка'}<input id="phIn" type="file" accept="image/*" style="display:none"></label><button type="button" class="btn" id="phDel" ${c?.photo?'':'style="display:none"'}>Премахни</button></div>
     <span class="small muted">Снимай колата отстрани или отпред под ъгъл. Снимката се изрязва и смалява автоматично.</span></fieldset>`:''}
@@ -1420,7 +1458,7 @@ function openEditCar(id){
       norms:{city:num(f.nCity),highway:num(f.nHighway),mixed:num(f.nMixed)},winterPct:num(f.winterPct),tankCap:num(f.tankCap),tankStart:num(f.tankStart),tankStartDate:f.tankStartDate,
       vin:f.vin.trim().toUpperCase().replace(/\s/g,''),tyreSize:f.tyreSize.trim(),nPetrol:f.nPetrol!=null?num(f.nPetrol):(c?.nPetrol??null),
       tyreSeason:f.tyreSeason,pressure:{front:num(f.pFront),rear:num(f.pRear)}};
-    if(isAdmin()&&photo!==undefined)body.photo=photo;
+    if(isStaff()&&photo!==undefined)body.photo=photo;
     if(c){
       const ch=[];if(c.driverId!==body.driverId)ch.push(`постоянен шофьор: ${uname(c.driverId)} → ${uname(body.driverId)}`);
       if((c.odo||0)!==body.odo)ch.push(`километраж: ${fint(c.odo)} → ${fint(body.odo)}`);
@@ -1511,6 +1549,7 @@ function openNewTask(){
 async function doneTask(id){try{await withRetry(()=>db.doc('tasks/'+id).update({status:'done',doneBy:meId,doneTs:new Date().toISOString()}));toast('Задачата е изпълнена')}catch(e){toast(dbMsg(e))}}
 function delEntry(carId,id){
   const e=allEntriesRaw().find(x=>x.id===id&&x.carId===carId);if(!e)return;
+  if(e.t==='trip'&&!(isAdmin()||(isMgr()&&canManage(S.cars[carId]))))return;
   openSheet('Изтриване на запис',`<p>${esc(entryText(e))}</p><p class="small muted">${fd(e.date)} · въвел ${esc(uname(e.by))}. Записът ще остане в историята като изтрит.</p>`,async()=>{
     await markEntry(carId,e,{del:true,delBy:meId,delTs:new Date().toISOString()});
     const c=S.cars[carId];if(e.t==='trip'&&e.endKm===c.odo)await carUpdate(carId,{odo:e.startKm});
@@ -1559,7 +1598,7 @@ function openSettings(){
   <fieldset><legend>Известия</legend><div class="grid3">${fld('Срок, дни',ninp('warnDays',s.warnDays))}${fld('Сервиз, км',ninp('serviceWarnKm',s.serviceWarnKm))}${fld('Проверка на, дни',ninp('pressureDays',s.pressureDays),'Масло, антифриз, гуми')}</div></fieldset>`,async f=>{
     const ms=v=>String(v).split(/[,\s]+/).map(Number).filter(n=>n>=1&&n<=12);
     const w=ms(f.winterMonths),su=ms(f.summerMonths);if(w.some(m=>su.includes(m)))fail('Един месец не може да е едновременно зимен и летен.');
-    await withRetry(()=>db.doc('meta/settings').set({winterPct:num(f.winterPct)||0,summerPct:num(f.summerPct)||0,winterMonths:w,summerMonths:su,warnDays:num(f.warnDays)||30,serviceWarnKm:num(f.serviceWarnKm)||500,pressureDays:num(f.pressureDays)||14,roadHelpPhone:f.roadHelpPhone.trim(),roadHelpName:f.roadHelpName.trim()}));toast('Настройките са запазени');
+    await withRetry(()=>db.doc('meta/settings').set({...S.settings,winterPct:num(f.winterPct)||0,summerPct:num(f.summerPct)||0,winterMonths:w,summerMonths:su,warnDays:num(f.warnDays)||30,serviceWarnKm:num(f.serviceWarnKm)||500,pressureDays:num(f.pressureDays)||14,roadHelpPhone:f.roadHelpPhone.trim(),roadHelpName:f.roadHelpName.trim()}));toast('Настройките са запазени');
   });
 }
 async function loadDemo(){
@@ -1644,7 +1683,7 @@ function vServiceAll(){
   HEAD={title:'Сервиз',back:'home'};const cars=scopeCars();if(!cars.length)return '<div class="empty">Няма автомобили.</div>';
   const rows=cars.map(c=>[carCell(c),{html:fint(c.odo),csv:c.odo},...SVC.map(([k])=>svcPill(svcStatus(c.service?.[k],c.odo))),{html:canManage(c)?`<button class="btn sm" data-act="svcIntervals" data-car="${c.id}">Интервали</button> <button class="btn sm" data-act="service" data-car="${c.id}">+ Сервиз</button>`:'',csv:''}]);
   const recs=entries().filter(e=>(e.t==='service'||e.t==='expense')&&scopeIds().has(e.carId)).slice().reverse().slice(0,30);
-  return `<p class="small muted">Остават км до следващото обслужване (или дата). Следващото е което настъпи първо.</p>`+tableHtml(['Автомобил','Пробег',...SVC.map(x=>x[1]),''],rows,null,[1],[])+
+  return shopsBlock()+`<p class="small muted">Остават км до следващото обслужване (или дата). Следващото е което настъпи първо.</p>`+tableHtml(['Автомобил','Пробег',...SVC.map(x=>x[1]),''],rows,null,[1],[])+
     `<div class="sec"><h3>Последни сервизи и разходи</h3>${recs.length?`<div class="list">${recs.map(e=>`<div class="li"><div class="l"><b>${e.t==='service'?esc(e.what||'Сервиз'):esc(e.cat||'Разход')}</b><span>${fd(e.date)} · ${esc(regText(S.cars[e.carId]?.reg))}${e.km?' · '+fint(e.km)+' км':''}</span></div><div class="r"><b class="num">${eur(e.t==='service'?e.cost:e.sum)}</b></div></div>`).join('')}</div>`:'<div class="empty">Няма записи.</div>'}</div>`;
 }
 function vTyresAll(){
@@ -1726,7 +1765,7 @@ const ACT={
   carFilter:d=>{R.carFilter=d.k;render()},toggleInactive:()=>{R.showInactive=!R.showInactive;render()},
   rep:d=>{R.rep=d.k;render()},
   closeSheet:closeSheet,
-  morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),tyCheck:d=>openTyCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
+  morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
   takeover:d=>openTakeover(d.car),endSession:d=>openEndSession(d.car),viewProblem:d=>viewProblem(d.id),
   editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car),expense:d=>openExpense(d.car),editDocs:d=>openDocs(d.car),
   newTask:openNewTask,doneTask:d=>doneTask(d.id),delEntry:d=>delEntry(d.car,d.id),
