@@ -582,14 +582,14 @@ function carAlerts(car){
       let vv=v,topped=!!lc[F.add]||!!tu;
       if(fk==='ty'&&tu&&tu.lvl){vv=tu.lvl;topped=!!tu.inflated}
       if(vv==='no')topped=false;
-      const good=vv===F.good,L=LVLCAP[vv],what=fk==='ty'?'налягане':'ниво';
+      const good=F.good.includes(vv),L=LVLCAP[vv],what=fk==='ty'?'налягане':'ниво';
       if(vv==='no'){
         if(isStaff())out.push({lvl:'warn',kind:'fluid',fluid:fk,key:F.k+':'+lc.id,car,text:'Гуми: не са проверени',sub:`Проверка на ${fd(lc.date)} от ${uname(lc.driver||lc.by)} – гумите са пропуснати`});
         else out.push({lvl:'warn',kind:'fluid',fluid:fk,tyNo:true,key:F.k+':'+lc.id,car,text:'Гуми: не са проверени – провери',sub:'Натисни тук, когато провериш гумите'});
         continue;}
       if(isStaff()){
         const lvl=(good||topped)?'good':(vv==='min'||vv==='low')?'crit':'warn';
-        out.push({lvl,kind:'fluid',fluid:fk,key:F.k+':'+lc.id+(tu?':'+tu.id:''),car,text:good?`${F.name}: ${what} ${L}`:topped?`${F.name}: ${F.topDone} (беше ${L})`:`${F.name}: ${what} ${L}`,
+        out.push({lvl,kind:'fluid',fluid:fk,key:F.k+':'+lc.id+(tu?':'+tu.id:''),car,text:good?`${F.name}: ${what} ${L}${vv==='mid'?' – в норма':''}`:topped?`${F.name}: ${F.topDone} (беше ${L})`:`${F.name}: ${what} ${L}`,
           sub:`${tu&&tu.lvl?'Гумите проверени на '+fd(tu.date)+' от '+uname(tu.driver||tu.by):'Проверка на '+fd(lc.date)+' от '+uname(lc.driver||lc.by)}${tu&&!tu.lvl?` · ${F.topDone} на ${fd(tu.date)} от ${uname(tu.driver||tu.by)}`:lc[F.add]?` · ${F.topDone} при проверката`:''}`});
       }else if(!good&&!topped)
         out.push({lvl:(vv==='min'||vv==='low')?'crit':'warn',kind:'fluid',fluid:fk,key:F.k+':'+lc.id,car,text:`${F.name}: ${what} ${L} – ${F.remind}`,sub:`Натисни тук, когато ${F.remind==='надуй'?'надуеш':'долееш'}`});
@@ -743,7 +743,7 @@ function sheetCar(c){return `<div class="sheet-car">${carPic(c)}<div class="sec"
 let HEAD=null;
 const allAlerts=()=>scopeCars().flatMap(carAlerts);
 const akey=a=>`${a.kind}:${a.car.id}:${a.key||a.id||''}:${a.lvl}`;
-const isRead=a=>!!((S.notif&&S.notif.read)||{})[akey(a)];
+const isRead=a=>a.lvl==='good'||!!((S.notif&&S.notif.read)||{})[akey(a)];
 const unreadN=()=>allAlerts().filter(a=>!isRead(a)).length;
 function renderTabs(){
   const nAlerts=unreadN();
@@ -1328,11 +1328,11 @@ const FL_IC={
 FL_IC.ty='<svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" fill="#fff" fill-opacity=".95"/><circle cx="16" cy="16" r="7.2" fill="#1E5FD0" fill-opacity=".55"/><circle cx="16" cy="16" r="2.6" fill="#fff"/><path d="M16 3v4M16 25v4M3 16h4M25 16h4M6.8 6.8l2.8 2.8M22.4 22.4l2.8 2.8M6.8 25.2l2.8-2.8M22.4 9.6l2.8-2.8" stroke="#1E5FD0" stroke-opacity=".45" stroke-width="2.2" stroke-linecap="round"/></svg>';
 /* нива: масло, антифриз, гуми */
 const FLUIDS={
- oil:{k:'oilLvl',add:'oilAdd',name:'Масло',lvls:[['min','Мин',18],['mid','Средно',50],['max','Макс',85]],good:'max',warn:'Нивото е ниско – долей.',
+ oil:{k:'oilLvl',add:'oilAdd',name:'Масло',lvls:[['min','Мин',18],['mid','Средно',50],['max','Макс',85]],good:['max','mid'],warn:'Нивото е ниско – долей.',
    topT:'Доливане на масло',topB:'Долях масло',topDone:'долято',hist:'Долято масло',remind:'долей',addLabel:'Долях масло'},
- af:{k:'afLvl',add:'afAdd',name:'Антифриз',lvls:[['min','Мин',18],['mid','Средно',50],['max','Макс',85]],good:'max',warn:'Нивото е ниско – долей.',
+ af:{k:'afLvl',add:'afAdd',name:'Антифриз',lvls:[['min','Мин',18],['mid','Средно',50],['max','Макс',85]],good:['max','mid'],warn:'Нивото е ниско – долей.',
    topT:'Доливане на антифриз',topB:'Долях антифриз',topDone:'долят',hist:'Долят антифриз',remind:'долей',addLabel:'Долях антифриз'},
- ty:{k:'tyLvl',add:'inflated',name:'Гуми',lvls:[['low','Ниско',25],['ok','Нормално',85],['no','Не са проверени',0]],good:'ok',warn:'Налягането е ниско – надуй гумите.',
+ ty:{k:'tyLvl',add:'inflated',name:'Гуми',lvls:[['low','Ниско',25],['ok','Нормално',85],['no','Не са проверени',0]],good:['ok'],warn:'Налягането е ниско – надуй гумите.',
    topT:'Надуване на гумите',topB:'Надух гумите',topDone:'надути',hist:'Надути гуми',remind:'надуй',addLabel:'Надух гумите'}
 };
 const LVLCAP={min:'МИН',mid:'СРЕДНО',max:'МАКС',low:'НИСКО',ok:'НОРМАЛНО',no:'НЕ Е ПРОВЕРЕНО'};
