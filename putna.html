@@ -350,6 +350,23 @@ body{background:linear-gradient(180deg,#E4ECF6 0,#EEF3F9 320px,#F2F5FA 100%) fix
 .fluid .check{box-shadow:none;background:#F6F8FB;padding:11px 12px}
 .fl-warn{font-size:13px;font-weight:600;color:#E5484D;display:none}
 .fluid:has(input[value=min]:checked) .fl-warn,.fluid:has(input[value=low]:checked) .fl-warn{display:block}
+.ftsw{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ftsw input{position:absolute;opacity:0;pointer-events:none}
+.ftsw label{padding:12px;border-radius:12px;border:1.5px solid var(--line);background:#F6F8FB;text-align:center;font-weight:700;font-size:16px;color:#5D6B80;cursor:pointer}
+.ftsw input:checked+label{border-color:#1E6FE8;background:#EAF2FF;color:#1E6FE8;box-shadow:0 0 0 3px rgba(30,111,232,.15)}
+.ftsw #ft_petrol:checked+label{border-color:#1E9E4A;background:#E8F7EE;color:#1E9E4A;box-shadow:0 0 0 3px rgba(30,158,74,.15)}
+.ftpill{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:99px;vertical-align:2px;margin-left:4px;background:#EAF2FF;color:#1E6FE8}
+.ftpill.petrol{background:#E8F7EE;color:#1E9E4A}
+.sos{display:flex;align-items:center;gap:14px;margin-top:10px;padding:14px 16px;border-radius:16px;background:linear-gradient(135deg,#F0453F,#C62828);color:#fff;text-decoration:none;box-shadow:0 6px 16px rgba(198,40,40,.28),inset 0 1px 0 rgba(255,255,255,.25)}
+.sos.off{background:#EEF2F6;color:#5D6B80;box-shadow:none}
+.sos-ic{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.22);display:grid;place-items:center;flex-shrink:0}
+.sos.off .sos-ic{background:#DDE3EA}
+.sos-ic .ic{width:26px;height:26px;fill:rgba(255,255,255,.3);stroke-width:2.1}
+.sos.off .sos-ic .ic{fill:none}
+.sos-t{display:flex;flex-direction:column;gap:2px}.sos-t b{font-size:17px}.sos-t small{font-size:14px;opacity:.9;font-weight:600}
+.lvl .q{width:22px;height:34px;display:grid;place-items:center;font-size:22px;font-weight:800;line-height:1}
+.fl-warn2{font-size:13px;font-weight:600;color:#E08A00;display:none}
+.fluid:has(input[value=no]:checked) .fl-warn2{display:block}
 </style>
 </head>
 <body>
@@ -487,13 +504,20 @@ function seasonFactor(car,date){
   return 1;
 }
 function normRate(car,road,date){const n=car?.norms||{};const base=+n[road]||+n.mixed||0;return base*seasonFactor(car,date)}
+const isBi=c=>/Бензин/.test(c?.fuel||'')&&/Газ|Метан/.test(c?.fuel||'');
+const gasName=c=>/Метан/.test(c?.fuel||'')?'Метан':'Газ';
+const ftOf=(c,e)=>isBi(c)?(e.ft==='petrol'?'petrol':'gas'):'main';
+const ftLabel=(c,e)=>{const t=ftOf(c,e);return t==='petrol'?'Бензин':t==='gas'?gasName(c):''};
+/* бензинът при газови коли се превръща в еквивалентни литри газ: газ/бензин по нормите (по подразбиране 1.2) */
+const petrolRatio=c=>{const g=+(c?.norms?.mixed)||0,p=+(c?.nPetrol)||0;return g&&p?g/p:1.2};
+const eqL=(c,e)=>ftOf(c,e)==='petrol'?(e.liters||0)*petrolRatio(c):(e.liters||0);
 const tripNorm=(car,e)=>(e.km||0)*normRate(car,e.road||'mixed',e.date)/100;
 
 function agg(list){
-  const r={km:0,fuelL:0,fuelCost:0,normL:0,service:0,other:0,trips:0,fuels:0};
+  const r={km:0,fuelL:0,fuelCost:0,normL:0,service:0,other:0,trips:0,fuels:0,gasL:0,petrolL:0,bi:false};
   for(const e of list){const car=S.cars[e.carId];
     if(e.t==='trip'){r.km+=e.km||0;r.normL+=tripNorm(car,e);r.trips++}
-    else if(e.t==='fuel'){r.fuelL+=e.liters||0;r.fuelCost+=e.sum||0;r.fuels++}
+    else if(e.t==='fuel'){r.fuelL+=eqL(car,e);r.fuelCost+=e.sum||0;r.fuels++;const t=ftOf(car,e);if(t!=='main'){r.bi=true;r[t+'L']+=e.liters||0}}
     else if(e.t==='service'){r.service+=e.cost||0}
     else if(e.t==='expense'){r.other+=e.sum||0}}
   r.avgPrice=r.fuelL?r.fuelCost/r.fuelL:null;
@@ -507,7 +531,7 @@ function tank(car){
   if(!car.tankCap||car.tankStart===''||car.tankStart==null)return null;
   const since=car.tankStartDate||'0000-00-00';let v=+car.tankStart;
   for(const e of entries()){if(e.carId!==car.id||e.date<since)continue;
-    if(e.t==='fuel')v+=e.liters||0;else if(e.t==='trip')v-=tripNorm(car,e);}
+    if(e.t==='fuel'){if(ftOf(car,e)!=='petrol')v+=e.liters||0}else if(e.t==='trip')v-=tripNorm(car,e);}
   return Math.max(0,Math.min(+car.tankCap,v));
 }
 function svcStatus(sv,odo){
@@ -545,13 +569,20 @@ function carAlerts(car){
     if(!lc||age>=s.pressureDays)out.push({lvl:'warn',kind:'pressure',car,text:'Периодична проверка: масло, антифриз, гуми',sub:lc?`Последна преди ${age} дни (${fd(lc.date)})`:'Още няма отбелязана проверка'});
     if(lc)for(const fk of['oil','af','ty']){const F=FLUIDS[fk],v=lc[F.k];if(!v)continue;
       const tu=entries().filter(e=>e.carId===car.id&&e.t==='topup'&&e.fluid===fk&&(e.date>lc.date||(e.date===lc.date&&(e.ts||'')>(lc.ts||'')))).pop();
-      const good=v===F.good,topped=!!lc[F.add]||!!tu,L=LVLCAP[v],what=fk==='ty'?'налягане':'ниво';
+      let vv=v,topped=!!lc[F.add]||!!tu;
+      if(fk==='ty'&&tu&&tu.lvl){vv=tu.lvl;topped=!!tu.inflated}
+      if(vv==='no')topped=false;
+      const good=vv===F.good,L=LVLCAP[vv],what=fk==='ty'?'налягане':'ниво';
+      if(vv==='no'){
+        if(isStaff())out.push({lvl:'warn',kind:'fluid',fluid:fk,key:F.k+':'+lc.id,car,text:'Гуми: не са проверени',sub:`Проверка на ${fd(lc.date)} от ${uname(lc.driver||lc.by)} – гумите са пропуснати`});
+        else out.push({lvl:'warn',kind:'fluid',fluid:fk,tyNo:true,key:F.k+':'+lc.id,car,text:'Гуми: не са проверени – провери',sub:'Натисни тук, когато провериш гумите'});
+        continue;}
       if(isStaff()){
-        const lvl=(good||topped)?'good':(v==='min'||v==='low')?'crit':'warn';
+        const lvl=(good||topped)?'good':(vv==='min'||vv==='low')?'crit':'warn';
         out.push({lvl,kind:'fluid',fluid:fk,key:F.k+':'+lc.id+(tu?':'+tu.id:''),car,text:good?`${F.name}: ${what} ${L}`:topped?`${F.name}: ${F.topDone} (беше ${L})`:`${F.name}: ${what} ${L}`,
-          sub:`Проверка на ${fd(lc.date)} от ${uname(lc.driver||lc.by)}${tu?` · ${F.topDone} на ${fd(tu.date)} от ${uname(tu.driver||tu.by)}`:lc[F.add]?` · ${F.topDone} при проверката`:''}`});
+          sub:`${tu&&tu.lvl?'Гумите проверени на '+fd(tu.date)+' от '+uname(tu.driver||tu.by):'Проверка на '+fd(lc.date)+' от '+uname(lc.driver||lc.by)}${tu&&!tu.lvl?` · ${F.topDone} на ${fd(tu.date)} от ${uname(tu.driver||tu.by)}`:lc[F.add]?` · ${F.topDone} при проверката`:''}`});
       }else if(!good&&!topped)
-        out.push({lvl:(v==='min'||v==='low')?'crit':'warn',kind:'fluid',fluid:fk,key:F.k+':'+lc.id,car,text:`${F.name}: ${what} ${L} – ${F.remind}`,sub:`Натисни тук, когато ${F.remind==='надуй'?'надуеш':'долееш'}`});
+        out.push({lvl:(vv==='min'||vv==='low')?'crit':'warn',kind:'fluid',fluid:fk,key:F.k+':'+lc.id,car,text:`${F.name}: ${what} ${L} – ${F.remind}`,sub:`Натисни тук, когато ${F.remind==='надуй'?'надуеш':'долееш'}`});
     }}
   for(const p of Object.values(S.problems)){if(p.carId!==car.id||p.status==='resolved')continue;
     out.push({lvl:p.priority==='high'?'crit':'warn',kind:'problem',id:p.id,car,text:`Ремонт: ${p.cat}${p.desc?' – '+p.desc.slice(0,60):''}`,sub:`${PSTAT[p.status]||'Нов'} · сигнал от ${uname(p.by)} на ${fd(p.date)}`});}
@@ -629,6 +660,7 @@ const fail=m=>{throw new Error(m)};
 <script>
 /* ============ views ============ */
 const IC={
+  phone:'<path d="M5 4h3.5l1.8 4.5-2.3 1.4a11 11 0 0 0 6.1 6.1l1.4-2.3L20 15.5V19a1.5 1.5 0 0 1-1.6 1.5A16.5 16.5 0 0 1 3.5 5.6 1.5 1.5 0 0 1 5 4z"/>',
   home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
   car:'<path d="M5 17h14M4 17v-4l2-5.2A1.5 1.5 0 0 1 7.4 7h9.2a1.5 1.5 0 0 1 1.4.8L20 13v4"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/><path d="M4 13h16"/>',
   tasks:'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10l1.5 1.5L13 9M9 15h6"/>',
@@ -734,6 +766,9 @@ function render(){
 function showLogin(){$('#boot').hidden=true;$('#shell').hidden=true;$('#loginView').hidden=false}
 
 /* ---- home ---- */
+function sosBtn(){const s=S.settings,ph=String(s.roadHelpPhone||'').trim();
+  return ph?`<a class="sos" href="tel:${esc(ph.replace(/[^\d+]/g,''))}"><span class="sos-ic">${icon('phone')}</span><span class="sos-t"><b>Звънни на пътна помощ</b><small>${esc(s.roadHelpName?s.roadHelpName+' · ':'')}${esc(ph)}</small></span></a>`
+    :`<div class="sos off"><span class="sos-ic">${icon('phone')}</span><span class="sos-t"><b>Пътна помощ</b><small>Администраторът още не е задал номер</small></span></div>`}
 function actionTiles(car){
   const cid=car?`data-car="${car.id}"`:'';
   const t=[['fuel','blue','fuel','Зареждане'],['morning','purple','road','Километраж'],['check','green','tyre','Проверка'],['problem','orange','alert','Проблем']];
@@ -793,7 +828,7 @@ function vHome(){
     :[[T('cars'),'blue','car','Автомобили'],[T('tasks'),'purple','tasks','Задачи'],[T('reports'),'green','reports','Отчети'],
       [T('staff'),'grey','users','Шофьори'],[T('messages'),'orange','bell','Съобщения'],[T('docsAll'),'grey','doc','Документи'],
       ['fuel','blue','fuel','Зареждане'],[T('serviceAll'),'orange','wrench','Сервиз'],['takeover','navy','wheel','Ще управлявам']];
-  h+=`<div class="sec"><h3>Бързи действия</h3><div class="qa${isAdmin()?'':' three'}">${qa.map(([a,c,i,l])=>`<button class="qt ${c}" data-act="${a}">${icon(i)}${l}</button>`).join('')}</div></div>`;
+  h+=`<div class="sec"><h3>Бързи действия</h3><div class="qa${isAdmin()?'':' three'}">${qa.map(([a,c,i,l])=>`<button class="qt ${c}" data-act="${a}">${icon(i)}${l}</button>`).join('')}</div>${isMgr()?sosBtn():''}</div>`;
   const al=allAlerts();
   const worst=cars.slice().sort((a,b)=>({crit:0,warn:1,ok:2}[carLevel(a)])-({crit:0,warn:1,ok:2}[carLevel(b)]));
   h+=`<div class="sec"><div class="sec-head"><h3>Автомобили</h3><button class="linkbtn" data-act="tab" data-k="cars">Виж всички (${cars.length})</button></div><div class="carlist">${worst.slice(0,5).map(carCard).join('')}</div></div>`;
@@ -823,7 +858,7 @@ function alertAct(a){
   if(a.kind==='svc')return m?`data-act="service" data-car="${c}"`:`data-act="openCar" data-car="${c}"`;
   if(a.kind==='tyres')return `data-act="tyres" data-car="${c}"`;
   if(a.kind==='pressure')return `data-act="check" data-car="${c}"`;
-  if(a.kind==='fluid')return isStaff()?`data-act="openCar" data-car="${c}"`:`data-act="topup" data-car="${c}" data-fluid="${a.fluid}"`;
+  if(a.kind==='fluid')return isStaff()?`data-act="openCar" data-car="${c}"`:a.tyNo?`data-act="tyCheck" data-car="${c}"`:`data-act="topup" data-car="${c}" data-fluid="${a.fluid}"`;
   if(a.kind==='problem')return `data-act="viewProblem" data-id="${a.id}"`;
   return `data-act="openCar" data-car="${c}"`;
 }
@@ -874,7 +909,7 @@ function kvBlock(a,withMoney=true){
   const ec=a.econ;
   return `<div class="kv">
     <div><span>Изминати км</span><b>${fint(a.km)}</b></div>
-    <div><span>Заредено гориво</span><b>${fnum(a.fuelL)} л</b></div>
+    <div><span>Заредено гориво</span><b>${a.bi?`Газ ${fnum(a.gasL)} л<br>Бензин ${fnum(a.petrolL)} л`:fnum(a.fuelL)+' л'}</b></div>
     <div><span>Фактически разход</span><b>${fnum(a.actual)} л/100</b></div>
     <div><span>Норматив</span><b>${fnum(a.normRate)} л/100</b></div>
     <div><span>Нормативно гориво</span><b>${fnum(a.normL)} л</b></div>
@@ -889,7 +924,7 @@ function kvBlock(a,withMoney=true){
 function secOverview(c,m){
   const ym=today().slice(0,7),a=agg(entries().filter(e=>e.carId===c.id&&e.date?.startsWith(ym)));
   const n=c.norms||{},sf=seasonFactor(c,today());
-  return `<div class="info"><div><span>Марка / Модел</span><b>${esc(carName(c))}</b></div><div><span>Рег. номер</span><b>${esc(regText(c.reg))}</b></div><div><span>Година</span><b>${esc(c.year||'—')}</b></div><div><span>Гориво</span><b>${esc(c.fuel||'—')}</b></div><div><span>Пробег</span><b>${fint(c.odo)} км</b></div><div><span>Отдел</span><b>${esc(dname(c.dept))}</b></div><div><span>Постоянен шофьор</span><b>${esc(uname(c.driverId))}</b></div>${tank(c)!=null?`<div><span>В резервоара (изчислено)</span><b>≈ ${fnum(tank(c),0)} / ${fint(c.tankCap)} л</b></div>`:''}</div>
+  return `<div class="info"><div><span>Марка / Модел</span><b>${esc(carName(c))}</b></div><div><span>Рег. номер</span><b>${esc(regText(c.reg))}</b></div><div><span>Година</span><b>${esc(c.year||'—')}</b></div><div><span>Гориво</span><b>${esc(c.fuel||'—')}</b></div><div><span>VIN номер</span><b style="font-family:ui-monospace,Menlo,monospace;font-size:14px;word-break:break-all">${esc(c.vin||'—')}</b></div><div><span>Размер на гумите</span><b>${esc(c.tyreSize||'—')}</b></div><div><span>Пробег</span><b>${fint(c.odo)} км</b></div><div><span>Отдел</span><b>${esc(dname(c.dept))}</b></div><div><span>Постоянен шофьор</span><b>${esc(uname(c.driverId))}</b></div>${tank(c)!=null?`<div><span>В резервоара (изчислено)</span><b>≈ ${fnum(tank(c),0)} / ${fint(c.tankCap)} л</b></div>`:''}</div>
   <div class="sec"><h3>Задачи и известия</h3>${alertList(carAlerts(c),true)}</div>
   <div class="sec"><h3>${monthLabel(ym)}</h3>${kvBlock(a)}<p class="small muted">Фактическият разход се смята по зареденото гориво за периода.</p></div>
   <div class="sec"><div class="sec-head"><h3>Норми за разход</h3>${m?`<button class="linkbtn" data-act="editCar" data-car="${c.id}">Промени</button>`:''}</div>
@@ -902,7 +937,7 @@ function secBook(c){
   for(const e of list){if(e.date!==cur){cur=e.date;h+=`<div class="date-h">${fd(cur)}</div>`}h+=tripLi(e)}
   return h+'</div>';
 }
-function fuelLi(e){const c=S.cars[e.carId];return `<div class="li"><div class="l"><b>${esc(e.station||'Бензиностанция')} · ${fnum(e.liters)} л</b><span>${fd(e.date)} ${esc(e.time||'')} · ${esc(uname(e.driver))}${R.tab!=='car'?' · '+esc(c?.reg||''):''}${e.by!==e.driver?' · въвел: '+esc(uname(e.by)):''}</span><span class="num">${fint(e.km)} км${e.note?' · '+esc(e.note):''}</span></div><div class="r"><b class="num">${eur(e.sum)}</b><span class="small muted num">${eur(e.ppl)}/л</span>${isStaff()&&canManage(c)?`<button class="linkbtn small" data-act="delEntry" data-car="${e.carId}" data-id="${e.id}">Изтрий</button>`:''}</div></div>`}
+function fuelLi(e){const c=S.cars[e.carId];return `<div class="li"><div class="l"><b>${esc(e.station||'Бензиностанция')} · ${fnum(e.liters)} л${ftLabel(c,e)?` <span class="ftpill ${ftOf(c,e)}">${ftLabel(c,e)}</span>`:''}</b><span>${fd(e.date)} ${esc(e.time||'')} · ${esc(uname(e.driver))}${R.tab!=='car'?' · '+esc(c?.reg||''):''}${e.by!==e.driver?' · въвел: '+esc(uname(e.by)):''}</span><span class="num">${fint(e.km)} км${e.note?' · '+esc(e.note):''}</span></div><div class="r"><b class="num">${eur(e.sum)}</b><span class="small muted num">${eur(e.ppl)}/л</span>${isStaff()&&canManage(c)?`<button class="linkbtn small" data-act="delEntry" data-car="${e.carId}" data-id="${e.id}">Изтрий</button>`:''}</div></div>`}
 function secFuel(c){
   const list=entries().filter(e=>e.carId===c.id&&e.t==='fuel').slice().reverse();
   const tk=tank(c);
@@ -951,11 +986,11 @@ function histItems(filterFn){
 function entryText(e){
   switch(e.t){
     case 'trip':return `${e.temp?'Временно управление':'Пътен запис'}: ${uname(e.driver)}, ${fint(e.startKm)} → ${fint(e.endKm)} (${fint(e.km)} км)${e.route||e.from?' · '+(e.route||[e.from,e.to].filter(Boolean).join(' – ')):''}`;
-    case 'fuel':return `Зареждане: ${fnum(e.liters)} л, ${eur(e.sum)} при ${fint(e.km)} км${e.station?' · '+e.station:''}`;
+    case 'fuel':return `Зареждане${ftLabel(S.cars[e.carId],e)?' ('+ftLabel(S.cars[e.carId],e).toLowerCase()+')':''}: ${fnum(e.liters)} л, ${eur(e.sum)} при ${fint(e.km)} км${e.station?' · '+e.station:''}`;
     case 'service':return `Сервиз: ${e.what||''}${e.cost?' · '+eur(e.cost):''}`;
     case 'expense':return `Разход: ${e.cat} · ${eur(e.sum)}`;
     case 'tyres':return `Гумите са сменени: ${e.kind==='winter'?'летни → зимни':'зимни → летни'} при ${fint(e.km)} км`;
-    case 'topup':return `${(FLUIDS[e.fluid]||{}).hist||'Доливане'} при ${fint(e.km)} км${e.note?' · '+e.note:''}`;
+    case 'topup':return e.lvl?`${e.text} при ${fint(e.km)} км`:`${(FLUIDS[e.fluid]||{}).hist||'Доливане'} при ${fint(e.km)} км${e.note?' · '+e.note:''}`;
     case 'check':return `Проверка (${e.oil===undefined?'гуми':'масло, антифриз, гуми'}) при ${fint(e.km)} км${e.oilLvl?' · масло: '+LVLTXT[e.oilLvl]:''}${e.afLvl?' · антифриз: '+LVLTXT[e.afLvl]:''}${e.tyLvl?' · налягане: '+LVLTXT[e.tyLvl]:''}${e.oilAdd?' · долято масло':''}${e.afAdd?' · долят антифриз':''}${e.inflated?' · надути гуми':''}${e.note?' · '+e.note:''}`;
     case 'session':return e.phase==='start'?`Поемане на автомобила: ${uname(e.user)} при ${fint(e.km)} км${e.note?' · '+e.note:''}`:`Приключено управление: ${uname(e.user)} при ${fint(e.km)} км`;
     case 'edit':return e.text||'Промяна';
@@ -1151,7 +1186,7 @@ function onCarChange(form,cb){const s=form.querySelector('#f_car');if(s&&s.tagNa
 const openTrip=guard((carId,morning)=>{
   const cf=carField(carId),car=S.cars[cf.id];
   const html=cf.html+`<div id="dz">${driverField(car)}</div>`+
-    `<div class="grid2">${fld('Дата',inp('date',today(),'date'))}${fld('Час',inp('time',nowTime(),'time'))}</div>${fld('Вид път',sel('road',Object.entries(ROADS),'mixed'))}`+
+    `${fld('Дата',inp('date',today(),'date'))}<input type="hidden" name="time" value="${nowTime()}">${fld('Вид път',sel('road',Object.entries(ROADS),'mixed'))}`+
     (morning?`${fld('Текущ километраж (сутрин)',ninp('endKm','','required'))}<input type="hidden" name="startKm" id="f_startKm" value="${car.odo||0}">`
             :`<div class="grid2">${fld('Начален км',ninp('startKm',car.odo||''))}${fld('Краен км',ninp('endKm',''))}</div>`)+
     `<div class="calc" id="kmCalc"></div><div class="note" id="kmWarn" hidden></div>`+
@@ -1184,11 +1219,13 @@ const openTrip=guard((carId,morning)=>{
   upd();
 });
 
+const ftToggle=c=>isBi(c)?`<div class="fld"><span class="lbl">Какво зареждаш?</span><div class="ftsw"><input type="radio" name="ft" id="ft_gas" value="gas" checked><label for="ft_gas">${gasName(c)}</label><input type="radio" name="ft" id="ft_petrol" value="petrol"><label for="ft_petrol">Бензин</label></div></div>`:'';
 const openFuel=guard(carId=>{
   const cf=carField(carId),car=S.cars[cf.id];
   const html=cf.html+`<div id="dz">${driverField(car)}</div>
   <div class="grid2">${fld('Дата',inp('date',today(),'date'))}${fld('Час',inp('time',nowTime(),'time'))}</div>
   ${fld('Километраж',ninp('km',car.odo||''))}
+  <div id="ftz">${ftToggle(car)}</div>
   <div class="grid2">${fld('Литри',ninp('liters','','placeholder="42.50"'))}${fld('Обща сума, €',ninp('sum','','placeholder="68.00"'))}</div>
   <div class="calc" id="pplCalc">Цена/литър: —</div>
   ${fld('Бензиностанция',inp('station','','text','placeholder="OMV" list="stations"'))}<datalist id="stations">${['OMV','Shell','Lukoil','Petrol','EKO','Rompetrol','Gazprom'].map(s=>`<option value="${s}">`).join('')}</datalist>
@@ -1200,13 +1237,13 @@ const openFuel=guard(carId=>{
     if(km==null||isNaN(km))fail('Въведи километража.');
     if(c.tankCap&&l>+c.tankCap*1.05)fail(`Литрите (${fnum(l)}) са повече от резервоара (${fint(c.tankCap)} л).`);
     const lf=lastOf(c.id,'fuel');if(lf&&km<lf.km)fail(`Километражът е по-малък от предишното зареждане (${fint(lf.km)} км).`);
-    await addEntry(c.id,{t:'fuel',date:f.date,time:f.time,driver:f.driver,km,liters:l,sum:s,ppl:+(s/l).toFixed(3),station:f.station.trim(),note:f.note.trim()});
-    toast(`Зареждането е записано: ${fnum(l)} л`);
+    await addEntry(c.id,{t:'fuel',...(isBi(c)?{ft:f.ft==='petrol'?'petrol':'gas'}:{}),date:f.date,time:f.time,driver:f.driver,km,liters:l,sum:s,ppl:+(s/l).toFixed(3),station:f.station.trim(),note:f.note.trim()});
+    toast(`Зареждането е записано: ${fnum(l)} л${isBi(c)?' '+(f.ft==='petrol'?'бензин':gasName(c).toLowerCase()):''}`);
   },'Запиши зареждане');
   const form=$('#sheetForm');
   const upd=()=>{const l=num(form.liters.value),s=num(form.sum.value);$('#pplCalc').innerHTML=`Цена/литър: <span class="num">${l&&s&&!isNaN(l)&&!isNaN(s)?eur(s/l):'—'}</span>${l&&s?` <span class="small">(${eur(s)} ÷ ${fnum(l)} л)</span>`:''}`};
   form.addEventListener('input',upd);
-  onCarChange(form,c=>{form.km.value=c.odo||'';$('#dz').innerHTML=driverField(c)});
+  onCarChange(form,c=>{form.km.value=c.odo||'';$('#dz').innerHTML=driverField(c);$('#ftz').innerHTML=ftToggle(c)});
 });
 
 function compressImage(file){return new Promise((res,rej)=>{const img=new Image(),url=URL.createObjectURL(file);
@@ -1257,15 +1294,15 @@ const FLUIDS={
    topT:'Доливане на масло',topB:'Долях масло',topDone:'долято',hist:'Долято масло',remind:'долей',addLabel:'Долях масло'},
  af:{k:'afLvl',add:'afAdd',name:'Антифриз',lvls:[['min','Мин',18],['mid','Средно',50],['max','Макс',85]],good:'max',warn:'Нивото е ниско – долей.',
    topT:'Доливане на антифриз',topB:'Долях антифриз',topDone:'долят',hist:'Долят антифриз',remind:'долей',addLabel:'Долях антифриз'},
- ty:{k:'tyLvl',add:'inflated',name:'Гуми',lvls:[['low','Ниско',25],['ok','Нормално',85]],good:'ok',warn:'Налягането е ниско – надуй гумите.',
+ ty:{k:'tyLvl',add:'inflated',name:'Гуми',lvls:[['low','Ниско',25],['ok','Нормално',85],['no','Не са проверени',0]],good:'ok',warn:'Налягането е ниско – надуй гумите.',
    topT:'Надуване на гумите',topB:'Надух гумите',topDone:'надути',hist:'Надути гуми',remind:'надуй',addLabel:'Надух гумите'}
 };
-const LVLCAP={min:'МИН',mid:'СРЕДНО',max:'МАКС',low:'НИСКО',ok:'НОРМАЛНО'};
-const LVLTXT={min:'мин',mid:'средно',max:'макс',low:'ниско',ok:'нормално'};
-const LVLCLS={min:'min',mid:'mid',max:'max',low:'min',ok:'max'};
+const LVLCAP={min:'МИН',mid:'СРЕДНО',max:'МАКС',low:'НИСКО',ok:'НОРМАЛНО',no:'НЕ Е ПРОВЕРЕНО'};
+const LVLTXT={min:'мин',mid:'средно',max:'макс',low:'ниско',ok:'нормално',no:'не е проверено'};
+const LVLCLS={min:'min',mid:'mid',max:'max',low:'min',ok:'max',no:'mid'};
 const fluidBox=(fk,title,sub,extra='')=>{const F=FLUIDS[fk];return `<div class="fluid"><div class="fl-h"><span class="fl-ic ${fk}">${FL_IC[fk]}</span><div><b>${title}</b><small>${sub}</small></div></div>${extra}
-  <div class="lvl" style="grid-template-columns:repeat(${F.lvls.length},1fr)">${F.lvls.map(([v,l,h])=>`<input type="radio" name="${F.k}" id="${fk}_${v}" value="${v}"><label class="${LVLCLS[v]}" for="${fk}_${v}"><span class="bar"><i style="height:${h}%"></i></span>${l}</label>`).join('')}</div>
-  <div class="fl-warn">${F.warn}</div>
+  <div class="lvl" style="grid-template-columns:repeat(${F.lvls.length},1fr)">${F.lvls.map(([v,l,h])=>`<input type="radio" name="${F.k}" id="${fk}_${v}" value="${v}"><label class="${LVLCLS[v]}" for="${fk}_${v}">${v==='no'?'<span class="q">?</span>':`<span class="bar"><i style="height:${h}%"></i></span>`}${l}</label>`).join('')}</div>
+  <div class="fl-warn">${F.warn}</div>${fk==='ty'?'<div class="fl-warn2">Можеш да приключиш проверката, но напомнянето ще остане, докато не провериш гумите.</div>':''}
   ${chk(F.add,F.addLabel)}</div>`};
 const openCheck=guard(carId=>{
   const cf=carField(carId),car=S.cars[cf.id];const p=car.pressure||{};
@@ -1277,9 +1314,20 @@ const openCheck=guard(carId=>{
   <div id="dz">${driverField(car)}</div>`,async f=>{
     if(!f.oilLvl)fail('Избери нивото на маслото: Мин, Средно или Макс.');
     if(!f.afLvl)fail('Избери нивото на антифриза: Мин, Средно или Макс.');
-    if(!f.tyLvl)fail('Избери налягането на гумите: Ниско или Нормално.');
+    if(!f.tyLvl)fail('Избери за гумите: Ниско, Нормално или Не са проверени.');
     await addEntry(f.car,{t:'check',date:f.date,km:num(f.km),driver:f.driver,oil:true,antifreeze:true,oilLvl:f.oilLvl,afLvl:f.afLvl,tyLvl:f.tyLvl,tyresOk:true,oilAdd:!!f.oilAdd,afAdd:!!f.afAdd,inflated:!!f.inflated,note:f.note.trim()});toast('Проверката е отбелязана');
   },'Проверката е извършена');
+});
+const openTyCheck=guard(carId=>{
+  const car=S.cars[carId],p=car.pressure||{},F=FLUIDS.ty;
+  const box=`<div class="fluid"><div class="fl-h"><span class="fl-ic ty">${FL_IC.ty}</span><div><b>Налягане в гумите</b><small>Какво е налягането?</small></div></div>
+    <div class="kv"><div><span>Предни гуми</span><b>${p.front?fnum(+p.front,1)+' bar':'—'}</b></div><div><span>Задни гуми</span><b>${p.rear?fnum(+p.rear,1)+' bar':'—'}</b></div></div>
+    <div class="lvl" style="grid-template-columns:1fr 1fr">${F.lvls.filter(x=>x[0]!=='no').map(([v,l,h])=>`<input type="radio" name="tyLvl" id="tyc_${v}" value="${v}"><label class="${LVLCLS[v]}" for="tyc_${v}"><span class="bar"><i style="height:${h}%"></i></span>${l}</label>`).join('')}</div>
+    <div class="fl-warn">${F.warn}</div>${chk('inflated','Надух гумите')}</div>`;
+  openSheet('Проверка на гумите',sheetCar(car)+box+`<div class="grid2">${fld('Дата',inp('date',today(),'date'))}${fld('Километраж',ninp('km',car.odo||''))}</div>`,async f=>{
+    if(!f.tyLvl)fail('Избери налягането: Ниско или Нормално.');
+    await addEntry(carId,{t:'topup',fluid:'ty',lvl:f.tyLvl,inflated:!!f.inflated,date:f.date,km:num(f.km),driver:meId,text:'Проверени гуми: '+LVLTXT[f.tyLvl]+(f.inflated?' · надути':'')});toast('Гумите са отбелязани');
+  },'Запиши');
 });
 const openTopup=guard((carId,fluid)=>{
   const car=S.cars[carId],F=FLUIDS[fluid];
@@ -1344,18 +1392,21 @@ function openEditCar(id){
     <div class="grid2">${fld('Марка',inp('make',c?.make,'text','placeholder="Dacia"'))}${fld('Модел',inp('model',c?.model,'text','placeholder="Logan"'))}</div>
     <div class="grid2">${fld('Рег. номер',inp('reg',c?.reg,'text','placeholder="СВ7190СЕ" autocapitalize="characters"'))}${fld('Година',ninp('year',c?.year))}</div>
     <div class="grid2">${fld('Гориво',sel('fuel',FUELS.map(x=>[x,x]),c?.fuel||'Дизел'))}${fld('Километраж',ninp('odo',c?.odo))}</div>
+    ${fld('VIN номер',inp('vin',c?.vin,'text','placeholder="17 знака, напр. VF1RJA00X12345678" autocapitalize="characters" maxlength="17" style="font-family:ui-monospace,Menlo,monospace;letter-spacing:.5px"'),'Намира се в талона, поле E')}
     ${fld('Отдел',sel('dept',depts.map(d=>[d.id,d.name]),dep,isMgr()?'disabled':''))}
     <div id="drvz">${fld('Постоянен шофьор',sel('driverId',drv(dep),c?.driverId||''),'Само шофьори от избрания отдел')}</div></fieldset>
   ${isAdmin()?`<fieldset><legend>Снимка на автомобила</legend>
     <div id="phz" class="sec" style="gap:10px">${c?.photo?`<img class="phprev" src="${c.photo}" alt="">`:'<span class="small muted">Няма снимка – показва се рисунка.</span>'}</div>
     <div class="grid2"><label class="btn" style="text-align:center">${c?.photo?'Смени снимката':'Добави снимка'}<input id="phIn" type="file" accept="image/*" style="display:none"></label><button type="button" class="btn" id="phDel" ${c?.photo?'':'style="display:none"'}>Премахни</button></div>
     <span class="small muted">Снимай колата отстрани или отпред под ъгъл. Снимката се изрязва и смалява автоматично.</span></fieldset>`:''}
-  <fieldset><legend>Норми за разход, л/100 км</legend>
+  <fieldset><legend>Норми за разход${isBi(c)?' на газ':''}, л/100 км</legend>
     <div class="grid3">${fld('Градско',ninp('nCity',n.city,'placeholder="9.0"'))}${fld('Извън­градско',ninp('nHighway',n.highway,'placeholder="6.5"'))}${fld('Смесено',ninp('nMixed',n.mixed,'placeholder="7.5"'))}</div>
+    <div id="bipz">${isBi(c)||/Газ|Метан/.test(c?.fuel||'')?`${fld('Бензин – смесено, л/100 км',ninp('nPetrol',c?.nPetrol,'placeholder="напр. 7.0"'),'Нормите горе са за газ. Тази норма е за километрите на бензин.')}`:''}</div>
     ${fld('Зимна надбавка за този автомобил, %',ninp('winterPct',c?.winterPct,`placeholder="общата: ${S.settings.winterPct}%"`),'Остави празно за общата настройка')}</fieldset>
   <fieldset><legend>Резервоар</legend>
     <div class="grid3">${fld('Капацитет, л',ninp('tankCap',c?.tankCap,'placeholder="50"'))}${fld('Начално гориво, л',ninp('tankStart',c?.tankStart,'placeholder="20"'))}${fld('Към дата',inp('tankStartDate',c?.tankStartDate||today(),'date'))}</div></fieldset>
   <fieldset><legend>Гуми</legend>
+    ${fld('Размер на гумите',inp('tyreSize',c?.tyreSize,'text','placeholder="напр. 185/65 R15"'))}
     ${fld('Монтирани в момента',sel('tyreSeason',[['summer','Летни'],['winter','Зимни'],['all','Всесезонни']],c?.tyreSeason||tyreTarget(today())))}
     <div class="grid2">${fld('Налягане предни, bar',ninp('pFront',p.front,'placeholder="2.2"'))}${fld('Налягане задни, bar',ninp('pRear',p.rear,'placeholder="2.2"'))}</div></fieldset>`,async f=>{
     if(isMgr())f.dept=me().dept;
@@ -1363,9 +1414,11 @@ function openEditCar(id){
     const dup=Object.values(S.cars).find(x=>x.id!==c?.id&&x.active!==false&&normReg(x.reg)===reg);
     if(dup)fail(`Вече има активен автомобил с номер ${dup.reg}.`);
     if(f.driverId){const du=S.users[f.driverId];if(!du||du.dept!==f.dept)fail('Постоянният шофьор не е от избрания отдел.')}
+    {const v=f.vin.trim().replace(/\s/g,'');if(v&&v.length!==17)fail(`VIN номерът трябва да е 17 знака (сега са ${v.length}).`);}
     const odoV=num(f.odo);if(odoV!=null&&isNaN(odoV))fail('Километражът трябва да е число.');
     const body={make:f.make.trim(),model:f.model.trim(),reg,year:f.year.trim(),fuel:f.fuel,dept:f.dept,driverId:f.driverId||null,odo:odoV||0,
       norms:{city:num(f.nCity),highway:num(f.nHighway),mixed:num(f.nMixed)},winterPct:num(f.winterPct),tankCap:num(f.tankCap),tankStart:num(f.tankStart),tankStartDate:f.tankStartDate,
+      vin:f.vin.trim().toUpperCase().replace(/\s/g,''),tyreSize:f.tyreSize.trim(),nPetrol:f.nPetrol!=null?num(f.nPetrol):(c?.nPetrol??null),
       tyreSeason:f.tyreSeason,pressure:{front:num(f.pFront),rear:num(f.pRear)}};
     if(isAdmin()&&photo!==undefined)body.photo=photo;
     if(c){
@@ -1380,7 +1433,9 @@ function openEditCar(id){
       await logEdit(nid,`Добавен автомобил ${body.reg}`);toast('Автомобилът е добавен');R.tab='car';R.carId=nid;R.carSec='overview';
     }
   },c?'Запази':'Добави автомобила');
-  const form=$('#sheetForm');form.dept.addEventListener('change',()=>{$('#drvz').innerHTML=fld('Постоянен шофьор',sel('driverId',drv(form.dept.value),''),'Само шофьори от избрания отдел')});
+  const form=$('#sheetForm');form.fuel.addEventListener('change',()=>{const b=/Бензин/.test(form.fuel.value)&&/Газ|Метан/.test(form.fuel.value);
+    $('#bipz').innerHTML=b?fld('Бензин – смесено, л/100 км',ninp('nPetrol',c?.nPetrol,'placeholder="напр. 7.0"'),'Нормите горе са за газ. Тази норма е за километрите на бензин.'):''});
+  form.dept.addEventListener('change',()=>{$('#drvz').innerHTML=fld('Постоянен шофьор',sel('driverId',drv(form.dept.value),''),'Само шофьори от избрания отдел')});
   const phIn=$('#phIn');if(phIn){
     phIn.addEventListener('change',async()=>{const file=phIn.files&&phIn.files[0];if(!file)return;
       $('#phz').innerHTML='<span class="small muted">Обработва се…</span>';
@@ -1500,10 +1555,11 @@ function openSettings(){
   const s=S.settings;
   openSheet('Настройки',`<fieldset><legend>Сезонни норми</legend><div class="grid2">${fld('Зимна надбавка, %',ninp('winterPct',s.winterPct))}${fld('Зимни месеци',inp('winterMonths',(s.winterMonths||[]).join(', ')),'Номера на месеци, напр. 11, 12, 1, 2, 3')}</div>
   <div class="grid2">${fld('Лятна надбавка, %',ninp('summerPct',s.summerPct),'Напр. за климатик')}${fld('Летни месеци',inp('summerMonths',(s.summerMonths||[]).join(', ')))}</div></fieldset>
+  <fieldset><legend>Пътна помощ</legend><div class="grid2">${fld('Телефон',inp('roadHelpPhone',s.roadHelpPhone,'tel','placeholder="напр. 0888 123 456"'))}${fld('Име / фирма',inp('roadHelpName',s.roadHelpName,'text','placeholder="напр. Пътна помощ Варна"'))}</div><small class="muted">Мениджърите ще виждат бутон „Звънни на пътна помощ“ на началния екран.</small></fieldset>
   <fieldset><legend>Известия</legend><div class="grid3">${fld('Срок, дни',ninp('warnDays',s.warnDays))}${fld('Сервиз, км',ninp('serviceWarnKm',s.serviceWarnKm))}${fld('Проверка на, дни',ninp('pressureDays',s.pressureDays),'Масло, антифриз, гуми')}</div></fieldset>`,async f=>{
     const ms=v=>String(v).split(/[,\s]+/).map(Number).filter(n=>n>=1&&n<=12);
     const w=ms(f.winterMonths),su=ms(f.summerMonths);if(w.some(m=>su.includes(m)))fail('Един месец не може да е едновременно зимен и летен.');
-    await withRetry(()=>db.doc('meta/settings').set({winterPct:num(f.winterPct)||0,summerPct:num(f.summerPct)||0,winterMonths:w,summerMonths:su,warnDays:num(f.warnDays)||30,serviceWarnKm:num(f.serviceWarnKm)||500,pressureDays:num(f.pressureDays)||14}));toast('Настройките са запазени');
+    await withRetry(()=>db.doc('meta/settings').set({winterPct:num(f.winterPct)||0,summerPct:num(f.summerPct)||0,winterMonths:w,summerMonths:su,warnDays:num(f.warnDays)||30,serviceWarnKm:num(f.serviceWarnKm)||500,pressureDays:num(f.pressureDays)||14,roadHelpPhone:f.roadHelpPhone.trim(),roadHelpName:f.roadHelpName.trim()}));toast('Настройките са запазени');
   });
 }
 async function loadDemo(){
@@ -1635,7 +1691,7 @@ function printHtml(sc){
   let i=0;const body=rows.map(e=>{const c=S.cars[e.carId];i++;
     if(e.t==='trip'){const nr=normRate(c,e.road||'mixed',e.date),nl=e.km*nr/100;
       return `<tr>${td(i,1)}${td(fd(e.date)+(e.time?' '+e.time:''))}${td(carName(c))}${td(regText(c?.reg))}${td(uname(e.driver)+(e.temp?' (врем.)':''))}${td(fint(e.startKm),1)}${td(fint(e.endKm),1)}${td(fint(e.km),1)}${td(e.from)}${td(e.to)}${td(e.route)}${td(e.purpose)}${td('')}${td('')}${td('')}${td(fnum(nr),1)}${td(fnum(nl),1)}${td('')}${td('')}${td(e.note)}</tr>`}
-    return `<tr class="f">${td(i,1)}${td(fd(e.date)+(e.time?' '+e.time:''))}${td(carName(c))}${td(regText(c?.reg))}${td(uname(e.driver))}${td('')}${td('')}${td('')}${td('')}${td('')}${td('Зареждане'+(e.station?' – '+e.station:'')+' при '+fint(e.km)+' км')}${td('')}${td(fnum(e.liters),1)}${td(fnum(e.ppl,3),1)}${td(fnum(e.sum),1)}${td('')}${td('')}${td('')}${td('')}${td(e.note)}</tr>`}).join('');
+    return `<tr class="f">${td(i,1)}${td(fd(e.date)+(e.time?' '+e.time:''))}${td(carName(c))}${td(regText(c?.reg))}${td(uname(e.driver))}${td('')}${td('')}${td('')}${td('')}${td('')}${td('Зареждане'+(ftLabel(c,e)?' ('+ftLabel(c,e).toLowerCase()+')':'')+(e.station?' – '+e.station:'')+' при '+fint(e.km)+' км')}${td('')}${td(fnum(e.liters),1)}${td(fnum(e.ppl,3),1)}${td(fnum(e.sum),1)}${td('')}${td('')}${td('')}${td('')}${td(e.note)}</tr>`}).join('');
   const ec=a.econ;
   const foot=`<tr class="t"><td colspan="7">Общо</td>${td(fint(a.km),1)}<td colspan="4"></td>${td(fnum(a.fuelL),1)}${td(a.avgPrice==null?'':fnum(a.avgPrice,3),1)}${td(fnum(a.fuelCost),1)}${td(fnum(a.normRate),1)}${td(fnum(a.normL),1)}${td(a.actual==null?'':fnum(a.actual),1)}${td(ec==null?'':(ec>=0?'+':'')+fnum(ec),1)}<td></td></tr>`;
   const sum=[['Общо километри',fint(a.km)+' км'],['Общо гориво (заредено)',fnum(a.fuelL)+' л'],['Нормативно гориво',fnum(a.normL)+' л'],['Фактическо гориво',fnum(a.fuelL)+' л'],
@@ -1670,7 +1726,7 @@ const ACT={
   carFilter:d=>{R.carFilter=d.k;render()},toggleInactive:()=>{R.showInactive=!R.showInactive;render()},
   rep:d=>{R.rep=d.k;render()},
   closeSheet:closeSheet,
-  morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
+  morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),tyCheck:d=>openTyCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
   takeover:d=>openTakeover(d.car),endSession:d=>openEndSession(d.car),viewProblem:d=>viewProblem(d.id),
   editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car),expense:d=>openExpense(d.car),editDocs:d=>openDocs(d.car),
   newTask:openNewTask,doneTask:d=>doneTask(d.id),delEntry:d=>delEntry(d.car,d.id),
