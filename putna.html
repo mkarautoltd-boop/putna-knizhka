@@ -379,14 +379,14 @@ body{background:linear-gradient(180deg,#E4ECF6 0,#EEF3F9 320px,#F2F5FA 100%) fix
 .shop-b .btn .ic{width:18px;height:18px}
 .tabs-in .tab{white-space:nowrap;min-width:0}
 .tabs-in.six .tab{font-size:10.5px;letter-spacing:-.1px;padding-left:1px;padding-right:1px}
-/* неподвижна долна лента: съдържанието се превърта в собствен контейнер */
-#shell:not([hidden]){position:fixed;top:0;left:0;right:0;bottom:0;height:auto;display:flex;flex-direction:column;overflow:hidden}
-#scroller{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
-#shell>.tabs{position:relative;flex:0 0 auto;bottom:auto}
+/* долна лента: залепена за дъното, страницата се превърта нормално */
+#shell:not([hidden]){display:flex;flex-direction:column;min-height:100vh;min-height:100lvh}
+#shell,#scroller{overflow:visible!important;overflow-x:clip!important}
+body:not(.noscroll){overflow:visible!important;overflow-x:clip!important}
+#scroller{flex:1 0 auto}
+#shell>.tabs{position:sticky;bottom:0;left:auto;right:auto;flex:0 0 auto}
 #scroller .wrap{padding-block:16px 24px}
 .drvlist{display:flex;flex-direction:column;gap:6px;margin:4px 0}
-/* iPhone иконка на началния екран: Safari дава по-малка височина — ползваме цялата височина на екрана */
-html.sa #shell:not([hidden]),html.sa #sheet{bottom:auto;height:var(--apph,100%)}
 </style>
 </head>
 <body>
@@ -432,7 +432,7 @@ html.sa #shell:not([hidden]),html.sa #sheet{bottom:auto;height:var(--apph,100%)}
     var w=land?Math.max(screen.width,screen.height):Math.min(screen.width,screen.height);
     var st=document.getElementById('iosFit');
     if(!st){st=document.createElement('style');st.id='iosFit';document.head.appendChild(st)}
-    st.textContent='html,body{width:'+w+'px!important;max-width:'+w+'px!important;min-width:0!important;overflow-x:hidden!important}'+
+    st.textContent='html,body{width:'+w+'px!important;max-width:'+w+'px!important;min-width:0!important}html{overflow-x:hidden!important}body:not(.noscroll){overflow-x:clip!important}'+
       '#shell,#main,.wrap,.login,.login-card,.top,.tabs,#sheet,.sheet-card{max-width:'+w+'px!important}'+
       '.tabs,.top{width:'+w+'px!important}';
   }
@@ -446,10 +446,7 @@ const APP_URL=location.origin+location.pathname;
 <script>
 /* ============ utils ============ */
 const $=s=>document.querySelector(s);
-(function(){const sa=window.navigator.standalone===true||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches);if(!sa)return;
-  const d=document.documentElement;d.classList.add('sa');
-  const fit=()=>{const land=Math.abs(window.orientation||0)===90;const h=land?Math.min(screen.width,screen.height):Math.max(screen.width,screen.height);d.style.setProperty('--apph',Math.max(h,window.innerHeight)+'px')};
-  fit();window.addEventListener('orientationchange',()=>setTimeout(fit,250));window.addEventListener('resize',fit);})();
+
 const toTop=()=>{const sc=document.getElementById('scroller');if(sc)sc.scrollTop=0;window.scrollTo(0,0)};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
