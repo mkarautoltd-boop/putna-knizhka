@@ -384,6 +384,7 @@ body{background:linear-gradient(180deg,#E4ECF6 0,#EEF3F9 320px,#F2F5FA 100%) fix
 #scroller{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
 #shell>.tabs{position:relative;flex:0 0 auto;bottom:auto}
 #scroller .wrap{padding-block:16px 24px}
+.drvlist{display:flex;flex-direction:column;gap:6px;margin:4px 0}
 </style>
 </head>
 <body>
@@ -499,7 +500,7 @@ function scopeCars(inclInactive=false){
     if(!inclInactive&&c.active===false)return false;
     if(u.role==='admin')return true;
     if(u.role==='manager')return c.dept===u.dept||c.session?.userId===u.id;
-    return c.driverId===u.id||c.session?.userId===u.id;
+    return isDrv(c,u.id)||c.session?.userId===u.id;
   }).sort((a,b)=>(a.active===false)-(b.active===false)||carName(a).localeCompare(carName(b),'bg'));
 }
 const scopeIds=()=>new Set(scopeCars(true).map(c=>c.id));
@@ -792,7 +793,9 @@ function showLogin(){$('#boot').hidden=true;$('#shell').hidden=true;$('#loginVie
 function sosBtn(){const s=S.settings,ph=String(s.roadHelpPhone||'').trim();
   return ph?`<a class="sos" href="tel:${esc(ph.replace(/[^\d+]/g,''))}"><span class="sos-ic">${icon('phone')}</span><span class="sos-t"><b>Звънни на пътна помощ</b><small>${esc(s.roadHelpName?s.roadHelpName+' · ':'')}${esc(ph)}</small></span></a>`
     :`<div class="sos off"><span class="sos-ic">${icon('phone')}</span><span class="sos-t"><b>Пътна помощ</b><small>Администраторът още не е задал номер</small></span></div>`}
-const myCars=()=>scopeCars().filter(c=>c.active!==false&&(c.driverId===meId||c.session?.userId===meId));
+const drvIds=c=>(c&&Array.isArray(c.driverIds)&&c.driverIds.length)?c.driverIds:(c&&c.driverId?[c.driverId]:[]);
+const isDrv=(c,id)=>drvIds(c).includes(id);
+const myCars=()=>scopeCars().filter(c=>c.active!==false&&(isDrv(c,meId)||c.session?.userId===meId));
 function vMyCar(){
   HEAD={title:'Моят автомобил'};const my=myCars();
   if(!my.length)return `<div class="empty">${icon('car')}<b>Нямаш избран автомобил.</b>Избери се за „Постоянен шофьор“ в Редактирай автомобил.</div>`;
@@ -840,7 +843,7 @@ function vHome(){
   const u=me(),cars=scopeCars();
   let h=sessionCards();
   if(!isStaff()){
-    const my=cars.filter(c=>c.driverId===meId||c.session?.userId===meId);
+    const my=cars.filter(c=>isDrv(c,meId)||c.session?.userId===meId);
     if(!my.length)return h+`<div class="empty">${icon('car')}<b>Нямаш назначен автомобил.</b>Обърни се към администратора или мениджъра на отдела.</div>`;
     for(const c of my){
       const al=carAlerts(c);
@@ -912,7 +915,7 @@ function tripLi(e){
 function vCars(){
   let all=scopeCars(isStaff()&&R.showInactive),cars=all;
   const q=R.q.trim().toLowerCase();
-  if(q)cars=cars.filter(c=>[c.make,c.model,c.reg,uname(c.driverId),dname(c.dept)].join(' ').toLowerCase().includes(q)||normReg(c.reg).includes(normReg(q)));
+  if(q)cars=cars.filter(c=>[c.make,c.model,c.reg,drvIds(c).map(uname).join(' '),dname(c.dept)].join(' ').toLowerCase().includes(q)||normReg(c.reg).includes(normReg(q)));
   if(R.carFilter==='ok')cars=cars.filter(c=>c.active!==false&&carLevel(c)==='ok');
   if(R.carFilter==='issue')cars=cars.filter(c=>c.active!==false&&carLevel(c)!=='ok');
   if(!isStaff()&&all.length===1){R.carId=all[0].id;return vCar()}
@@ -963,7 +966,7 @@ function kvBlock(a,withMoney=true){
 function secOverview(c,m){
   const ym=today().slice(0,7),a=agg(entries().filter(e=>e.carId===c.id&&e.date?.startsWith(ym)));
   const n=c.norms||{},sf=seasonFactor(c,today());
-  return `<div class="info"><div><span>Марка / Модел</span><b>${esc(carName(c))}</b></div><div><span>Рег. номер</span><b>${esc(regText(c.reg))}</b></div><div><span>Година</span><b>${esc(c.year||'—')}</b></div><div><span>Гориво</span><b>${esc(c.fuel||'—')}</b></div><div><span>VIN номер</span><b style="font-family:ui-monospace,Menlo,monospace;font-size:14px;word-break:break-all">${esc(c.vin||'—')}</b></div><div><span>Размер на гумите</span><b>${esc(c.tyreSize||'—')}</b></div><div><span>Пробег</span><b>${fint(c.odo)} км</b></div><div><span>Отдел</span><b>${esc(dname(c.dept))}</b></div><div><span>Постоянен шофьор</span><b>${esc(uname(c.driverId))}</b></div>${tank(c)!=null?`<div><span>В резервоара (изчислено)</span><b>≈ ${fnum(tank(c),0)} / ${fint(c.tankCap)} л</b></div>`:''}</div>
+  return `<div class="info"><div><span>Марка / Модел</span><b>${esc(carName(c))}</b></div><div><span>Рег. номер</span><b>${esc(regText(c.reg))}</b></div><div><span>Година</span><b>${esc(c.year||'—')}</b></div><div><span>Гориво</span><b>${esc(c.fuel||'—')}</b></div><div><span>VIN номер</span><b style="font-family:ui-monospace,Menlo,monospace;font-size:14px;word-break:break-all">${esc(c.vin||'—')}</b></div><div><span>Размер на гумите</span><b>${esc(c.tyreSize||'—')}</b></div><div><span>Пробег</span><b>${fint(c.odo)} км</b></div><div><span>Отдел</span><b>${esc(dname(c.dept))}</b></div><div><span>${drvIds(c).length>1?'Шофьори':'Постоянен шофьор'}</span><b>${drvIds(c).length?drvIds(c).map(x=>esc(uname(x))).join('<br>'):'—'}</b></div>${tank(c)!=null?`<div><span>В резервоара (изчислено)</span><b>≈ ${fnum(tank(c),0)} / ${fint(c.tankCap)} л</b></div>`:''}</div>
   <div class="sec"><h3>Задачи и известия</h3>${alertList(carAlerts(c),true)}</div>
   <div class="sec"><h3>${monthLabel(ym)}</h3>${kvBlock(a)}<p class="small muted">Фактическият разход се смята по зареденото гориво за периода.</p></div>
   <div class="sec"><div class="sec-head"><h3>Норми за разход</h3>${m?`<button class="linkbtn" data-act="editCar" data-car="${c.id}">Промени</button>`:''}</div>
@@ -1151,7 +1154,7 @@ function repCar(){
   if(!R.repCar||!S.cars[R.repCar])R.repCar=cars[0].id;
   const c=S.cars[R.repCar],E=periodEntries(new Set([c.id]),R.repFrom,R.repTo),a=agg(E);
   let h=repPeriodFilters(`<label>Автомобил${rsel('repCar',carOpts(false),R.repCar)}</label>`);
-  h+=`<div class="panel"><div class="row between"><h2>${esc(carName(c))}</h2>${plate(c.reg)}</div><span class="small muted">${fd(R.repFrom)} – ${fd(R.repTo)} · ${esc(dname(c.dept))} · Шофьор: ${esc(uname(c.driverId))}</span></div>`;
+  h+=`<div class="panel"><div class="row between"><h2>${esc(carName(c))}</h2>${plate(c.reg)}</div><span class="small muted">${fd(R.repFrom)} – ${fd(R.repTo)} · ${esc(dname(c.dept))} · ${drvIds(c).length>1?'Шофьори':'Шофьор'}: ${esc(drvIds(c).map(uname).join(', ')||'—')}</span></div>`;
   h+=kvBlock(a);
   const trips=E.filter(e=>e.t==='trip');
   const rows=trips.map(e=>[fd(e.date),uname(e.driver)+(e.temp?' (врем.)':''),{html:fint(e.startKm),csv:e.startKm},{html:fint(e.endKm),csv:e.endKm},{html:fint(e.km),csv:e.km},e.route||[e.from,e.to].filter(Boolean).join('–'),e.purpose||'',uname(e.by)]);
@@ -1242,7 +1245,7 @@ function carField(carId,onlyActive=true,filterFn){
 function driverField(car,val){
   if(!isStaff())return `<input type="hidden" name="driver" value="${meId}">`;
   const us=Object.values(S.users).filter(u=>u.active!==false&&(u.role==='admin'||u.dept===car?.dept||u.id===val||u.id===meId)).sort((a,b)=>a.name.localeCompare(b.name,'bg'));
-  return fld('Шофьор',sel('driver',us.map(u=>[u.id,`${u.name} (${ROLES[u.role]})`]),val||car?.session?.userId||car?.driverId||meId),'Въвел данните: '+esc(me().name));
+  return fld('Шофьор',sel('driver',us.map(u=>[u.id,`${u.name} (${ROLES[u.role]})`]),val||car?.session?.userId||(isDrv(car,meId)?meId:drvIds(car)[0])||meId),'Въвел данните: '+esc(me().name));
 }
 function guard(fn){return(...a)=>{try{return fn(...a)}catch(e){toast(e.message)}}}
 function onCarChange(form,cb){const s=form.querySelector('#f_car');if(s&&s.tagName==='SELECT')s.addEventListener('change',()=>cb(S.cars[s.value]))}
@@ -1451,6 +1454,7 @@ function openEditCar(id){
   const depts=Object.values(S.depts).filter(d=>isAdmin()||d.id===me().dept);
   if(!depts.length){toast(isAdmin()?'Първо създай отдел (Още → Отдели).':'Нямаш отдел.');if(isAdmin()){R.tab='depts';render()}return}
   const n=c?.norms||{},p=c?.pressure||{},dep=c?.dept||depts[0].id;let photo;
+  const drvBox=(d,selIds)=>{const L=drv(d).filter(x=>x[0]);return `<div class="fld"><span>Шофьори на автомобила</span>${L.length?`<div class="drvlist">${L.map(([id,n])=>chk('drv_'+id,esc(n),selIds.includes(id))).join('')}</div>`:'<small>Няма шофьори в този отдел.</small>'}<small>Отметни всички, които карат колата. Може и повече от един.</small></div>`};
   const drv=d=>[['','— без постоянен шофьор —'],...Object.values(S.users).filter(u=>u.active!==false&&(((u.role==='driver'||u.role==='manager')&&u.dept===d)||u.role==='admin')).map(u=>[u.id,u.name+(u.role==='manager'?' (мениджър)':u.role==='admin'?' (администратор)':'')])];
   openSheet(c?'Редактирай автомобил':'Нов автомобил',`<fieldset><legend>Основни данни</legend>
     <div class="grid2">${fld('Марка',inp('make',c?.make,'text','placeholder="Dacia"'))}${fld('Модел',inp('model',c?.model,'text','placeholder="Logan"'))}</div>
@@ -1458,7 +1462,7 @@ function openEditCar(id){
     <div class="grid2">${fld('Гориво',sel('fuel',FUELS.map(x=>[x,x]),c?.fuel||'Дизел'))}${fld('Километраж',ninp('odo',c?.odo))}</div>
     ${fld('VIN номер',inp('vin',c?.vin,'text','placeholder="17 знака, напр. VF1RJA00X12345678" autocapitalize="characters" maxlength="17" style="font-family:ui-monospace,Menlo,monospace;letter-spacing:.5px"'),'Намира се в талона, поле E')}
     ${fld('Отдел',sel('dept',depts.map(d=>[d.id,d.name]),dep,isMgr()?'disabled':''))}
-    <div id="drvz">${fld('Постоянен шофьор',sel('driverId',drv(dep),c?.driverId||''),'Само шофьори от избрания отдел')}</div></fieldset>
+    <div id="drvz">${drvBox(dep,drvIds(c))}</div></fieldset>
   ${isStaff()?`<fieldset><legend>Снимка на автомобила</legend>
     <div id="phz" class="sec" style="gap:10px">${c?.photo?`<img class="phprev" src="${c.photo}" alt="">`:'<span class="small muted">Няма снимка – показва се рисунка.</span>'}</div>
     <div class="grid2"><label class="btn" style="text-align:center">${c?.photo?'Смени снимката':'Добави снимка'}<input id="phIn" type="file" accept="image/*" style="display:none"></label><button type="button" class="btn" id="phDel" ${c?.photo?'':'style="display:none"'}>Премахни</button></div>
@@ -1477,16 +1481,17 @@ function openEditCar(id){
     const reg=normReg(f.reg);if(!f.make.trim()||!f.model.trim())fail('Въведи марка и модел.');if(!reg)fail('Въведи регистрационен номер.');
     const dup=Object.values(S.cars).find(x=>x.id!==c?.id&&x.active!==false&&normReg(x.reg)===reg);
     if(dup)fail(`Вече има активен автомобил с номер ${dup.reg}.`);
-    if(f.driverId){const du=S.users[f.driverId];if(!du||(du.role!=='admin'&&du.dept!==f.dept))fail('Постоянният шофьор не е от избрания отдел.')}
+    const dIds=Object.keys(f).filter(k=>k.startsWith('drv_')&&f[k]).map(k=>k.slice(4));
+    for(const id of dIds){const du=S.users[id];if(!du||(du.role!=='admin'&&du.dept!==f.dept))fail(`${du?du.name:'Шофьорът'} не е от избрания отдел.`)}
     {const v=f.vin.trim().replace(/\s/g,'');if(v&&v.length!==17)fail(`VIN номерът трябва да е 17 знака (сега са ${v.length}).`);}
     const odoV=num(f.odo);if(odoV!=null&&isNaN(odoV))fail('Километражът трябва да е число.');
-    const body={make:f.make.trim(),model:f.model.trim(),reg,year:f.year.trim(),fuel:f.fuel,dept:f.dept,driverId:f.driverId||null,odo:odoV||0,
+    const body={make:f.make.trim(),model:f.model.trim(),reg,year:f.year.trim(),fuel:f.fuel,dept:f.dept,driverIds:dIds,driverId:dIds[0]||null,odo:odoV||0,
       norms:{city:num(f.nCity),highway:num(f.nHighway),mixed:num(f.nMixed)},winterPct:num(f.winterPct),tankCap:num(f.tankCap),tankStart:num(f.tankStart),tankStartDate:f.tankStartDate,
       vin:f.vin.trim().toUpperCase().replace(/\s/g,''),tyreSize:f.tyreSize.trim(),nPetrol:f.nPetrol!=null?num(f.nPetrol):(c?.nPetrol??null),
       tyreSeason:f.tyreSeason,pressure:{front:num(f.pFront),rear:num(f.pRear)}};
     if(isStaff()&&photo!==undefined)body.photo=photo;
     if(c){
-      const ch=[];if(c.driverId!==body.driverId)ch.push(`постоянен шофьор: ${uname(c.driverId)} → ${uname(body.driverId)}`);
+      const ch=[];{const a=drvIds(c).map(uname).join(', ')||'—',b=body.driverIds.map(uname).join(', ')||'—';if(a!==b)ch.push(`шофьори: ${a} → ${b}`);}
       if((c.odo||0)!==body.odo)ch.push(`километраж: ${fint(c.odo)} → ${fint(body.odo)}`);
       if(c.dept!==body.dept)ch.push(`отдел: ${dname(c.dept)} → ${dname(body.dept)}`);
       if(c.reg!==body.reg)ch.push(`номер: ${c.reg} → ${body.reg}`);
@@ -1499,7 +1504,7 @@ function openEditCar(id){
   },c?'Запази':'Добави автомобила');
   const form=$('#sheetForm');form.fuel.addEventListener('change',()=>{const b=/Бензин/.test(form.fuel.value)&&/Газ|Метан/.test(form.fuel.value);
     $('#bipz').innerHTML=b?fld('Бензин – смесено, л/100 км',ninp('nPetrol',c?.nPetrol,'placeholder="напр. 7.0"'),'Нормите горе са за газ. Тази норма е за километрите на бензин.'):''});
-  form.dept.addEventListener('change',()=>{$('#drvz').innerHTML=fld('Постоянен шофьор',sel('driverId',drv(form.dept.value),''),'Само шофьори от избрания отдел')});
+  form.dept.addEventListener('change',()=>{$('#drvz').innerHTML=drvBox(form.dept.value,[])});
   const phIn=$('#phIn');if(phIn){
     phIn.addEventListener('change',async()=>{const file=phIn.files&&phIn.files[0];if(!file)return;
       $('#phz').innerHTML='<span class="small muted">Обработва се…</span>';
@@ -1685,7 +1690,7 @@ function vStaff(){
   const ym=today().slice(0,7);
   const us=Object.values(S.users).filter(u=>u.role==='driver'&&(isAdmin()||u.dept===me().dept)).sort((a,b)=>a.name.localeCompare(b.name,'bg'));
   if(!us.length)return `<div class="empty">Няма шофьори. Добави ги с + горе вдясно.</div>`;
-  return `<div class="list">${us.map(u=>{const cars=Object.values(S.cars).filter(c=>c.driverId===u.id&&c.active!==false);
+  return `<div class="list">${us.map(u=>{const cars=Object.values(S.cars).filter(c=>isDrv(c,u.id)&&c.active!==false);
     const km=entries().filter(e=>e.t==='trip'&&e.driver===u.id&&e.date.startsWith(ym)).reduce((s,e)=>s+(e.km||0),0);
     return `<div class="li staff"><div class="srow">${avatar(u)}<div class="l"><b>${esc(u.name)}</b><span>${ROLES[u.role]}${u.dept?' · '+esc(dname(u.dept)):''}${u.active===false?' · <b style="color:var(--crit)">неактивен</b>':''}</span><span>${cars.length?cars.map(c=>esc(carName(c)+' · '+regText(c.reg))).join(', '):'Без постоянен автомобил'}</span></div>
     <div class="r"><b class="num">${fint(km)} км</b><span class="small muted">този месец</span></div></div>
@@ -1864,7 +1869,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 function openUserLink(id){
   const u=S.users[id];if(!u)return;
   const url=APP_URL+'?u='+encodeURIComponent(u.username);
-  const cars=Object.values(S.cars).filter(c=>c.driverId===u.id&&c.active!==false);
+  const cars=Object.values(S.cars).filter(c=>isDrv(c,u.id)&&c.active!==false);
   const build=pw=>`Здравей, ${u.name.split(' ')[0]}! Това е линкът за електронната пътна книжка:\n${url}\n\nПотребител: ${u.username}\nПарола: ${pw||''}`;
   openSheet('Линк за вход',`<div class="row" style="flex-wrap:nowrap">${avatar(u)}<div class="sec" style="gap:2px"><b>${esc(u.name)}</b><span class="small muted">${esc(u.username)} · ${ROLES[u.role]}</span></div></div>
   ${cars.length?`<div class="tip">След вход вижда директно: ${cars.map(c=>esc(carName(c)+' '+regText(c.reg))).join(', ')}</div>`:(u.role==='driver'?`<div class="note">Няма назначен автомобил. Задай го от автомобила → Редактирай → Постоянен шофьор.</div>`:'')}
