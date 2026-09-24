@@ -377,6 +377,8 @@ body{background:linear-gradient(180deg,#E4ECF6 0,#EEF3F9 320px,#F2F5FA 100%) fix
 .shop-b{display:grid;grid-template-columns:1fr 1fr;gap:8px}.shop-b .btn{justify-content:center;text-decoration:none;gap:6px}
 .shop-b .btn:only-child{grid-column:1/-1}
 .shop-b .btn .ic{width:18px;height:18px}
+.tabs-in .tab{white-space:nowrap;min-width:0}
+.tabs-in.six .tab{font-size:10.5px;letter-spacing:-.1px;padding-left:1px;padding-right:1px}
 </style>
 </head>
 <body>
@@ -703,7 +705,7 @@ const IC={
   euro:'<path d="M18 6.5A7 7 0 1 0 18 17.5M4 10h9M4 14h9"/>'
 };
 const icon=(k,cls='')=>`<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${IC[k]||''}</svg>`;
-const ICONS=Object.fromEntries(['home','cars','tasks','reports','more'].map(k=>[k,`<svg viewBox="0 0 24 24">${IC[k==='cars'?'car':k]}</svg>`]));
+const ICONS=Object.fromEntries(['home','cars','tasks','reports','more','mycar'].map(k=>[k,`<svg viewBox="0 0 24 24">${IC[k==='cars'?'car':k==='mycar'?'wheel':k]}</svg>`]));
 const VAN=/master|ducato|sprinter|transit|vito|crafter|boxer|jumper|trafic|vivaro|movano|daily|transporter|kangoo|berlingo|partner|caddy|doblo|proace|expert|combo|мастер|дукато|спринтер|транзит|вито|крафтер|боксер|джъмпер|трафик|виваро|мовано|дейли|транспортер|кангу|берлинго|партнер|кади|добло|проейс|експерт|комбо|бус|ван/i;
 function carSvg(c,cls=''){
   const van=VAN.test(`${c?.make||''} ${c?.model||''}`);
@@ -747,9 +749,11 @@ const isRead=a=>a.lvl==='good'||!!((S.notif&&S.notif.read)||{})[akey(a)];
 const unreadN=()=>allAlerts().filter(a=>!isRead(a)).length;
 function renderTabs(){
   const nAlerts=unreadN();
-  const t=[['home','Начало'],['cars',isStaff()?'Автомобили':'Автомобил'],['tasks','Задачи']];
+  const mine=isStaff()&&myCars().length>0;
+  const t=[['home','Начало'],...(mine?[['mycar','Моята кола']]:[]),['cars',mine?'Коли':isStaff()?'Автомобили':'Автомобил'],['tasks','Задачи']];
   if(isStaff())t.push(['reports','Отчети']);
   t.push(['more','Още']);
+  $('#tabs').classList.toggle('six',t.length>5);
   $('#tabs').innerHTML=t.map(([k,l])=>`<button class="tab" data-act="tab" data-k="${k}" aria-current="${R.tab===k||(k==='cars'&&R.tab==='car')||(k==='more'&&['users','depts','settings'].includes(R.tab))}">${ICONS[k]}${l}${k==='tasks'&&nAlerts?`<span class="dot">${nAlerts}</span>`:''}</button>`).join('');
 }
 function renderHead(){
@@ -771,7 +775,7 @@ function render(){
   if(!u||u.active===false){showLogin();return}
   $('#boot').hidden=true;$('#loginView').hidden=true;$('#shell').hidden=false;
   HEAD=null;
-  const V={home:vHome,cars:vCars,car:vCar,tasks:vTasks,reports:vReports,more:vMore,users:vUsers,depts:vDepts,settings:vSettings,staff:vStaff,messages:vMessages,docsAll:vDocsAll,problemsAll:vProblemsAll,serviceAll:vServiceAll,tyresAll:vTyresAll,fuelAll:vFuelAll,tripsAll:vTripsAll};
+  const V={home:vHome,mycar:vMyCar,cars:vCars,car:vCar,tasks:vTasks,reports:vReports,more:vMore,users:vUsers,depts:vDepts,settings:vSettings,staff:vStaff,messages:vMessages,docsAll:vDocsAll,problemsAll:vProblemsAll,serviceAll:vServiceAll,tyresAll:vTyresAll,fuelAll:vFuelAll,tripsAll:vTripsAll};
   const html=(V[R.tab]||vHome)();
   renderTabs();renderHead();
   $('#main').innerHTML=html;
@@ -782,6 +786,22 @@ function showLogin(){$('#boot').hidden=true;$('#shell').hidden=true;$('#loginVie
 function sosBtn(){const s=S.settings,ph=String(s.roadHelpPhone||'').trim();
   return ph?`<a class="sos" href="tel:${esc(ph.replace(/[^\d+]/g,''))}"><span class="sos-ic">${icon('phone')}</span><span class="sos-t"><b>Звънни на пътна помощ</b><small>${esc(s.roadHelpName?s.roadHelpName+' · ':'')}${esc(ph)}</small></span></a>`
     :`<div class="sos off"><span class="sos-ic">${icon('phone')}</span><span class="sos-t"><b>Пътна помощ</b><small>Администраторът още не е задал номер</small></span></div>`}
+const myCars=()=>scopeCars().filter(c=>c.active!==false&&(c.driverId===meId||c.session?.userId===meId));
+function vMyCar(){
+  HEAD={title:'Моят автомобил'};const my=myCars();
+  if(!my.length)return `<div class="empty">${icon('car')}<b>Нямаш избран автомобил.</b>Избери се за „Постоянен шофьор“ в Редактирай автомобил.</div>`;
+  let h='';
+  for(const c of my){const al=carAlerts(c).filter(a=>a.lvl!=='good');
+    h+=`<div class="sec">${carCard(c)}${al.length?`<div style="margin-top:10px">${alertList(al.slice(0,4))}</div>`:''}
+      ${al.some(a=>a.kind==='pressure')?`<button class="btn go wide" style="margin-top:10px" data-act="check" data-car="${c.id}">${icon('plus')} Направи проверката</button>`:''}
+      <h3 style="margin-top:14px">Бързи действия</h3>${myCarTiles(c)}</div>`;
+    const last=entries().filter(e=>e.carId===c.id&&e.t==='trip').slice(-3).reverse();
+    if(last.length)h+=`<div class="sec"><h3>Последни записи</h3><div class="list">${last.map(tripLi).join('')}</div></div>`;}
+  return h;
+}
+function myCarTiles(car){const cid=`data-car="${car.id}"`;
+  const t=[['morning','purple','road','Километраж'],['fuel','blue','fuel','Зареждане'],['check','green','tyre','Проверка'],['problem','orange','alert','Проблем'],['trip','grey','doc','Пътен запис'],['myBook','navy','doc','Книжка']];
+  return `<div class="qa three">${t.map(([a,c,i,l])=>`<button class="qt ${c}" data-act="${a}" ${cid}>${icon(i)}${l}</button>`).join('')}</div>`}
 function actionTiles(car){
   const cid=car?`data-car="${car.id}"`:'';
   const t=[['fuel','blue','fuel','Зареждане'],['morning','purple','road','Километраж'],['check','green','tyre','Проверка'],['problem','orange','alert','Проблем']];
@@ -1425,7 +1445,7 @@ function openEditCar(id){
   const depts=Object.values(S.depts).filter(d=>isAdmin()||d.id===me().dept);
   if(!depts.length){toast(isAdmin()?'Първо създай отдел (Още → Отдели).':'Нямаш отдел.');if(isAdmin()){R.tab='depts';render()}return}
   const n=c?.norms||{},p=c?.pressure||{},dep=c?.dept||depts[0].id;let photo;
-  const drv=d=>[['','— без постоянен шофьор —'],...Object.values(S.users).filter(u=>u.active!==false&&u.role==='driver'&&u.dept===d).map(u=>[u.id,u.name])];
+  const drv=d=>[['','— без постоянен шофьор —'],...Object.values(S.users).filter(u=>u.active!==false&&(((u.role==='driver'||u.role==='manager')&&u.dept===d)||u.role==='admin')).map(u=>[u.id,u.name+(u.role==='manager'?' (мениджър)':u.role==='admin'?' (администратор)':'')])];
   openSheet(c?'Редактирай автомобил':'Нов автомобил',`<fieldset><legend>Основни данни</legend>
     <div class="grid2">${fld('Марка',inp('make',c?.make,'text','placeholder="Dacia"'))}${fld('Модел',inp('model',c?.model,'text','placeholder="Logan"'))}</div>
     <div class="grid2">${fld('Рег. номер',inp('reg',c?.reg,'text','placeholder="СВ7190СЕ" autocapitalize="characters"'))}${fld('Година',ninp('year',c?.year))}</div>
@@ -1451,7 +1471,7 @@ function openEditCar(id){
     const reg=normReg(f.reg);if(!f.make.trim()||!f.model.trim())fail('Въведи марка и модел.');if(!reg)fail('Въведи регистрационен номер.');
     const dup=Object.values(S.cars).find(x=>x.id!==c?.id&&x.active!==false&&normReg(x.reg)===reg);
     if(dup)fail(`Вече има активен автомобил с номер ${dup.reg}.`);
-    if(f.driverId){const du=S.users[f.driverId];if(!du||du.dept!==f.dept)fail('Постоянният шофьор не е от избрания отдел.')}
+    if(f.driverId){const du=S.users[f.driverId];if(!du||(du.role!=='admin'&&du.dept!==f.dept))fail('Постоянният шофьор не е от избрания отдел.')}
     {const v=f.vin.trim().replace(/\s/g,'');if(v&&v.length!==17)fail(`VIN номерът трябва да е 17 знака (сега са ${v.length}).`);}
     const odoV=num(f.odo);if(odoV!=null&&isNaN(odoV))fail('Километражът трябва да е число.');
     const body={make:f.make.trim(),model:f.model.trim(),reg,year:f.year.trim(),fuel:f.fuel,dept:f.dept,driverId:f.driverId||null,odo:odoV||0,
@@ -1760,6 +1780,7 @@ async function printPdf(){
 /* ============ events ============ */
 const ACT={
   tab:d=>{R.tab=d.k;if(d.k==='cars')R.carBack='cars';window.scrollTo(0,0);render()},
+  myBook:d=>{R.carBack=R.tab;R.tab='car';R.carId=d.car;R.carSec='book';window.scrollTo(0,0);render()},
   openCar:d=>{R.carBack=R.tab==='car'?R.carBack:R.tab;R.tab='car';R.carId=d.car;R.carSec='overview';window.scrollTo(0,0);render()},
   carSec:d=>{R.carSec=d.k;render()},
   carFilter:d=>{R.carFilter=d.k;render()},toggleInactive:()=>{R.showInactive=!R.showInactive;render()},
