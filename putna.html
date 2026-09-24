@@ -379,6 +379,11 @@ body{background:linear-gradient(180deg,#E4ECF6 0,#EEF3F9 320px,#F2F5FA 100%) fix
 .shop-b .btn .ic{width:18px;height:18px}
 .tabs-in .tab{white-space:nowrap;min-width:0}
 .tabs-in.six .tab{font-size:10.5px;letter-spacing:-.1px;padding-left:1px;padding-right:1px}
+/* неподвижна долна лента: съдържанието се превърта в собствен контейнер */
+#shell:not([hidden]){position:fixed;top:0;left:0;right:0;bottom:0;height:100%;display:flex;flex-direction:column;overflow:hidden}
+#scroller{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
+#shell>.tabs{position:relative;flex:0 0 auto;bottom:auto}
+#scroller .wrap{padding-block:16px 24px}
 </style>
 </head>
 <body>
@@ -401,8 +406,8 @@ body{background:linear-gradient(180deg,#E4ECF6 0,#EEF3F9 320px,#F2F5FA 100%) fix
 </div>
 
 <div id="shell" hidden>
-  <header class="top"><div class="top-in" id="topIn"></div></header>
-  <main class="wrap" id="main"></main>
+  <div id="scroller"><header class="top"><div class="top-in" id="topIn"></div></header>
+  <main class="wrap" id="main"></main></div>
   <nav class="tabs"><div class="tabs-in" id="tabs"></div></nav>
 </div>
 
@@ -438,6 +443,7 @@ const APP_URL=location.origin+location.pathname;
 <script>
 /* ============ utils ============ */
 const $=s=>document.querySelector(s);
+const toTop=()=>{const sc=document.getElementById('scroller');if(sc)sc.scrollTop=0;window.scrollTo(0,0)};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const pad=n=>String(n).padStart(2,'0');
@@ -1779,9 +1785,9 @@ async function printPdf(){
 
 /* ============ events ============ */
 const ACT={
-  tab:d=>{R.tab=d.k;if(d.k==='cars')R.carBack='cars';window.scrollTo(0,0);render()},
-  myBook:d=>{R.carBack=R.tab;R.tab='car';R.carId=d.car;R.carSec='book';window.scrollTo(0,0);render()},
-  openCar:d=>{R.carBack=R.tab==='car'?R.carBack:R.tab;R.tab='car';R.carId=d.car;R.carSec='overview';window.scrollTo(0,0);render()},
+  tab:d=>{R.tab=d.k;if(d.k==='cars')R.carBack='cars';toTop();render()},
+  myBook:d=>{R.carBack=R.tab;R.tab='car';R.carId=d.car;R.carSec='book';toTop();render()},
+  openCar:d=>{R.carBack=R.tab==='car'?R.carBack:R.tab;R.tab='car';R.carId=d.car;R.carSec='overview';toTop();render()},
   carSec:d=>{R.carSec=d.k;render()},
   carFilter:d=>{R.carFilter=d.k;render()},toggleInactive:()=>{R.showInactive=!R.showInactive;render()},
   rep:d=>{R.rep=d.k;render()},
@@ -1793,7 +1799,7 @@ const ACT={
   editUser:d=>openEditUser(d.id),editDept:d=>openEditDept(d.id),editSettings:openSettings,myPass:openMyPass,demo:loadDemo,csv:downloadCsv,
   logout:()=>{const t=TOKEN;logoutLocal();if(t)gs('logout',t).catch(()=>{})},
   userLink:d=>openUserLink(d.id),
-  carDocs:d=>{R.carBack='home';R.tab='car';R.carId=d.car;R.carSec='docs';window.scrollTo(0,0);render()},
+  carDocs:d=>{R.carBack='home';R.tab='car';R.carId=d.car;R.carSec='docs';toTop();render()},
   markRead:markAllRead,newMsg:openNewMsg,delMsg:d=>delMsg(d.id),printPdf:printPdf,
   driverRep:d=>{R.tab='reports';R.rep='driver';R.repDriver=d.id;render()},
   pf:d=>{R.pf=d.k;render()},
