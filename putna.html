@@ -594,6 +594,27 @@ body:not(.noscroll){overflow:visible!important;overflow-x:clip!important}
 .dc-ic.svg svg{width:34px;height:24px}
 /* лента под часовника на iPhone, за да не се вижда съдържание зад него */
 body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:#0B2244;z-index:40;pointer-events:none}
+
+/* ---- живи цветове в картите (визия 7) ---- */
+.dcard{position:relative;border:0}
+.dcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--dc)}
+.dcard.ok{--dc:#1FA35A;--dc2:#34C173;--dcs:#E6F7EC}
+.dcard.warn{--dc:#F08A18;--dc2:#FFAE45;--dcs:#FFF1E0}
+.dcard.crit{--dc:#E0342F;--dc2:#FF6A5E;--dcs:#FDECEB}
+.dcard.none{--dc:#AEB8C6;--dc2:#C9D1DC;--dcs:#F1F4F8}
+.dcard .dc-ic{background:var(--dcs)!important}
+.dcard .dc-left{color:var(--dc)!important}
+.dcard.none .dc-left{color:#8A97AB!important}
+.dc-btn{background:linear-gradient(135deg,var(--dc2),var(--dc))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.dc-btn span{color:var(--dc)!important}
+.dc-tag{margin-left:auto;font-style:normal;font-size:12px;font-weight:800;color:#fff;background:var(--dc);padding:4px 10px;border-radius:99px;letter-spacing:.02em}
+.dc-bar{height:8px;border-radius:99px;background:var(--dcs);overflow:hidden;margin-top:-2px}
+.dc-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--dc2),var(--dc))}
+
+.dcard.sv .dc-r{flex-direction:column;gap:2px}
+.dcard.sv .dc-r span{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#8A97AB}
+.dcard.sv .dc-r b{font-size:20px}
+.dcard .dc-h b{flex:1;min-width:0}
 </style>
 </head>
 <body>
@@ -1345,19 +1366,21 @@ function secService(c,m){
   <div class="sec"><div class="sec-head"><h3>Сервизи и разходи</h3>${m?`<button class="btn sm" data-act="expense" data-car="${c.id}">+ Друг разход</button>`:''}</div>
   ${recs.length?`<div class="list">${recs.map(e=>`<div class="li"><div class="l"><b>${e.t==='service'?esc(e.what||'Сервиз'):esc(e.cat||'Разход')}</b><span>${fd(e.date)}${e.km?' · '+fint(e.km)+' км':''}${e.place?' · '+esc(e.place):''}${e.items?.length?' · '+e.items.map(k=>SVC.find(x=>x[0]===k)?.[1]).join(', '):''}</span>${e.note?`<span>${esc(e.note)}</span>`:''}</div><div class="r"><b class="num">${eur(e.t==='service'?e.cost:e.sum)}</b><span class="pill">${e.t==='service'?'Сервиз':'Разход'}</span>${m?`<button class="linkbtn small" data-act="delEntry" data-car="${e.carId}" data-id="${e.id}">Изтрий</button>`:''}</div></div>`).join('')}</div>`:'<div class="empty">Няма въведени сервизи и разходи.</div>'}</div>`)+shopsBlock();
 }
-const SVC_EMO={main:'🔧',pads:'🛑',timing:'⚙️',other:'🧰'};
+const SVC_EMO={pads:'🛑',timing:'⚙️',other:'🧰'};
+const SVC_CARDS=[['oil','Масло и филтри'],['pads','Накладки'],['timing','Ангренаж'],['other','Други ремонти']];
+const SVC_LBL=Object.fromEntries(SVC_CARDS);
 function svcCards(c,m){
-  return `<div class="dcards">${SVC.map(([k,l])=>{const sv=c.service?.[k]||{},st=svcStatus(sv,c.odo);
-    const lvl=st?st.lvl:'none',ic=k==='oil'?FL_IC.oil:(SVC_EMO[k]||'🔧');
+  return `<div class="dcards">${SVC_CARDS.map(([k,l])=>{const sv=c.service?.[k]||{},st=svcStatus(sv,c.odo);
+    const lvl=st?st.lvl:'none',ic=k==='oil'?FL_IC.oil:SVC_EMO[k];
+    const next=st?[st.nextKm!=null?fint(st.nextKm)+' км':'',st.nextDate?fd(st.nextDate):''].filter(Boolean).join(' · '):'';
+    /* колко е изминато от интервала – за лентата */
+    let pc=null;if(st){const a=[];if(st.nextKm!=null&&sv.intKm)a.push(1-st.remKm/sv.intKm);if(st.days!=null&&sv.intMonths)a.push(1-st.days/(sv.intMonths*30.4));if(a.length)pc=Math.max(0,Math.min(1,Math.max(...a)))}
     const over=st&&((st.remKm!=null&&st.remKm<0)||(st.days!=null&&st.days<0));
-    const left=!st?'Няма данни':(over?[st.remKm<0?`Просрочен с ${fint(-st.remKm)} км`:'',st.days<0?`Просрочен от ${fd(st.nextDate)}`:'']:[st.remKm!=null?`${fint(st.remKm)} км`:'',st.days!=null?leftText(today(),st.nextDate):'']).filter(Boolean).join(' · ')||'—';
-    const intv=[sv.intKm?fint(sv.intKm)+' км':'',sv.intMonths?sv.intMonths+' мес.':''].filter(Boolean).join(' / ');
-    return `<div class="dcard ${lvl}"><div class="dc-h"><span class="dc-ic${k==='oil'?' svg':''}">${ic}</span><b>${l}</b></div>
-      <div class="dc-r"><span>Последно</span><b>${sv.lastDate?fd(sv.lastDate):'—'}${sv.lastKm!=null?' · '+fint(sv.lastKm)+' км':''}</b></div>
-      ${intv?`<div class="dc-r"><span>На всеки</span><b>${intv}</b></div>`:''}
-      ${st&&(st.nextKm!=null||st.nextDate)?`<div class="dc-r"><span>Следващ</span><b>${[st.nextKm!=null?fint(st.nextKm)+' км':'',st.nextDate?fd(st.nextDate):''].filter(Boolean).join(' / ')}</b></div>`:''}
-      <div class="dc-r"><span>${over?'Статус':'Остават'}</span><b class="dc-left">${left}</b></div>
-      ${m?`<button class="dc-btn" data-act="service" data-car="${c.id}">Отбележи сервиз<span>${icon('plus')}</span></button>`:''}</div>`}).join('')}</div>`;
+    const hint=!st?'':over?'Просрочена':lvl==='warn'?'Наближава':'';
+    return `<div class="dcard sv ${lvl}"><div class="dc-h"><span class="dc-ic${k==='oil'?' svg':''}">${ic}</span><b>${l}</b>${hint?`<em class="dc-tag">${hint}</em>`:''}</div>
+      <div class="dc-r"><span>Следваща смяна</span><b class="dc-left">${next||'Няма данни'}</b></div>
+      ${pc!=null?`<div class="dc-bar"><i style="width:${Math.round(pc*100)}%"></i></div>`:''}
+      ${m?`<button class="dc-btn" data-act="service" data-car="${c.id}" data-k="${k}">Отбележи смяна<span>${icon('plus')}</span></button>`:''}</div>`}).join('')}</div>`;
 }
 function secDocs(c,m){
   const d=c.docs||{},td=today();
@@ -1903,12 +1926,12 @@ function openSvcIntervals(id){
     await carUpdate(id,{service:out});await logEdit(id,'Обновени сервизни интервали');toast('Запазено');
   });
 }
-function openService(id){
+function openService(id,pick){
   const c=S.cars[id];
-  openSheet('Сервиз',`${sheetCar(c)}
+  openSheet(pick?'Сервиз: '+(SVC_LBL[pick]||''):'Сервиз',`${sheetCar(c)}
   <div class="grid2">${fld('Дата',inp('date',today(),'date'))}${fld('Километраж',ninp('km',c.odo||''))}</div>
   ${fld('Какво е направено / сменено',ta('what'))}
-  <fieldset><legend>Нулирай интервалите за</legend>${SVC.map(([k,l])=>chk('i_'+k,l,k==='main')).join('')}</fieldset>
+  <fieldset><legend>Нулирай интервалите за</legend>${SVC.map(([k,l])=>chk('i_'+k,l,pick?k===pick:k==='main')).join('')}</fieldset>
   <div class="grid2">${fld('Сума, €',ninp('cost'))}${fld('Сервиз',inp('place','','text','placeholder="Име на сервиза"'))}</div>${fld('Бележка',inp('note'))}`,async f=>{
     const items=SVC.map(x=>x[0]).filter(k=>f['i_'+k]);const km=num(f.km);
     if(!f.what.trim()&&!items.length)fail('Опиши какво е направено.');
@@ -2165,7 +2188,7 @@ const ACT={
   closeSheet:closeSheet,
   morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
   takeover:d=>openTakeover(d.car),endSession:d=>openEndSession(d.car),viewProblem:d=>viewProblem(d.id),
-  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car),expense:d=>openExpense(d.car),editDocs:d=>openDocs(d.car),
+  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDocs:d=>openDocs(d.car),
   newTask:openNewTask,doneTask:d=>doneTask(d.id),delEntry:d=>delEntry(d.car,d.id),
   editUser:d=>openEditUser(d.id),editDept:d=>openEditDept(d.id),editSettings:openSettings,myPass:openMyPass,demo:loadDemo,csv:downloadCsv,
   logout:()=>{const t=TOKEN;logoutLocal();if(t)gs('logout',t).catch(()=>{})},
