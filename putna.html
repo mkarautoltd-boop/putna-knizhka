@@ -647,12 +647,14 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .dcard .dc-left.dc-ok{color:#1FA35A!important}.dcard .dc-left.dc-warn{color:#F08A18!important}.dcard .dc-left.dc-crit{color:#E0342F!important}.dcard .dc-left.dc-none{color:#8A97AB!important;font-weight:600}
 .dc-ic.oil svg{width:38px;height:38px}.dc-ic.pads svg{width:38px;height:38px}
 
-/* дълбочина на плочките „Бързи действия“ */
-.qt,.qa:not(.three) .qt{box-shadow:inset 0 1.5px 0 rgba(255,255,255,.45),inset 0 -4px 0 rgba(0,0,0,.14),0 2px 3px rgba(15,35,65,.12),0 14px 22px -10px var(--qs,rgba(15,35,65,.45))!important;transform:translateZ(0)}
-.qt::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(180deg,rgba(255,255,255,.22) 0%,rgba(255,255,255,0) 42%,rgba(0,0,0,0) 60%,rgba(0,0,0,.10) 100%);pointer-events:none}
-.qemo{box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -2px 3px rgba(0,0,0,.10),0 6px 12px -6px rgba(0,0,0,.35)!important;background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.16))!important}
-.qt .ql{text-shadow:0 1px 2px rgba(0,0,0,.22)}
-.qt:active{transform:translateY(2px) scale(.98);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.14),0 1px 2px rgba(15,35,65,.15),0 6px 12px -8px var(--qs,rgba(15,35,65,.45))!important}
+/* плочките „Бързи действия“: чисто и елегантно, с лека дълбочина */
+.qt,.qa:not(.three) .qt{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 1px 2px rgba(15,35,65,.08),0 10px 24px -14px var(--qs,rgba(15,35,65,.4))!important}
+.qt::before{background:rgba(255,255,255,.08)!important}
+.qt::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(180deg,rgba(255,255,255,.12) 0%,rgba(255,255,255,0) 50%);pointer-events:none}
+.qemo{background:rgba(255,255,255,.2)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.28)!important}
+.qt .ql{text-shadow:none!important;font-weight:700}
+.qt .qch{opacity:.6}
+.qt:active{transform:scale(.97)}
 </style>
 </head>
 <body>
