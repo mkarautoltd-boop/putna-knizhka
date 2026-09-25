@@ -9,7 +9,7 @@
 - След одобрение: промени `putna.html`, пробвай с Playwright (виж „Тестване“), направи commit и push в `main`. GitHub Pages публикува сам за 1–2 минути.
 - Накрая дай линка с нов номер `?v=N`, за да заобиколи кеша на телефона:
   `https://mkarautoltd-boop.github.io/putna-knizhka/putna.html?v=N`
-  (последният използван е `?v=16`).
+  (последният използван е `?v=17`).
 - Приложението се ползва като **иконка на началния екран на iPhone** (standalone, `black-translucent`).
 
 ## Устройство
