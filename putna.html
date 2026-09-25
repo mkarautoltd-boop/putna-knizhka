@@ -636,6 +636,7 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .dc-srow .dc-sh b{color:var(--rc)}.dc-srow.none .dc-sh b{color:#8A97AB;font-weight:600}
 .dc-srow .dc-bar i{background:linear-gradient(90deg,var(--rc2),var(--rc))}
 .dc-ic.svg svg{width:34px;height:34px}.dc-ic.oil svg{width:34px;height:24px}.dc-ic.pads svg{width:40px;height:40px}
+.dcard.sv .dc-r b.dc-was{font-size:17px;color:#0F1B2D}
 </style>
 </head>
 <body>
@@ -1404,7 +1405,7 @@ function svcCards(c,m){
     const lvl=R2.reduce((w,[,r])=>LV_RANK[r.lvl]>LV_RANK[w]?r.lvl:w,'none');
     const ic=g==='oil'?FL_IC.oil:SVC_EMO[g];
     const hint=lvl==='crit'?'Просрочена':lvl==='warn'?'Наближава':'';
-    const body=keys.length===1?(()=>{const r=R2[0][1];return `<div class="dc-r"><span>Следваща смяна</span><b class="dc-left">${r.next||'Няма данни'}</b></div>${r.pc!=null?`<div class="dc-bar"><i style="width:${Math.round(r.pc*100)}%"></i></div>`:''}`})()
+    const body=keys.length===1?(()=>{const r=R2[0][1],lv=svcOf(c,keys[0]);return `${g==='battery'?`<div class="dc-r"><span>Сменен</span><b class="dc-was">${lv.lastDate||lv.lastKm!=null?[lv.lastDate?fd(lv.lastDate):'',lv.lastKm!=null?fint(lv.lastKm)+' км':''].filter(Boolean).join(' · '):'Няма данни'}</b></div>`:''}<div class="dc-r"><span>Следваща смяна</span><b class="dc-left">${r.next||'Няма данни'}</b></div>${r.pc!=null?`<div class="dc-bar"><i style="width:${Math.round(r.pc*100)}%"></i></div>`:''}`})()
       :`<div class="dc-sub">${R2.map(([k,r])=>`<div class="dc-srow ${r.lvl}"><div class="dc-sh"><span>${SVC_SHORT[k]}</span><b>${r.next||'Няма данни'}</b></div>${r.pc!=null?`<div class="dc-bar"><i style="width:${Math.round(r.pc*100)}%"></i></div>`:''}</div>`).join('')}</div>`;
     return `<div class="dcard sv ${lvl}"><div class="dc-h"><span class="dc-ic svg ${g}">${ic}</span><b>${l}</b>${hint?`<em class="dc-tag">${hint}</em>`:''}</div>
       ${body}
