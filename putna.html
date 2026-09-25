@@ -665,6 +665,12 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .qt.blue .qemo{background:#EAF1FC!important}.qt.purple .qemo{background:#F0ECFB!important}.qt.green .qemo{background:#E6F5EC!important}
 .qt.orange .qemo{background:#FDEEE6!important}.qt.red .qemo{background:#FCEBEC!important}.qt.grey .qemo{background:#FBF3E1!important}.qt.navy .qemo{background:#E9EDF3!important}
 .qt i{box-shadow:0 0 0 2px #fff}
+
+/* плочките като копчета: бял обем, светъл ръб отгоре, по-тъмен отдолу, хлътват при натискане */
+.qt,.qa:not(.three) .qt{background:linear-gradient(180deg,#FFFFFF 0%,#F2F5F9 100%)!important;border:1px solid #E3E8EF!important;
+  box-shadow:inset 0 1px 0 #fff,inset 0 -3px 0 #DDE3EB,0 2px 3px rgba(15,35,65,.08),0 10px 20px -12px rgba(15,35,65,.35)!important;transition:transform .08s,box-shadow .08s}
+.qt:active{transform:translateY(2px)!important;box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 #DDE3EB,0 1px 2px rgba(15,35,65,.08),0 4px 10px -8px rgba(15,35,65,.35)!important}
+.qemo{box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -2px 0 rgba(15,35,65,.06),0 2px 4px rgba(15,35,65,.08)!important}
 </style>
 </head>
 <body>
