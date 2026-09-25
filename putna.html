@@ -1235,7 +1235,7 @@ function docCards(c,m){
     return `<div class="dcard ${lvl}"><div class="dc-h"><span class="dc-ic">${DOC_EMO[k]||'📄'}</span><b>${esc(l)}</b></div>
       <div class="dc-r"><span>Валидна до</span><b>${dt?fd(dt):'—'}</b></div>
       <div class="dc-r"><span>${left!=null&&left<0?'Статус':'Валидна за още'}</span><b class="dc-left">${val}</b></div>
-      ${m?`<button class="dc-btn" data-act="editDocs" data-car="${c.id}">${dt?'Поднови':'Добави'}<span>${icon('plus')}</span></button>`:''}</div>`}).join('')}</div>`;
+</div>`}).join('')}</div>`;
 }
 function carCard(c){
   const lvl=c.active===false?'off':carLevel(c),al=carAlerts(c);
@@ -1409,7 +1409,7 @@ function svcCards(c,m){
       :`<div class="dc-sub">${R2.map(([k,r])=>`<div class="dc-srow ${r.lvl}"><div class="dc-sh"><span>${SVC_SHORT[k]}</span><b>${r.next||'Няма данни'}</b></div>${r.pc!=null?`<div class="dc-bar"><i style="width:${Math.round(r.pc*100)}%"></i></div>`:''}</div>`).join('')}</div>`;
     return `<div class="dcard sv ${lvl}"><div class="dc-h"><span class="dc-ic ${g==='timing'?'':'svg '}${g}">${ic}</span><b>${l}</b>${hint?`<em class="dc-tag">${hint}</em>`:''}</div>
       ${body}
-      ${m?`<button class="dc-btn" data-act="service" data-car="${c.id}" data-k="${g}">Отбележи смяна<span>${icon('plus')}</span></button>`:''}</div>`}).join('')}</div>`;
+</div>`}).join('')}</div>`;
 }
 function secDocs(c,m){
   const d=c.docs||{},td=today();
@@ -1645,7 +1645,7 @@ const openTrip=guard((carId,morning)=>{
   const cf=carField(carId),car=S.cars[cf.id];
   const kmBox=`<div class="calc" id="kmCalc"></div><div class="note" id="kmWarn" hidden></div>`;
   const html=cf.html+
-    (morning?`${fld('Начален километраж днес',`<div class="mk-row">${ninp('endKm','','required placeholder="напр. '+fint((car.odo||0)+50)+'"')}<button type="submit" class="btn go">✓ Потвърди</button></div>`,'Километражът сутрин, преди да тръгнеш. Изминатите км за предния ден се смятат сами.')}<input type="hidden" name="startKm" id="f_startKm" value="${car.odo||0}">`+kmBox:'')+
+    (morning?`${fld('Начален километраж днес',`<div class="mk-row">${ninp('endKm','','required placeholder="напр. '+((car.odo||0)>=100000?fint(car.odo+50):'123 456')+'"')}<button type="submit" class="btn go">✓ Потвърди</button></div>`,'Километражът сутрин, преди да тръгнеш. Изминатите км за предния ден се смятат сами.')}<input type="hidden" name="startKm" id="f_startKm" value="${car.odo||0}">`+kmBox:'')+
     `<div id="dz">${driverField(car)}</div>`+
     `${fld('Дата',inp('date',today(),'date'))}<input type="hidden" name="time" value="${nowTime()}">${fld('Вид път',sel('road',Object.entries(ROADS),'mixed'))}`+
     (morning?'':`<div class="grid2">${fld('Начален км',ninp('startKm',car.odo||''))}${fld('Краен км',ninp('endKm',''))}</div>`+kmBox)+
