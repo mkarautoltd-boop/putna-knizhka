@@ -626,6 +626,16 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .dc-bar{background:rgba(255,255,255,.8);box-shadow:inset 0 0 0 1px var(--dcs)}
 .dc-btn{background:linear-gradient(100deg,var(--dc2) 0%,var(--dc) 70%)!important}
 .dc-ic.pads svg{width:40px;height:40px}
+
+.dc-sub{display:flex;flex-direction:column;gap:12px}
+.dc-srow{display:flex;flex-direction:column;gap:6px}
+.dc-sh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.dc-sh span{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#8A97AB}
+.dc-sh b{font-size:16px;font-weight:800}
+.dc-srow.ok{--rc:#1FA35A;--rc2:#34C173}.dc-srow.warn{--rc:#F08A18;--rc2:#FFAE45}.dc-srow.crit{--rc:#E0342F;--rc2:#FF6A5E}.dc-srow.none{--rc:#AEB8C6;--rc2:#C9D1DC}
+.dc-srow .dc-sh b{color:var(--rc)}.dc-srow.none .dc-sh b{color:#8A97AB;font-weight:600}
+.dc-srow .dc-bar i{background:linear-gradient(90deg,var(--rc2),var(--rc))}
+.dc-ic.svg svg{width:34px;height:34px}.dc-ic.oil svg{width:34px;height:24px}.dc-ic.pads svg{width:40px;height:40px}
 </style>
 </head>
 <body>
@@ -713,7 +723,10 @@ const ROLES={admin:'Администратор',manager:'Мениджър',drive
 const ROADS={mixed:'Смесено',city:'Градско',highway:'Извънградско'};
 const FUELS=['Дизел','Бензин','Газ/Бензин','Метан/Бензин','Хибрид','Електрически'];
 const DOCS=[['gtp','ГТП'],['go','Гражданска отговорност'],['kasko','Каско'],['vignette','Винетка']];
-const SVC=[['main','Сервизно обслужване'],['oil','Масло и филтри'],['pads','Накладки'],['timing','Ангренаж'],['other','Друга поддръжка']];
+const SVC=[['main','Сервизно обслужване'],['oil','Масло и филтри'],['pads','Предни накладки'],['padsR','Задни накладки'],['discs','Дискове'],['timing','Ангренаж'],['battery','Акумулатор'],['other','Други ремонти']];
+/* интервали по подразбиране, ако не са зададени */
+const SVC_DEF={discs:{intKm:60000},battery:{intMonths:48}};
+const svcOf=(c,k)=>{const x={...(c?.service?.[k]||{})},d=SVC_DEF[k]||{};if(x.intKm==null&&x.intMonths==null)Object.assign(x,d);return x};
 const PCATS=['Двигател','Спирачки','Ходова част','Гуми','Електрика','Климатик','Каросерия','Друго'];
 const PRIO={low:'Нисък',mid:'Среден',high:'Висок'};
 const PSTAT={new:'Нов',progress:'В процес',resolved:'Решен'};
@@ -838,7 +851,7 @@ function carAlerts(car){
   for(const{k,l,d}of docList){if(!d)continue;const left=daysBetween(td,d);
     if(left<0)out.push({lvl:'crit',kind:'doc',key:k,car,text:`${l}: изтекъл на ${fd(d)}`,sub:`Просрочен с ${-left} дни`});
     else if(left<=s.warnDays)out.push({lvl:'warn',kind:'doc',key:k,car,text:`${l}: изтича на ${fd(d)}`,sub:left===0?'Изтича днес':`След ${left} дни`});}
-  for(const[k,l]of SVC){const st=svcStatus(car.service?.[k],odo);if(!st||st.lvl==='ok')continue;
+  for(const[k,l]of SVC){const st=svcStatus(svcOf(car,k),odo);if(!st||st.lvl==='ok')continue;
     const parts=[];if(st.remKm!=null)parts.push(st.remKm<0?`просрочен с ${fint(-st.remKm)} км`:`след ${fint(st.remKm)} км`);
     if(st.days!=null)parts.push(st.days<0?`просрочен от ${fd(st.nextDate)}`:`до ${fd(st.nextDate)}`);
     out.push({lvl:st.lvl,kind:'svc',key:k,car,text:`${l}${st.lvl==='crit'?': просрочен':''}`,sub:parts.join(' · ')});}
@@ -1377,21 +1390,25 @@ function secService(c,m){
   <div class="sec"><div class="sec-head"><h3>Сервизи и разходи</h3>${m?`<button class="btn sm" data-act="expense" data-car="${c.id}">+ Друг разход</button>`:''}</div>
   ${recs.length?`<div class="list">${recs.map(e=>`<div class="li"><div class="l"><b>${e.t==='service'?esc(e.what||'Сервиз'):esc(e.cat||'Разход')}</b><span>${fd(e.date)}${e.km?' · '+fint(e.km)+' км':''}${e.place?' · '+esc(e.place):''}${e.items?.length?' · '+e.items.map(k=>SVC.find(x=>x[0]===k)?.[1]).join(', '):''}</span>${e.note?`<span>${esc(e.note)}</span>`:''}</div><div class="r"><b class="num">${eur(e.t==='service'?e.cost:e.sum)}</b><span class="pill">${e.t==='service'?'Сервиз':'Разход'}</span>${m?`<button class="linkbtn small" data-act="delEntry" data-car="${e.carId}" data-id="${e.id}">Изтрий</button>`:''}</div></div>`).join('')}</div>`:'<div class="empty">Няма въведени сервизи и разходи.</div>'}</div>`)+shopsBlock();
 }
-const SVC_EMO={pads:'<svg viewBox="0 0 48 48" fill="none" stroke="#F58A07" stroke-linecap="round"><circle cx="24" cy="24" r="10.5" stroke-width="3.4"/><path d="M12.2 12.5a16.5 16.5 0 0 0 0 23" stroke-width="3.4"/><path d="M35.8 12.5a16.5 16.5 0 0 1 0 23" stroke-width="3.4"/><path d="M6.5 10.5a22 22 0 0 0 0 27" stroke-width="3.4" stroke-dasharray="4.2 3.6"/><path d="M41.5 10.5a22 22 0 0 1 0 27" stroke-width="3.4" stroke-dasharray="4.2 3.6"/></svg>',timing:'⚙️',other:'🧰'};
-const SVC_CARDS=[['oil','Масло и филтри'],['pads','Накладки'],['timing','Ангренаж'],['other','Други ремонти']];
-const SVC_LBL=Object.fromEntries(SVC_CARDS);
+const SVC_EMO={pads:'<svg viewBox="0 0 48 48" fill="none" stroke="#F58A07" stroke-linecap="round"><circle cx="24" cy="24" r="10.5" stroke-width="3.4"/><path d="M12.2 12.5a16.5 16.5 0 0 0 0 23" stroke-width="3.4"/><path d="M35.8 12.5a16.5 16.5 0 0 1 0 23" stroke-width="3.4"/><path d="M6.5 10.5a22 22 0 0 0 0 27" stroke-width="3.4" stroke-dasharray="4.2 3.6"/><path d="M41.5 10.5a22 22 0 0 1 0 27" stroke-width="3.4" stroke-dasharray="4.2 3.6"/></svg>',timing:'<svg viewBox="0 0 48 48" fill="none" stroke="#F58A07" stroke-linecap="round" stroke-linejoin="round"><circle cx="15" cy="30" r="8.5" stroke-width="3"/><circle cx="33" cy="16" r="7" stroke-width="3"/><circle cx="15" cy="30" r="2.4" fill="#F58A07" stroke="none"/><circle cx="33" cy="16" r="2" fill="#F58A07" stroke="none"/><path d="M8.2 25.5 27.5 10.8M21.6 35.2 39.4 20.4" stroke-width="3"/></svg>',battery:'<svg viewBox="0 0 48 48" fill="none" stroke="#F58A07" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="14" width="36" height="24" rx="3" stroke-width="3.4"/><path d="M12 14v-4h7v4M29 14v-4h7v4" stroke-width="3"/><path d="M12.5 26h7M16 22.5v7M28.5 26h7" stroke-width="3.2"/></svg>',other:'<svg viewBox="0 0 48 48" fill="none" stroke="#F58A07" stroke-linecap="round" stroke-linejoin="round"><path d="M29.5 8.5a9 9 0 0 0-8.3 12.3L8.6 33.4a3.6 3.6 0 0 0 5.1 5.1l12.6-12.6a9 9 0 0 0 12.3-8.3l-5.4 5.4-5.5-1.3-1.3-5.5Z" stroke-width="3.2"/></svg>'};
+const SVC_CARDS=[['oil','Масло и филтри',['oil']],['pads','Накладки и дискове',['pads','padsR','discs']],['timing','Ангренаж',['timing']],['battery','Акумулатор',['battery']],['other','Други ремонти',['other']]];
+const SVC_LBL=Object.fromEntries(SVC_CARDS.map(x=>[x[0],x[1]]));
+const SVC_SHORT={pads:'Предни накладки',padsR:'Задни накладки',discs:'Дискове'};
+function svcRow(c,k){const sv=svcOf(c,k),st=svcStatus(sv,c.odo);
+  const next=st?[st.nextKm!=null?fint(st.nextKm)+' км':'',st.nextDate?fd(st.nextDate):''].filter(Boolean).join(' · '):'';
+  let pc=null;if(st){const a=[];if(st.nextKm!=null&&sv.intKm)a.push(1-st.remKm/sv.intKm);if(st.days!=null&&sv.intMonths)a.push(1-st.days/(sv.intMonths*30.4));if(a.length)pc=Math.max(0,Math.min(1,Math.max(...a)))}
+  return {st,lvl:st?st.lvl:'none',next,pc}}
+const LV_RANK={crit:3,warn:2,ok:1,none:0};
 function svcCards(c,m){
-  return `<div class="dcards">${SVC_CARDS.map(([k,l])=>{const sv=c.service?.[k]||{},st=svcStatus(sv,c.odo);
-    const lvl=st?st.lvl:'none',ic=k==='oil'?FL_IC.oil:SVC_EMO[k];
-    const next=st?[st.nextKm!=null?fint(st.nextKm)+' км':'',st.nextDate?fd(st.nextDate):''].filter(Boolean).join(' · '):'';
-    /* колко е изминато от интервала – за лентата */
-    let pc=null;if(st){const a=[];if(st.nextKm!=null&&sv.intKm)a.push(1-st.remKm/sv.intKm);if(st.days!=null&&sv.intMonths)a.push(1-st.days/(sv.intMonths*30.4));if(a.length)pc=Math.max(0,Math.min(1,Math.max(...a)))}
-    const over=st&&((st.remKm!=null&&st.remKm<0)||(st.days!=null&&st.days<0));
-    const hint=!st?'':over?'Просрочена':lvl==='warn'?'Наближава':'';
-    return `<div class="dcard sv ${lvl}"><div class="dc-h"><span class="dc-ic${k==='oil'||k==='pads'?' svg':''}${k==='pads'?' pads':''}">${ic}</span><b>${l}</b>${hint?`<em class="dc-tag">${hint}</em>`:''}</div>
-      <div class="dc-r"><span>Следваща смяна</span><b class="dc-left">${next||'Няма данни'}</b></div>
-      ${pc!=null?`<div class="dc-bar"><i style="width:${Math.round(pc*100)}%"></i></div>`:''}
-      ${m?`<button class="dc-btn" data-act="service" data-car="${c.id}" data-k="${k}">Отбележи смяна<span>${icon('plus')}</span></button>`:''}</div>`}).join('')}</div>`;
+  return `<div class="dcards">${SVC_CARDS.map(([g,l,keys])=>{const R2=keys.map(k=>[k,svcRow(c,k)]);
+    const lvl=R2.reduce((w,[,r])=>LV_RANK[r.lvl]>LV_RANK[w]?r.lvl:w,'none');
+    const ic=g==='oil'?FL_IC.oil:SVC_EMO[g];
+    const hint=lvl==='crit'?'Просрочена':lvl==='warn'?'Наближава':'';
+    const body=keys.length===1?(()=>{const r=R2[0][1];return `<div class="dc-r"><span>Следваща смяна</span><b class="dc-left">${r.next||'Няма данни'}</b></div>${r.pc!=null?`<div class="dc-bar"><i style="width:${Math.round(r.pc*100)}%"></i></div>`:''}`})()
+      :`<div class="dc-sub">${R2.map(([k,r])=>`<div class="dc-srow ${r.lvl}"><div class="dc-sh"><span>${SVC_SHORT[k]}</span><b>${r.next||'Няма данни'}</b></div>${r.pc!=null?`<div class="dc-bar"><i style="width:${Math.round(r.pc*100)}%"></i></div>`:''}</div>`).join('')}</div>`;
+    return `<div class="dcard sv ${lvl}"><div class="dc-h"><span class="dc-ic svg ${g}">${ic}</span><b>${l}</b>${hint?`<em class="dc-tag">${hint}</em>`:''}</div>
+      ${body}
+      ${m?`<button class="dc-btn" data-act="service" data-car="${c.id}" data-k="${g}">Отбележи смяна<span>${icon('plus')}</span></button>`:''}</div>`}).join('')}</div>`;
 }
 function secDocs(c,m){
   const d=c.docs||{},td=today();
@@ -1932,22 +1949,24 @@ async function toggleCar(id){
 function openSvcIntervals(id){
   const c=S.cars[id];const sv=c.service||{};
   openSheet('Сервизни интервали',`<p class="small muted">Пример: последен сервиз 20.09.2026 при 120 000 км, интервал 10 000 км или 12 месеца → следващ при 130 000 км или на 20.09.2027, което настъпи първо.</p>`+
-    SVC.map(([k,l])=>{const x=sv[k]||{};return `<fieldset><legend>${l}</legend><div class="grid2">${fld('Последно на',inp(k+'_lastDate',x.lastDate,'date'))}${fld('При км',ninp(k+'_lastKm',x.lastKm))}</div><div class="grid2">${fld('Интервал, км',ninp(k+'_intKm',x.intKm,'placeholder="10000"'))}${fld('Интервал, месеци',ninp(k+'_intMonths',x.intMonths,'placeholder="12"'))}</div></fieldset>`}).join(''),async f=>{
+    SVC.map(([k,l])=>{const x=svcOf(c,k);return `<fieldset><legend>${l}</legend><div class="grid2">${fld('Последно на',inp(k+'_lastDate',x.lastDate,'date'))}${fld('При км',ninp(k+'_lastKm',x.lastKm))}</div><div class="grid2">${fld('Интервал, км',ninp(k+'_intKm',x.intKm,'placeholder="10000"'))}${fld('Интервал, месеци',ninp(k+'_intMonths',x.intMonths,'placeholder="12"'))}</div></fieldset>`}).join(''),async f=>{
     const out={};for(const[k]of SVC)out[k]={lastDate:f[k+'_lastDate']||null,lastKm:num(f[k+'_lastKm']),intKm:num(f[k+'_intKm']),intMonths:num(f[k+'_intMonths'])};
     await carUpdate(id,{service:out});await logEdit(id,'Обновени сервизни интервали');toast('Запазено');
   });
 }
 function openService(id,pick){
   const c=S.cars[id];
+  const grp=pick&&SVC_CARDS.find(x=>x[0]===pick),only=grp?grp[2]:null;
   openSheet(pick?'Сервиз: '+(SVC_LBL[pick]||''):'Сервиз',`${sheetCar(c)}
   <div class="grid2">${fld('Дата',inp('date',today(),'date'))}${fld('Километраж',ninp('km',c.odo||''))}</div>
   ${fld('Какво е направено / сменено',ta('what'))}
-  <fieldset><legend>Нулирай интервалите за</legend>${SVC.map(([k,l])=>chk('i_'+k,l,pick?k===pick:k==='main')).join('')}</fieldset>
+  <fieldset><legend>${only&&only.length>1?'Какво е сменено':'Нулирай интервалите за'}</legend>${SVC.filter(([k])=>!only||only.includes(k)).map(([k,l])=>chk('i_'+k,l,only?only.length===1:k==='main')).join('')}</fieldset>
   <div class="grid2">${fld('Сума, €',ninp('cost'))}${fld('Сервиз',inp('place','','text','placeholder="Име на сервиза"'))}</div>${fld('Бележка',inp('note'))}`,async f=>{
     const items=SVC.map(x=>x[0]).filter(k=>f['i_'+k]);const km=num(f.km);
+    if(only&&!items.length)fail('Отметни какво е сменено.');
     if(!f.what.trim()&&!items.length)fail('Опиши какво е направено.');
     await addEntry(id,{t:'service',date:f.date,km,what:f.what.trim()||items.map(k=>SVC.find(x=>x[0]===k)[1]).join(', '),items,cost:num(f.cost)||0,place:f.place.trim(),note:f.note.trim()});
-    const patch={};for(const k of items)patch[k]={lastDate:f.date,lastKm:km};
+    const patch={};for(const k of items)patch[k]={...svcOf(c,k),lastDate:f.date,lastKm:km};
     if(items.length)await carUpdate(id,{service:patch});toast('Сервизът е записан');
   });
 }
@@ -2112,7 +2131,7 @@ function vProblemsAll(){
 function svcPill(st){if(!st)return {html:'<span class="pill">—</span>',csv:''};const t=st.remKm!=null?fint(st.remKm)+' км':fd(st.nextDate);return {html:`<span class="pill ${st.lvl}">${t}</span>${st.nextDate&&st.remKm!=null?`<br><span class="small muted">${fd(st.nextDate)}</span>`:''}`,csv:t}}
 function vServiceAll(){
   HEAD={title:'Сервиз',back:'home'};const cars=scopeCars();if(!cars.length)return '<div class="empty">Няма автомобили.</div>';
-  const rows=cars.map(c=>[carCell(c),{html:fint(c.odo),csv:c.odo},...SVC.map(([k])=>svcPill(svcStatus(c.service?.[k],c.odo))),{html:canManage(c)?`<button class="btn sm" data-act="svcIntervals" data-car="${c.id}">Интервали</button> <button class="btn sm" data-act="service" data-car="${c.id}">+ Сервиз</button>`:'',csv:''}]);
+  const rows=cars.map(c=>[carCell(c),{html:fint(c.odo),csv:c.odo},...SVC.map(([k])=>svcPill(svcStatus(svcOf(c,k),c.odo))),{html:canManage(c)?`<button class="btn sm" data-act="svcIntervals" data-car="${c.id}">Интервали</button> <button class="btn sm" data-act="service" data-car="${c.id}">+ Сервиз</button>`:'',csv:''}]);
   const recs=entries().filter(e=>(e.t==='service'||e.t==='expense')&&scopeIds().has(e.carId)).slice().reverse().slice(0,30);
   return (`<p class="small muted">Остават км до следващото обслужване (или дата). Следващото е което настъпи първо.</p>`+tableHtml(['Автомобил','Пробег',...SVC.map(x=>x[1]),''],rows,null,[1],[])+
     `<div class="sec"><h3>Последни сервизи и разходи</h3>${recs.length?`<div class="list">${recs.map(e=>`<div class="li"><div class="l"><b>${e.t==='service'?esc(e.what||'Сервиз'):esc(e.cat||'Разход')}</b><span>${fd(e.date)} · ${esc(regText(S.cars[e.carId]?.reg))}${e.km?' · '+fint(e.km)+' км':''}</span></div><div class="r"><b class="num">${eur(e.t==='service'?e.cost:e.sum)}</b></div></div>`).join('')}</div>`:'<div class="empty">Няма записи.</div>'}</div>`)+shopsBlock();
