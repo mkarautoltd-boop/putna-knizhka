@@ -615,6 +615,16 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .dcard.sv .dc-r span{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#8A97AB}
 .dcard.sv .dc-r b{font-size:20px}
 .dcard .dc-h b{flex:1;min-width:0}
+
+/* нюанс: картата е леко оцветена в своя цвят, преливащо към бяло */
+.dcard{background:radial-gradient(120% 90% at 100% 0%,var(--dcg) 0%,rgba(255,255,255,0) 60%),linear-gradient(160deg,var(--dcs) 0%,#fff 55%)}
+.dcard.ok{--dcg:rgba(52,193,115,.22)}
+.dcard.warn{--dcg:rgba(255,174,69,.28)}
+.dcard.crit{--dcg:rgba(255,106,94,.24)}
+.dcard.none{--dcg:rgba(174,184,198,.20)}
+.dcard .dc-ic{box-shadow:0 4px 10px -4px var(--dc);background:#fff!important}
+.dc-bar{background:rgba(255,255,255,.8);box-shadow:inset 0 0 0 1px var(--dcs)}
+.dc-btn{background:linear-gradient(100deg,var(--dc2) 0%,var(--dc) 70%)!important}
 </style>
 </head>
 <body>
