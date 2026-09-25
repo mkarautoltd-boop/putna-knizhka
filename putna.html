@@ -590,6 +590,10 @@ body:not(.noscroll){overflow:visible!important;overflow-x:clip!important}
 .vlist .vhero-bg.svg{opacity:.16;align-items:flex-start;padding-top:18px}
 .vlist .vhero-st{margin-top:2px;padding-top:8px}
 .vlist .vhero-st .status{font-size:13.5px}
+
+.dc-ic.svg svg{width:34px;height:24px}
+/* лента под часовника на iPhone, за да не се вижда съдържание зад него */
+body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:#0B2244;z-index:40;pointer-events:none}
 </style>
 </head>
 <body>
@@ -1174,6 +1178,7 @@ function leftText(td,dt){const a=new Date(td+'T12:00:00'),b=new Date(dt+'T12:00:
   let mo=(b.getFullYear()-a.getFullYear())*12+b.getMonth()-a.getMonth();if(b.getDate()<a.getDate())mo--;
   const mid=new Date(a);mid.setMonth(mid.getMonth()+mo);const d=Math.round((b-mid)/864e5);
   const P=(n,x,y)=>n+' '+(n===1?x:y);
+  if(mo>=12){const y=Math.floor(mo/12),r=mo%12;return [P(y,'година','години'),r?P(r,'месец','месеца'):''].filter(Boolean).join(' и ')}
   return [mo>0?P(mo,'месец','месеца'):'',d>0||mo===0?P(d,'ден','дни'):''].filter(Boolean).join(' и ')}
 function docCards(c,m){
   const d=c.docs||{},td=today();
@@ -1335,10 +1340,24 @@ function secService(c,m){
     return `<tr><td><b>${l}</b></td><td>${fd(sv.lastDate)}</td><td class="num r">${fint(sv.lastKm)}</td><td>${sv.intKm?fint(sv.intKm)+' км':''}${sv.intKm&&sv.intMonths?' / ':''}${sv.intMonths?sv.intMonths+' мес.':''}</td><td class="num r">${st?.nextKm!=null?fint(st.nextKm):'—'}</td><td>${fd(st?.nextDate)}</td><td class="num r">${st?.remKm!=null?fint(st.remKm):'—'}</td><td>${st?lvlPill(st.lvl):'<span class="pill">Няма данни</span>'}</td></tr>`}).join('');
   const recs=entries().filter(e=>e.carId===c.id&&(e.t==='service'||e.t==='expense')).slice().reverse();
   return (`<div class="sec"><div class="sec-head"><h3>Сервизни интервали</h3>${m?`<div class="row"><button class="btn sm" data-act="svcIntervals" data-car="${c.id}">Интервали</button><button class="btn sm primary" data-act="service" data-car="${c.id}">+ Сервиз</button></div>`:''}</div>
-  <div class="tablewrap"><table><thead><tr><th>Елемент</th><th>Последно</th><th class="r">Км</th><th>Интервал</th><th class="r">Следващ км</th><th>Следваща дата</th><th class="r">Остават км</th><th>Статус</th></tr></thead><tbody>${rows}</tbody></table></div>
+  ${svcCards(c,m)}
   <p class="small muted">Следващият сервиз е което настъпи първо: километрите или датата.</p></div>
   <div class="sec"><div class="sec-head"><h3>Сервизи и разходи</h3>${m?`<button class="btn sm" data-act="expense" data-car="${c.id}">+ Друг разход</button>`:''}</div>
   ${recs.length?`<div class="list">${recs.map(e=>`<div class="li"><div class="l"><b>${e.t==='service'?esc(e.what||'Сервиз'):esc(e.cat||'Разход')}</b><span>${fd(e.date)}${e.km?' · '+fint(e.km)+' км':''}${e.place?' · '+esc(e.place):''}${e.items?.length?' · '+e.items.map(k=>SVC.find(x=>x[0]===k)?.[1]).join(', '):''}</span>${e.note?`<span>${esc(e.note)}</span>`:''}</div><div class="r"><b class="num">${eur(e.t==='service'?e.cost:e.sum)}</b><span class="pill">${e.t==='service'?'Сервиз':'Разход'}</span>${m?`<button class="linkbtn small" data-act="delEntry" data-car="${e.carId}" data-id="${e.id}">Изтрий</button>`:''}</div></div>`).join('')}</div>`:'<div class="empty">Няма въведени сервизи и разходи.</div>'}</div>`)+shopsBlock();
+}
+const SVC_EMO={main:'🔧',pads:'🛑',timing:'⚙️',other:'🧰'};
+function svcCards(c,m){
+  return `<div class="dcards">${SVC.map(([k,l])=>{const sv=c.service?.[k]||{},st=svcStatus(sv,c.odo);
+    const lvl=st?st.lvl:'none',ic=k==='oil'?FL_IC.oil:(SVC_EMO[k]||'🔧');
+    const over=st&&((st.remKm!=null&&st.remKm<0)||(st.days!=null&&st.days<0));
+    const left=!st?'Няма данни':(over?[st.remKm<0?`Просрочен с ${fint(-st.remKm)} км`:'',st.days<0?`Просрочен от ${fd(st.nextDate)}`:'']:[st.remKm!=null?`${fint(st.remKm)} км`:'',st.days!=null?leftText(today(),st.nextDate):'']).filter(Boolean).join(' · ')||'—';
+    const intv=[sv.intKm?fint(sv.intKm)+' км':'',sv.intMonths?sv.intMonths+' мес.':''].filter(Boolean).join(' / ');
+    return `<div class="dcard ${lvl}"><div class="dc-h"><span class="dc-ic${k==='oil'?' svg':''}">${ic}</span><b>${l}</b></div>
+      <div class="dc-r"><span>Последно</span><b>${sv.lastDate?fd(sv.lastDate):'—'}${sv.lastKm!=null?' · '+fint(sv.lastKm)+' км':''}</b></div>
+      ${intv?`<div class="dc-r"><span>На всеки</span><b>${intv}</b></div>`:''}
+      ${st&&(st.nextKm!=null||st.nextDate)?`<div class="dc-r"><span>Следващ</span><b>${[st.nextKm!=null?fint(st.nextKm)+' км':'',st.nextDate?fd(st.nextDate):''].filter(Boolean).join(' / ')}</b></div>`:''}
+      <div class="dc-r"><span>${over?'Статус':'Остават'}</span><b class="dc-left">${left}</b></div>
+      ${m?`<button class="dc-btn" data-act="service" data-car="${c.id}">Отбележи сервиз<span>${icon('plus')}</span></button>`:''}</div>`}).join('')}</div>`;
 }
 function secDocs(c,m){
   const d=c.docs||{},td=today();
