@@ -637,6 +637,12 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .dc-srow .dc-bar i{background:linear-gradient(90deg,var(--rc2),var(--rc))}
 .dc-ic.svg svg{width:34px;height:34px}.dc-ic.oil svg{width:34px;height:24px}.dc-ic.pads svg{width:40px;height:40px}
 .dcard.sv .dc-r b.dc-was{font-size:17px;color:#0F1B2D}
+
+/* чист дизайн: всички карти са бели с лек сив отблясък; цветът остава само в стойността, етикета и лентата */
+.dcard{background:radial-gradient(120% 90% at 100% 0%,rgba(174,184,198,.20) 0%,rgba(255,255,255,0) 60%),linear-gradient(160deg,#F1F4F8 0%,#fff 55%)!important}
+.dcard::before{background:#AEB8C6!important}
+.dcard .dc-ic{background:#fff!important;box-shadow:0 4px 10px -4px rgba(15,35,65,.25)!important}
+.dc-bar{background:#EEF2F6!important;box-shadow:none!important}
 </style>
 </head>
 <body>
