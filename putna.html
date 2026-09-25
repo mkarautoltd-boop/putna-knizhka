@@ -1576,7 +1576,7 @@ const openCheck=guard(carId=>{
   <fieldset><legend>Гуми</legend>${fluidBox('ty','Налягане в гумите','Какво е налягането?',`<div class="kv" id="presRec"><div><span>Предни гуми</span><b>${p.front?fnum(+p.front,1)+' bar':'—'}</b></div><div><span>Задни гуми</span><b>${p.rear?fnum(+p.rear,1)+' bar':'—'}</b></div></div><span class="small muted" style="margin-top:-4px">Препоръчително налягане</span>`)}</fieldset>
   <fieldset><legend>Светлини</legend><div class="fluid"><div class="fl-h"><span class="fl-ic lt">${FL_IC.lt}</span><div><b>Светлини</b><small>Светят ли всички лампи?</small></div></div>${ltPick('lt',true)}
   <div class="fl-warn2">Можеш да приключиш проверката, но напомнянето ще остане, докато не провериш светлините.</div></div></fieldset>
-  <div class="grid2">${fld('Дата',inp('date',today(),'date'))}${fld('Километраж',ninp('km',car.odo||''))}</div>
+  <input type="hidden" name="date" id="f_date" value="${today()}">${fld('Километраж',ninp('km',car.odo||''))}
   ${fld('Бележка',inp('note','','text','placeholder="напр. маслото е близо до MIN"'))}
   <div id="dz">${driverField(car)}</div>`,async f=>{
     if(!f.oilLvl)fail('Избери нивото на маслото: Мин, Средно или Макс.');
@@ -1593,7 +1593,7 @@ const openTyCheck=guard(carId=>{
     <div class="kv"><div><span>Предни гуми</span><b>${p.front?fnum(+p.front,1)+' bar':'—'}</b></div><div><span>Задни гуми</span><b>${p.rear?fnum(+p.rear,1)+' bar':'—'}</b></div></div>
     <div class="lvl" style="grid-template-columns:1fr 1fr">${F.lvls.filter(x=>x[0]!=='no').map(([v,l,h])=>`<input type="radio" name="tyLvl" id="tyc_${v}" value="${v}"><label class="${LVLCLS[v]}" for="tyc_${v}"><span class="bar"><i style="height:${h}%"></i></span>${l}</label>`).join('')}</div>
     <div class="fl-warn">${F.warn}</div>${chk('inflated','Надух гумите')}</div>`;
-  openSheet('Проверка на гумите',sheetCar(car)+box+`<div class="grid2">${fld('Дата',inp('date',today(),'date'))}${fld('Километраж',ninp('km',car.odo||''))}</div>`,async f=>{
+  openSheet('Проверка на гумите',sheetCar(car)+box+`<input type="hidden" name="date" id="f_date" value="${today()}">${fld('Километраж',ninp('km',car.odo||''))}`,async f=>{
     if(!f.tyLvl)fail('Избери налягането: Ниско или Нормално.');
     await addEntry(carId,{t:'topup',fluid:'ty',lvl:f.tyLvl,inflated:!!f.inflated,date:f.date,km:num(f.km),driver:meId,text:'Проверени гуми: '+LVLTXT[f.tyLvl]+(f.inflated?' · надути':'')});toast('Гумите са отбелязани');
   },'Запиши');
@@ -1601,7 +1601,7 @@ const openTyCheck=guard(carId=>{
 const openLtCheck=guard(carId=>{
   const car=S.cars[carId];
   openSheet('Проверка на светлините',sheetCar(car)+`<div class="fluid"><div class="fl-h"><span class="fl-ic lt">${FL_IC.lt}</span><div><b>Светлини</b><small>Светят ли всички лампи?</small></div></div>${ltPick('ltc',false)}</div>
-  <div class="grid2">${fld('Дата',inp('date',today(),'date'))}${fld('Километраж',ninp('km',car.odo||''))}</div>`,async f=>{
+  <input type="hidden" name="date" id="f_date" value="${today()}">${fld('Километраж',ninp('km',car.odo||''))}`,async f=>{
     if(!f.ltLvl)fail('Избери: Всички светят или Има изгоряла.');
     const ltBad=ltRead(f),fixed=f.ltLvl==='bad'&&!!f.ltFix;
     await addEntry(carId,{t:'topup',fluid:'lt',lvl:f.ltLvl,ltBad,fixed,date:f.date,km:num(f.km),driver:meId,text:'Проверени светлини: '+(f.ltLvl==='ok'?'всички светят':'не свети '+ltNames(ltBad))+(fixed?' · сменена крушка':'')});toast('Светлините са отбелязани');
@@ -1610,7 +1610,7 @@ const openLtCheck=guard(carId=>{
 const openTopup=guard((carId,fluid)=>{
   const car=S.cars[carId],F=FLUIDS[fluid];
   openSheet(F.topT,sheetCar(car)+`<div class="fluid"><div class="fl-h"><span class="fl-ic ${fluid}">${FL_IC[fluid]}</span><div><b>${F.topB}</b><small>Отбележи, след като ${fluid==='ty'?'надуеш гумите до препоръчителното налягане':fluid==='lt'?'смениш изгорялата крушка':'долееш до нужното ниво'}.</small></div></div></div>
-  <div class="grid2">${fld('Дата',inp('date',today(),'date'))}${fld('Километраж',ninp('km',car.odo||''))}</div>
+  <input type="hidden" name="date" id="f_date" value="${today()}">${fld('Километраж',ninp('km',car.odo||''))}
   ${fld('Бележка',inp('note','','text',`placeholder="${fluid==='ty'||fluid==='lt'?'напр. предна лява':'напр. 0,5 л'}"`))}`,async f=>{
     await addEntry(carId,{t:'topup',fluid,date:f.date,km:num(f.km),driver:meId,text:F.hist+(f.note.trim()?' · '+f.note.trim():''),note:f.note.trim()});toast('Отбелязано: '+F.hist.toLowerCase());
   },F.topB);
