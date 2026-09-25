@@ -2052,6 +2052,17 @@ function logoutLocal(){TOKEN=null;meId=null;try{localStorage.removeItem('pk_toke
   for(const c of ['users','depts','cars','logs','problems','tasks'])S[c]={};S.loaded.clear();invalidate();R.tab='home';closeSheet();showLogin()}
 async function refresh(){if(!TOKEN)return;try{applyData(await gs('getAll',TOKEN))}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
+/* само обновяване: при всяка промяна вдигай APP_VER */
+const APP_VER='21';let _verAt=0;
+async function checkUpdate(){
+  if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
+  try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
+    const m=t.match(/const APP_VER='([^']+)'/);
+    if(m&&m[1]!==APP_VER){const go=()=>location.replace(location.pathname+'?v='+m[1]+'&t='+Date.now());
+      if($('#sheet').hidden)go();else{const w=setInterval(()=>{if($('#sheet').hidden){clearInterval(w);go()}},2000)}}}catch(e){}
+}
+setTimeout(checkUpdate,2000);setInterval(checkUpdate,10*60000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate()});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&TOKEN)refresh()});
 
 function openUserLink(id){
