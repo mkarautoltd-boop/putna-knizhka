@@ -431,15 +431,15 @@ body:not(.noscroll){overflow:visible!important;overflow-x:clip!important}
 .greet .nw{white-space:nowrap;font-size:inherit;color:inherit;margin:0}
 .greet .gemo{font-size:inherit;margin:0}
 #main{position:relative;z-index:6}
-.top.hero .top-in{padding-bottom:56px;padding-top:18px;align-items:flex-start}
-.greet b{font-size:24px;letter-spacing:-.02em}
-.greet span{font-size:13.5px;margin-top:2px}
-.greet .rl{font-size:10.5px;background:rgba(255,255,255,.12);align-self:flex-start;padding:4px 9px;border-radius:99px;margin-bottom:6px;color:#CFE0F7;letter-spacing:.1em}
+.top.hero .top-in{padding-bottom:48px;padding-top:10px;align-items:flex-start}
+.greet b{font-size:19px;letter-spacing:-.01em}
+.greet span{font-size:13px;margin-top:1px}
+.greet .rl{font-size:10.5px;background:rgba(255,255,255,.12);align-self:flex-start;padding:3px 8px;border-radius:99px;margin-bottom:4px;color:#CFE0F7;letter-spacing:.1em}
 .gemo,.temo,.qemo,.tip-e,.isq.emo,.greet .rl{font-family:"Onest","Apple Color Emoji","Noto Color Emoji",sans-serif}
 .hdate{display:none}
-.bell{background:rgba(255,255,255,.12)!important;width:48px;height:48px;display:grid;place-items:center;border-radius:16px!important;flex-shrink:0}
+.bell{background:rgba(255,255,255,.12)!important;width:42px;height:42px;display:grid;place-items:center;border-radius:16px!important;flex-shrink:0}
 .bell i{border-color:#133A6E}
-.top.hero+#main{margin-top:-60px}
+.top.hero+#main{margin-top:-52px}
 .kpis.three{grid-template-columns:repeat(3,minmax(0,1fr))}
 .kpi{padding:14px 4px 12px!important;border-radius:20px!important;border:0!important;box-shadow:0 10px 24px -10px rgba(15,35,65,.30),0 1px 2px rgba(15,35,65,.06)!important}
 .kpis.three .kpi b{font-size:22px}
@@ -450,7 +450,7 @@ body:not(.noscroll){overflow:visible!important;overflow-x:clip!important}
 .qt .ql{font-size:14.5px}
 .qt::before{content:"";position:absolute;right:-26px;top:-26px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.12);pointer-events:none}
 .qt{overflow:hidden}
-.plate{display:inline-flex;align-self:flex-start;border:1.5px solid #1B2A3F;border-radius:6px;background:#fff;font-family:var(--mono);font-weight:700;font-size:14px;letter-spacing:.04em;line-height:1;overflow:hidden;margin:3px 0 2px;white-space:nowrap;padding-right:7px;gap:6px;align-items:center;height:24px;color:#0F1B2D}
+.plate{display:inline-flex;align-self:flex-start;border:1.5px solid #1B2A3F;border-radius:6px;background:#fff;font-family:var(--sans);font-weight:700;font-size:15px;letter-spacing:0;line-height:1;overflow:hidden;margin:3px 0 2px;white-space:nowrap;padding-right:6px;gap:5px;align-items:center;height:24px;color:#0F1B2D}
 .plate i{font-style:normal;background:#1646B3;color:#fff;font-size:9px;font-family:var(--sans);font-weight:700;height:100%;display:flex;align-items:flex-end;padding:0 4px 3px;letter-spacing:0;position:relative}
 .plate i::before{content:"★";position:absolute;top:2px;left:50%;transform:translateX(-50%);font-size:7px;color:#FFD400}
 .isq.emo{background:#F3F6FA!important;background-image:none!important;box-shadow:inset 0 0 0 1px #E6ECF3;font-size:24px;display:grid;place-items:center}
@@ -1015,7 +1015,7 @@ function carCard(c){
   const lvl=c.active===false?'off':carLevel(c),al=carAlerts(c);
   const st=c.active===false?'Неактивен':lvl==='ok'?'Изправен':lvl==='crit'?(al[0]?.text||'Критично'):(al[0]?.text||'Предстоящо');
   return `<button class="vcard${c.active===false?' off':''}" data-act="openCar" data-car="${c.id}">${carPic(c)}
-    <div class="vi"><b>${esc(carName(c))}</b><span class="plate"><i>BG</i>${esc(regText(c.reg))}</span><span class="status ${lvl}">${esc(st.length>34?st.slice(0,33)+'…':st)}</span>
+    <div class="vi"><b>${esc(carName(c))}</b><span class="plate"><i>BG</i>${esc(regText(c.reg)).replace(/ /g,'\u2009')}</span><span class="status ${lvl}">${esc(st.length>34?st.slice(0,33)+'…':st)}</span>
     <span class="vd">${esc(dname(c.dept))} · ${fint(c.odo)} км${c.session?' · временно: '+esc(uname(c.session.userId)):''}</span></div>${icon('chev','chev')}</button>`;
 }
 const KIND_EMO={doc:'📄',svc:'🔧',tyres:'❄️',pressure:'🔍',problem:'⚠️'};
