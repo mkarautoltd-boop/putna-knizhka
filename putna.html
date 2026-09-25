@@ -548,8 +548,10 @@ body:not(.noscroll){overflow:visible!important;overflow-x:clip!important}
 .vhero-slot{flex:0 0 100%;scroll-snap-align:center}
 .vhero-slot:not(.on) .vhero{opacity:.6;transform:scale(.96)}
 .vhero-slot .vhero{transition:transform .2s,opacity .2s}
-.vhero-dots{display:flex;justify-content:center;align-items:center;gap:7px;margin-top:-4px;flex-wrap:wrap}
+.vhero-dots{display:flex;justify-content:center;align-items:center;gap:7px;margin-top:-4px;flex-wrap:nowrap}
 .vhero-dots i{width:9px;height:9px;border-radius:50%;border:1.8px solid #2E55D6}
+.vhero-dots i.sm{width:6px;height:6px;border-width:1.5px;opacity:.7}
+.vhero-count{text-align:center;font-size:12.5px;font-weight:700;color:#8A97AB;margin-top:-6px}
 .vhero-dots .on{width:30px;height:30px;border-radius:50%;background:#2E55D6;display:grid;place-items:center;color:#fff}
 .vhero-dots .on .ic{width:18px;height:18px;stroke:#fff}
 .dcards{display:flex;flex-direction:column;gap:14px}
@@ -1137,7 +1139,12 @@ function heroRail(c){
   const L=scopeCars().filter(x=>x.active!==false||x.id===c.id);
   if(L.length<2)return `<div class="vhero-one">${carHero(c)}</div>`;
   return `<div class="vhero-rail" id="heroRail">${L.map(x=>`<div class="vhero-slot${x.id===c.id?' on':''}" data-id="${x.id}">${carHero(x)}</div>`).join('')}</div>
-    <div class="vhero-dots">${L.map(x=>x.id===c.id?`<span class="on">${icon('car')}</span>`:'<i></i>').join('')}</div>`;
+    ${heroDots(L,c)}`;
+}
+/* точки: най-много 9, крайните по-малки, и брояч при много коли */
+function heroDots(L,c){const n=L.length,i=L.findIndex(x=>x.id===c.id),W=9,a=Math.max(0,Math.min(i-4,n-W)),b=Math.min(n,a+W);
+  let h='';for(let k=a;k<b;k++){const edge=(k===a&&a>0)||(k===b-1&&b<n);h+=k===i?`<span class="on">${icon('car')}</span>`:`<i class="${edge?'sm':''}"></i>`}
+  return `<div class="vhero-dots">${h}</div>${n>W?`<div class="vhero-count">${i+1} от ${n}</div>`:''}`;
 }
 const DOC_EMO={gtp:'🔧',go:'🛡️',kasko:'🚘',vignette:'🛣️'};
 function leftText(td,dt){const a=new Date(td+'T12:00:00'),b=new Date(dt+'T12:00:00');
