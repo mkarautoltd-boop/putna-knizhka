@@ -1035,7 +1035,7 @@ function render(){
   const html=(V[R.tab]||vHome)();
   renderTabs();renderHead();
   setHTML($('#main'),html);
-  const rail=$('#heroRail'),on=rail&&rail.querySelector('.vhero-slot.on');if(on&&!rail._busy)rail.scrollLeft=on.offsetLeft-(rail.clientWidth-on.clientWidth)/2;
+  for(const rail of document.querySelectorAll('.vhero-rail')){const on=rail.querySelector('.vhero-slot.on');if(on)rail.scrollLeft=on.offsetLeft-(rail.clientWidth-on.clientWidth)/2}
 }
 function showLogin(){$('#boot').hidden=true;$('#shell').hidden=true;$('#loginView').hidden=false}
 
@@ -1159,7 +1159,7 @@ function heroStatus(c){const lvl=c.active===false?'off':carLevel(c),al=carAlerts
   return `<div class="vhero-st"><span class="status ${lvl}">${esc(st.length>40?st.slice(0,39)+'…':st)}</span>${isStaff()?`<small>${esc(dname(c.dept))}</small>`:''}${icon('chev','chev')}</div>`;
 }
 function heroRail(c){
-  const L=scopeCars().filter(x=>x.active!==false||x.id===c.id);
+  let L=R.carBack==='cars'&&isStaff()?listCars():scopeCars().filter(x=>x.active!==false);if(!L.some(x=>x.id===c.id))L=[...L,c];
   if(L.length<2)return `<div class="vhero-one">${carHero(c)}</div>`;
   return `<div class="vhero-rail" id="heroRail">${L.map(x=>`<div class="vhero-slot${x.id===c.id?' on':''}" data-id="${x.id}">${carHero(x)}</div>`).join('')}</div>
     ${heroDots(L,c)}`;
@@ -1219,6 +1219,14 @@ function tripLi(e){
 }
 
 /* ---- cars ---- */
+function listCars(){
+  let cars=scopeCars(isStaff()&&R.showInactive);
+  const q=R.q.trim().toLowerCase();
+  if(q)cars=cars.filter(c=>[c.make,c.model,c.reg,drvIds(c).map(uname).join(' '),dname(c.dept)].join(' ').toLowerCase().includes(q)||normReg(c.reg).includes(normReg(q)));
+  if(R.carFilter==='ok')cars=cars.filter(c=>c.active!==false&&carLevel(c)==='ok');
+  if(R.carFilter==='issue')cars=cars.filter(c=>c.active!==false&&carLevel(c)!=='ok');
+  return cars;
+}
 function vCars(){
   let all=scopeCars(isStaff()&&R.showInactive),cars=all;
   const q=R.q.trim().toLowerCase();
@@ -1235,7 +1243,11 @@ function vCars(){
     <div class="chips"><button class="chip" data-act="carFilter" data-k="" aria-pressed="${!f}">Всички (${all.length})</button><button class="chip" data-act="carFilter" data-k="ok" aria-pressed="${f==='ok'}">Изправни (${nOk})</button><button class="chip" data-act="carFilter" data-k="issue" aria-pressed="${f==='issue'}">С известия (${nIs})</button><button class="chip" data-act="toggleInactive" aria-pressed="${R.showInactive}">Неактивни</button></div>`;
   }
   if(!cars.length)return h+`<div class="empty">${q||R.carFilter?'Няма автомобили по този филтър.':'Няма автомобили.'}</div>`;
-  return h+`<div class="carlist vlist">${cars.map(c=>carHero(c,true)).join('')}</div>`;
+  const cur=cars.find(c=>c.id===R.listCar)||cars[0];R.listCar=cur.id;
+  const al=carAlerts(cur).filter(a=>a.lvl!=='good');
+  return h+(cars.length>1?`<div class="vhero-rail" id="listRail">${cars.map(x=>`<div class="vhero-slot${x.id===cur.id?' on':''}" data-id="${x.id}">${carHero(x,true)}</div>`).join('')}</div>${heroDots(cars,cur)}`:`<div class="vhero-one">${carHero(cur,true)}</div>`)+
+    `<button class="btn primary wide" data-act="openCar" data-car="${cur.id}">Отвори ${esc(carName(cur))}</button>`+
+    (al.length?`<div class="sec"><h3>Задачи за тази кола</h3>${alertList(al.slice(0,3))}</div>`:'');
 }
 const canAddCar=()=>isAdmin()||isMgr();
 
@@ -2127,7 +2139,7 @@ async function printPdf(){
 const ACT={
   tab:d=>{R.tab=d.k;if(d.k==='cars')R.carBack='cars';toTop();render()},
   myBook:d=>{R.carBack=R.tab;R.tab='car';R.carId=d.car;R.carSec='book';toTop();render()},
-  openCar:d=>{R.carBack=R.tab==='car'?R.carBack:R.tab;R.tab='car';R.carId=d.car;R.carSec='overview';toTop();render()},
+  openCar:d=>{R.carBack=R.tab==='car'?R.carBack:R.tab;R.tab='car';R.carId=d.car;R.listCar=d.car;R.carSec='overview';toTop();render()},
   carSec:d=>{R.carSec=d.k;render()},
   carFilter:d=>{R.carFilter=d.k;render()},toggleInactive:()=>{R.showInactive=!R.showInactive;render()},
   rep:d=>{R.rep=d.k;render()},
@@ -2145,9 +2157,9 @@ const ACT={
   pf:d=>{R.pf=d.k;render()},
   copyText:()=>{const t=$('#f_msg');const done=()=>toast('Копирано');try{navigator.clipboard.writeText(t.value).then(done,()=>{t.select();document.execCommand('copy');done()})}catch(e){t.select();document.execCommand('copy');done()}}
 };
-document.addEventListener('scroll',e=>{const r=e.target;if(!r||r.id!=='heroRail')return;clearTimeout(r._t);
+document.addEventListener('scroll',e=>{const r=e.target;if(!r||(r.id!=='heroRail'&&r.id!=='listRail'))return;clearTimeout(r._t);
   r._t=setTimeout(()=>{const sl=[...r.children],mid=r.scrollLeft+r.clientWidth/2;let best=sl[0];for(const x of sl)if(Math.abs(x.offsetLeft+x.clientWidth/2-mid)<Math.abs(best.offsetLeft+best.clientWidth/2-mid))best=x;
-    if(best&&best.dataset.id!==R.carId){R.carId=best.dataset.id;render()}},140)},true);
+    const k=r.id==='listRail'?'listCar':'carId';if(best&&best.dataset.id!==R[k]){R[k]=best.dataset.id;render()}},140)},true);
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;e.preventDefault();const f=ACT[b.dataset.act];if(f)f(b.dataset,b)});
 document.addEventListener('change',e=>{const t=e.target;if(t.closest('#sheet'))return;
   if(t.dataset.bind){R[t.dataset.bind]=t.value;if(t.dataset.bind==='repMonth'&&t.value){R.repFrom=t.value+'-01';R.repTo=monthEnd(t.value)}render()}
