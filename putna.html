@@ -645,6 +645,7 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .dc-bar{background:#EEF2F6!important;box-shadow:none!important}
 
 .dcard .dc-left.dc-ok{color:#1FA35A!important}.dcard .dc-left.dc-warn{color:#F08A18!important}.dcard .dc-left.dc-crit{color:#E0342F!important}.dcard .dc-left.dc-none{color:#8A97AB!important;font-weight:600}
+.dc-ic.oil svg{width:38px;height:38px}.dc-ic.pads svg{width:38px;height:38px}
 </style>
 </head>
 <body>
@@ -1399,7 +1400,8 @@ function secService(c,m){
   <div class="sec"><div class="sec-head"><h3>Сервизи и разходи</h3>${m?`<button class="btn sm" data-act="expense" data-car="${c.id}">+ Друг разход</button>`:''}</div>
   ${recs.length?`<div class="list">${recs.map(e=>`<div class="li"><div class="l"><b>${e.t==='service'?esc(e.what||'Сервиз'):esc(e.cat||'Разход')}</b><span>${fd(e.date)}${e.km?' · '+fint(e.km)+' км':''}${e.place?' · '+esc(e.place):''}${e.items?.length?' · '+e.items.map(k=>SVC.find(x=>x[0]===k)?.[1]).join(', '):''}</span>${e.note?`<span>${esc(e.note)}</span>`:''}</div><div class="r"><b class="num">${eur(e.t==='service'?e.cost:e.sum)}</b><span class="pill">${e.t==='service'?'Сервиз':'Разход'}</span>${m?`<button class="linkbtn small" data-act="delEntry" data-car="${e.carId}" data-id="${e.id}">Изтрий</button>`:''}</div></div>`).join('')}</div>`:'<div class="empty">Няма въведени сервизи и разходи.</div>'}</div>`)+shopsBlock();
 }
-const SVC_EMO={pads:'<svg viewBox="0 0 48 48" fill="none" stroke="#F58A07" stroke-linecap="round"><circle cx="24" cy="24" r="10.5" stroke-width="3.4"/><path d="M12.2 12.5a16.5 16.5 0 0 0 0 23" stroke-width="3.4"/><path d="M35.8 12.5a16.5 16.5 0 0 1 0 23" stroke-width="3.4"/><path d="M6.5 10.5a22 22 0 0 0 0 27" stroke-width="3.4" stroke-dasharray="4.2 3.6"/><path d="M41.5 10.5a22 22 0 0 1 0 27" stroke-width="3.4" stroke-dasharray="4.2 3.6"/></svg>',timing:'⚙️',battery:'<svg viewBox="0 0 48 48" fill="none" stroke="#F58A07" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="14" width="36" height="24" rx="3" stroke-width="3.4"/><path d="M12 14v-4h7v4M29 14v-4h7v4" stroke-width="3"/><path d="M12.5 26h7M16 22.5v7M28.5 26h7" stroke-width="3.2"/></svg>',other:'<svg viewBox="0 0 48 48" fill="none" stroke="#F58A07" stroke-linecap="round" stroke-linejoin="round"><path d="M29.5 8.5a9 9 0 0 0-8.3 12.3L8.6 33.4a3.6 3.6 0 0 0 5.1 5.1l12.6-12.6a9 9 0 0 0 12.3-8.3l-5.4 5.4-5.5-1.3-1.3-5.5Z" stroke-width="3.2"/></svg>'};
+const SVC_OIL='<svg viewBox="0 0 48 48" fill="none"><defs><linearGradient id="oc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD35C"/><stop offset="1" stop-color="#F29A12"/></linearGradient></defs><path d="M9.5 22 4.3 19.4a1.6 1.6 0 0 0-2.3 1.4v3.7l7.5 3.8" fill="none" stroke="#B86A00" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/><rect x="15" y="13.5" width="8.5" height="3.6" rx="1.3" fill="#8C5200"/><rect x="17.7" y="16.5" width="3" height="5" fill="#B86A00"/><path d="M8.5 21.5H29.5l6.4-4.4 9.5-2.9 1 2.1-9.4 5.6-6 10H11.2a2.7 2.7 0 0 1-2.7-2.7Z" fill="url(#oc)" stroke="#B86A00" stroke-width="1.3" stroke-linejoin="round"/><path d="M11 23.5h17.4l-1.5 2.3H11Z" fill="#fff" fill-opacity=".55"/><path d="M45 22.5s-2.6 3.4-2.6 5.2a2.6 2.6 0 0 0 5.2 0c0-1.8-2.6-5.2-2.6-5.2Z" fill="#F2B21B" stroke="#B86A00" stroke-width="1"/></svg>';
+const SVC_EMO={pads:'<svg viewBox="0 0 48 48" fill="none"><circle cx="22" cy="26" r="17" fill="#C9D1DC" stroke="#7F8DA0" stroke-width="1.6"/><circle cx="22" cy="26" r="12.5" fill="#E6EBF1" stroke="#A3AFBF" stroke-width="1"/><g fill="#98A5B6"><circle cx="22" cy="16.5" r="1.5"/><circle cx="31.5" cy="26" r="1.5"/><circle cx="22" cy="35.5" r="1.5"/><circle cx="12.5" cy="26" r="1.5"/><circle cx="28.7" cy="19.3" r="1.2"/><circle cx="28.7" cy="32.7" r="1.2"/><circle cx="15.3" cy="32.7" r="1.2"/><circle cx="15.3" cy="19.3" r="1.2"/></g><circle cx="22" cy="26" r="6" fill="#fff" stroke="#7F8DA0" stroke-width="1.4"/><g fill="#5D6B80"><circle cx="22" cy="23" r="1"/><circle cx="24.9" cy="25.1" r="1"/><circle cx="23.8" cy="28.4" r="1"/><circle cx="20.2" cy="28.4" r="1"/><circle cx="19.1" cy="25.1" r="1"/></g><path d="M30 6.5c7 1.6 12.4 7.2 13.6 14.4.3 1.6-.9 3-2.5 3H37c-1.3 0-2.3-.9-2.6-2.1-.8-3.6-3.6-6.5-7.2-7.4-1.2-.3-2.1-1.4-2.1-2.6V9c0-1.6 1.4-2.8 2.9-2.5Z" fill="#E5484D" stroke="#A8232A" stroke-width="1.2"/><path d="M31 9.6c3.8 1.4 6.8 4.4 8.1 8.2" stroke="#fff" stroke-opacity=".6" stroke-width="1.6" stroke-linecap="round"/></svg>',timing:'⚙️',battery:'🔋',other:'🛠️'};
 const SVC_CARDS=[['oil','Масло и филтри',['oil']],['pads','Накладки и дискове',['pads','padsR','discs']],['timing','Ангренаж',['timing']],['battery','Акумулатор',['battery']],['other','Други ремонти',['other']]];
 const SVC_LBL=Object.fromEntries(SVC_CARDS.map(x=>[x[0],x[1]]));
 const SVC_SHORT={pads:'Предни накладки',padsR:'Задни накладки',discs:'Дискове'};
@@ -1411,14 +1413,14 @@ const LV_RANK={crit:3,warn:2,ok:1,none:0};
 function svcCards(c,m){
   return `<div class="dcards">${SVC_CARDS.map(([g,l,keys])=>{const R2=keys.map(k=>[k,svcRow(c,k)]);
     const lvl=R2.reduce((w,[,r])=>LV_RANK[r.lvl]>LV_RANK[w]?r.lvl:w,'none');
-    const ic=g==='oil'?FL_IC.oil:SVC_EMO[g];
+    const ic=g==='oil'?SVC_OIL:SVC_EMO[g];
     const hint=lvl==='crit'?'Просрочена':lvl==='warn'?'Наближава':'';
     const row=(k,lab)=>{const r=svcRow(c,k).st,rl=svcRow(c,k).lvl;if(!r)return `<div class="dc-r"><span>${lab}</span><b class="dc-left dc-none">Няма данни</b></div>`;
       return `${r.nextKm!=null?`<div class="dc-r"><span>${lab}</span><b class="dc-left dc-${rl}">${fint(r.nextKm)} км</b></div>`:''}${r.nextDate?`<div class="dc-r"><span>${r.nextKm!=null?'или до дата':lab}</span><b class="dc-left dc-${rl}">${fd(r.nextDate)}</b></div>`:''}`};
     const lv=svcOf(c,keys[0]);
     const body=(g==='battery'?`<div class="dc-r"><span>Сменен</span><b>${lv.lastDate||lv.lastKm!=null?[lv.lastDate?fd(lv.lastDate):'',lv.lastKm!=null?fint(lv.lastKm)+' км':''].filter(Boolean).join(' · '):'—'}</b></div>`:'')+
       (keys.length===1?row(keys[0],'Следваща смяна'):keys.map(k=>row(k,SVC_SHORT[k])).join(''));
-    return `<div class="dcard ${lvl}"><div class="dc-h"><span class="dc-ic ${g==='timing'?'':'svg '}${g}">${ic}</span><b>${l}</b>${hint?`<em class="dc-tag">${hint}</em>`:''}</div>
+    return `<div class="dcard ${lvl}"><div class="dc-h"><span class="dc-ic ${g==='oil'||g==='pads'?'svg ':''}${g}">${ic}</span><b>${l}</b>${hint?`<em class="dc-tag">${hint}</em>`:''}</div>
       ${body}
 </div>`}).join('')}</div>`;
 }
