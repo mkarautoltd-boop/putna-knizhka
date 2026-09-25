@@ -464,6 +464,35 @@ body:not(.noscroll){overflow:visible!important;overflow-x:clip!important}
 .tip-e{font-size:54px;line-height:1;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4));position:relative;z-index:1}
 .tab[aria-current="true"] .temo{transform:translateY(-1px) scale(1.08)}
 .temo{transition:transform .15s}
+/* ---- прозорци (визия 4) ---- */
+.sheet-card{background:#EEF3F9;border-radius:26px 26px 0 0}
+.sheet-head{background:radial-gradient(circle at 105% -20%,rgba(255,153,90,.40) 0,rgba(255,153,90,0) 50%),linear-gradient(135deg,#0B2244 0%,#133A6E 70%,#1B4A8A 100%);padding:16px}
+.sheet-head h2{font-size:17px;line-height:1.25}
+.shemo{font-size:21px;line-height:1;margin-right:7px;vertical-align:-2px;font-family:"Apple Color Emoji","Noto Color Emoji",sans-serif}
+.x{background:rgba(255,255,255,.14);width:36px;height:36px;font-size:20px}
+.sheet-head::before{width:36px}
+#sheetForm{gap:14px;padding:18px 16px 16px}
+#sheetForm .fld>span{font-size:13px;font-weight:700;color:#5B6B80;letter-spacing:.01em}
+#sheetForm input,#sheetForm select,#sheetForm textarea{border:1.5px solid #DFE6EF;border-radius:14px;min-height:52px;padding:12px 14px;background:#fff;box-shadow:0 1px 2px rgba(15,35,65,.04)}
+#sheetForm input:focus,#sheetForm select:focus,#sheetForm textarea:focus{border-color:#3E7ED6;box-shadow:0 0 0 4px rgba(62,126,214,.15)}
+#sheetForm .fld small{font-size:12.5px;line-height:1.35}
+.fld:has(.mk-row){background:#fff;border-radius:20px;padding:14px;box-shadow:0 10px 24px -14px rgba(15,35,65,.35),0 1px 2px rgba(15,35,65,.05);gap:10px}
+.fld:has(.mk-row)>span{font-size:15px!important;color:#0F1B2D!important}
+.fld:has(.mk-row)>span::before{content:"🔢";margin-right:7px;font-family:"Apple Color Emoji","Noto Color Emoji",sans-serif}
+.mk-row input{font-size:26px!important;font-weight:800!important;letter-spacing:.01em;min-height:60px!important;background:#F6F9FC!important;text-align:center}
+.mk-row input::placeholder{color:#B5C0CE;font-weight:600;font-size:18px}
+.mk-row .btn{min-height:60px!important;border-radius:16px;padding:0 16px;font-size:16px}
+.btn.go{background:linear-gradient(135deg,#34B65F,#1E9A4A);border:0;box-shadow:0 8px 18px -8px rgba(30,154,74,.7)}
+.calc{background:#fff;color:#1F5FBF;border-radius:16px;padding:12px 14px;box-shadow:inset 0 0 0 1.5px #DCE8FA;display:block;line-height:1.5}
+.calc .cemo{font-family:"Apple Color Emoji","Noto Color Emoji",sans-serif;margin-right:6px}
+.calc .num{font-size:18px;font-weight:800}
+.calc small{font-size:13px;color:#6A8BC0}
+.calc .cgo{color:#1E9A4A;margin-top:4px;padding-top:6px;border-top:1px dashed #DCE8FA}
+#sheetForm fieldset{border-radius:20px;padding:16px;box-shadow:0 1px 2px rgba(15,35,65,.05)}
+#sheetForm legend{font-size:15px}
+.sheet-actions{background:linear-gradient(180deg,rgba(238,243,249,0) 0,#EEF3F9 18px);padding-top:22px;gap:6px}
+.sheet-actions .btn{min-height:54px;border-radius:16px;font-size:17px}
+.sheet-actions .btn.ghost{background:transparent;border:0;color:#5B6B80;min-height:44px;font-size:16px}
 </style>
 </head>
 <body>
@@ -765,9 +794,10 @@ const lvlPill=l=>l==='crit'?'<span class="pill crit">Критично</span>':l=
 
 /* ============ sheet ============ */
 let sheetSubmit=null;
+const SHEET_EMO={'Сутрешен километраж':'🛣️','Пътен запис':'📝','Проблем':'⚠️','Сигнал за проблем':'⚠️','Периодична проверка':'🔍','Проверка на гумите':'🛞','Проверка на светлините':'💡','Сервиз':'🔧','Смяна на гуми':'🛞','Ще управлявам автомобил':'🔑','Документи':'📄','Нова задача':'📋','Ново съобщение':'💬','Настройки':'⚙️','Смяна на парола':'🔒','Друг разход':'💶','Нов автомобил':'🚗','Редактирай автомобил':'🚗','Сервизни интервали':'🗓️','Нов потребител':'👤','Редактирай потребител':'👤'};
 function openSheet(title,html,onSubmit,label='Запази'){
   {const of=$('#sheetForm'),nf=of.cloneNode(false);of.parentNode.replaceChild(nf,of);nf.addEventListener('submit',onSheetSubmit)}
-  $('#sheetTitle').textContent=title;
+  const em=SHEET_EMO[title];$('#sheetTitle').innerHTML=(em?`<span class="shemo">${em}</span>`:'')+esc(title);
   $('#sheetForm').innerHTML=html+`<div class="err" id="formErr" hidden></div>`+
     (onSubmit?`<div class="sheet-actions"><button type="button" class="btn ghost" data-act="closeSheet">Отказ</button><button type="submit" class="btn go" id="sheetOk">${esc(label)}</button></div>`
              :`<div class="sheet-actions solo"><button type="button" class="btn" data-act="closeSheet">Затвори</button></div>`);
@@ -1387,7 +1417,7 @@ const openTrip=guard((carId,morning)=>{
   const cf=carField(carId),car=S.cars[cf.id];
   const kmBox=`<div class="calc" id="kmCalc"></div><div class="note" id="kmWarn" hidden></div>`;
   const html=cf.html+
-    (morning?`${fld('Начален километраж днес',`<div class="mk-row">${ninp('endKm','','required')}<button type="submit" class="btn go">Потвърди</button></div>`,'Километражът сутрин, преди да тръгнеш. Изминатите км за предния ден се смятат сами.')}<input type="hidden" name="startKm" id="f_startKm" value="${car.odo||0}">`+kmBox:'')+
+    (morning?`${fld('Начален километраж днес',`<div class="mk-row">${ninp('endKm','','required placeholder="напр. '+fint((car.odo||0)+50)+'"')}<button type="submit" class="btn go">✓ Потвърди</button></div>`,'Километражът сутрин, преди да тръгнеш. Изминатите км за предния ден се смятат сами.')}<input type="hidden" name="startKm" id="f_startKm" value="${car.odo||0}">`+kmBox:'')+
     `<div id="dz">${driverField(car)}</div>`+
     `${fld('Дата',inp('date',today(),'date'))}<input type="hidden" name="time" value="${nowTime()}">${fld('Вид път',sel('road',Object.entries(ROADS),'mixed'))}`+
     (morning?'':`<div class="grid2">${fld('Начален км',ninp('startKm',car.odo||''))}${fld('Краен км',ninp('endKm',''))}</div>`+kmBox)+
@@ -1411,7 +1441,7 @@ const openTrip=guard((carId,morning)=>{
     const calc=$('#kmCalc'),w=$('#kmWarn');
     if(morning){form.startKm.value=c.odo||0}
     if(morning){const pm=entries().filter(x=>x.carId===c.id&&x.t==='trip'&&x.morning&&!x.virtual).pop();
-      calc.innerHTML=`Предишен начален: <span class="num">${pm?fint(pm.reading)+' км':'—'}</span>${pm?' ('+fd(pm.date)+')':''}`+(pm&&e!=null&&!isNaN(e)&&e>=pm.reading?` · Изминати на ${fd(pm.date)}: <span class="num">${fint(e-pm.reading)} км</span>`:'');}
+      calc.innerHTML=`<div><span class="cemo">📍</span>Предишен начален: <span class="num">${pm?fint(pm.reading)+' км':'—'}</span>${pm?' <small>('+fd(pm.date)+')</small>':''}</div>`+(pm&&e!=null&&!isNaN(e)&&e>=pm.reading?`<div class="cgo"><span class="cemo">✅</span>Изминати на ${fds(pm.date)}: <span class="num">${fint(e-pm.reading)} км</span></div>`:'');}
     else calc.innerHTML=`Предишен запис: <span class="num">${fint(c.odo)} км</span>`+(e!=null&&!isNaN(e)&&s!=null?` · Изминати: <span class="num">${fint(e-s)} км</span>`:'');
     w.hidden=true;
     if(s!=null&&!isNaN(s)&&s<(c.odo||0)){w.textContent=`Началният км е под последния запис (${fint(c.odo)} км) – записът ще бъде отказан.`;w.hidden=false}
