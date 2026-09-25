@@ -1370,7 +1370,7 @@ function secService(c,m){
   const rows=SVC.map(([k,l])=>{const sv=c.service?.[k]||{},st=svcStatus(sv,c.odo);
     return `<tr><td><b>${l}</b></td><td>${fd(sv.lastDate)}</td><td class="num r">${fint(sv.lastKm)}</td><td>${sv.intKm?fint(sv.intKm)+' км':''}${sv.intKm&&sv.intMonths?' / ':''}${sv.intMonths?sv.intMonths+' мес.':''}</td><td class="num r">${st?.nextKm!=null?fint(st.nextKm):'—'}</td><td>${fd(st?.nextDate)}</td><td class="num r">${st?.remKm!=null?fint(st.remKm):'—'}</td><td>${st?lvlPill(st.lvl):'<span class="pill">Няма данни</span>'}</td></tr>`}).join('');
   const recs=entries().filter(e=>e.carId===c.id&&(e.t==='service'||e.t==='expense')).slice().reverse();
-  return (`<div class="sec"><div class="sec-head"><h3>Сервизни интервали</h3>${m?`<div class="row"><button class="btn sm" data-act="svcIntervals" data-car="${c.id}">Интервали</button><button class="btn sm primary" data-act="service" data-car="${c.id}">+ Отбележи смяна</button></div>`:''}</div>
+  return (`<div class="sec"><div class="sec-head"><h3>Сервизни интервали</h3>${m?`<div class="row"><button class="btn sm" data-act="svcIntervals" data-car="${c.id}">Интервали</button><button class="btn sm primary" data-act="service" data-car="${c.id}">+ Сервиз</button></div>`:''}</div>
   ${svcCards(c,m)}
   <p class="small muted">Следващият сервиз е което настъпи първо: километрите или датата.</p></div>
   <div class="sec"><div class="sec-head"><h3>Сервизи и разходи</h3>${m?`<button class="btn sm" data-act="expense" data-car="${c.id}">+ Друг разход</button>`:''}</div>
