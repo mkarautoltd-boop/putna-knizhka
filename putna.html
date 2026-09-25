@@ -625,6 +625,7 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .dcard .dc-ic{box-shadow:0 4px 10px -4px var(--dc);background:#fff!important}
 .dc-bar{background:rgba(255,255,255,.8);box-shadow:inset 0 0 0 1px var(--dcs)}
 .dc-btn{background:linear-gradient(100deg,var(--dc2) 0%,var(--dc) 70%)!important}
+.dc-ic.pads svg{width:40px;height:40px}
 </style>
 </head>
 <body>
@@ -1376,7 +1377,7 @@ function secService(c,m){
   <div class="sec"><div class="sec-head"><h3>Сервизи и разходи</h3>${m?`<button class="btn sm" data-act="expense" data-car="${c.id}">+ Друг разход</button>`:''}</div>
   ${recs.length?`<div class="list">${recs.map(e=>`<div class="li"><div class="l"><b>${e.t==='service'?esc(e.what||'Сервиз'):esc(e.cat||'Разход')}</b><span>${fd(e.date)}${e.km?' · '+fint(e.km)+' км':''}${e.place?' · '+esc(e.place):''}${e.items?.length?' · '+e.items.map(k=>SVC.find(x=>x[0]===k)?.[1]).join(', '):''}</span>${e.note?`<span>${esc(e.note)}</span>`:''}</div><div class="r"><b class="num">${eur(e.t==='service'?e.cost:e.sum)}</b><span class="pill">${e.t==='service'?'Сервиз':'Разход'}</span>${m?`<button class="linkbtn small" data-act="delEntry" data-car="${e.carId}" data-id="${e.id}">Изтрий</button>`:''}</div></div>`).join('')}</div>`:'<div class="empty">Няма въведени сервизи и разходи.</div>'}</div>`)+shopsBlock();
 }
-const SVC_EMO={pads:'🛑',timing:'⚙️',other:'🧰'};
+const SVC_EMO={pads:'<svg viewBox="0 0 48 48" fill="none"><circle cx="22" cy="26" r="17" fill="#C9D1DC" stroke="#8A97AB" stroke-width="1.6"/><circle cx="22" cy="26" r="12.5" fill="#E3E8EF" stroke="#A3AFBF" stroke-width="1"/><g fill="#A3AFBF"><circle cx="22" cy="16.5" r="1.4"/><circle cx="31.5" cy="26" r="1.4"/><circle cx="22" cy="35.5" r="1.4"/><circle cx="12.5" cy="26" r="1.4"/><circle cx="28.7" cy="19.3" r="1.1"/><circle cx="28.7" cy="32.7" r="1.1"/><circle cx="15.3" cy="32.7" r="1.1"/><circle cx="15.3" cy="19.3" r="1.1"/></g><circle cx="22" cy="26" r="6" fill="#fff" stroke="#8A97AB" stroke-width="1.4"/><g fill="#6B778A"><circle cx="22" cy="23" r="1"/><circle cx="24.9" cy="25.1" r="1"/><circle cx="23.8" cy="28.4" r="1"/><circle cx="20.2" cy="28.4" r="1"/><circle cx="19.1" cy="25.1" r="1"/></g><path d="M30 6.5c7 1.6 12.4 7.2 13.6 14.4.3 1.6-.9 3-2.5 3H37c-1.3 0-2.3-.9-2.6-2.1-.8-3.6-3.6-6.5-7.2-7.4-1.2-.3-2.1-1.4-2.1-2.6V9c0-1.6 1.4-2.8 2.9-2.5Z" fill="#E5484D" stroke="#B8282D" stroke-width="1.2"/><path d="M31 9.6c3.8 1.4 6.8 4.4 8.1 8.2" stroke="#fff" stroke-opacity=".55" stroke-width="1.6" stroke-linecap="round"/></svg>',timing:'⚙️',other:'🧰'};
 const SVC_CARDS=[['oil','Масло и филтри'],['pads','Накладки'],['timing','Ангренаж'],['other','Други ремонти']];
 const SVC_LBL=Object.fromEntries(SVC_CARDS);
 function svcCards(c,m){
@@ -1387,7 +1388,7 @@ function svcCards(c,m){
     let pc=null;if(st){const a=[];if(st.nextKm!=null&&sv.intKm)a.push(1-st.remKm/sv.intKm);if(st.days!=null&&sv.intMonths)a.push(1-st.days/(sv.intMonths*30.4));if(a.length)pc=Math.max(0,Math.min(1,Math.max(...a)))}
     const over=st&&((st.remKm!=null&&st.remKm<0)||(st.days!=null&&st.days<0));
     const hint=!st?'':over?'Просрочена':lvl==='warn'?'Наближава':'';
-    return `<div class="dcard sv ${lvl}"><div class="dc-h"><span class="dc-ic${k==='oil'?' svg':''}">${ic}</span><b>${l}</b>${hint?`<em class="dc-tag">${hint}</em>`:''}</div>
+    return `<div class="dcard sv ${lvl}"><div class="dc-h"><span class="dc-ic${k==='oil'||k==='pads'?' svg':''}${k==='pads'?' pads':''}">${ic}</span><b>${l}</b>${hint?`<em class="dc-tag">${hint}</em>`:''}</div>
       <div class="dc-r"><span>Следваща смяна</span><b class="dc-left">${next||'Няма данни'}</b></div>
       ${pc!=null?`<div class="dc-bar"><i style="width:${Math.round(pc*100)}%"></i></div>`:''}
       ${m?`<button class="dc-btn" data-act="service" data-car="${c.id}" data-k="${k}">Отбележи смяна<span>${icon('plus')}</span></button>`:''}</div>`}).join('')}</div>`;
