@@ -535,7 +535,7 @@ body:not(.noscroll){overflow:visible!important;overflow-x:clip!important}
 .vhero-top{display:flex;align-items:center;gap:14px;padding-right:42px}
 .vhero-logo{width:50px;height:50px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:800;font-size:24px;color:#3A4658;background:radial-gradient(circle at 35% 30%,#fff 0,#E3E8EF 45%,#AEB8C6 100%);box-shadow:inset 0 -2px 4px rgba(0,0,0,.18),0 3px 8px rgba(15,35,65,.25);border:2px solid #fff}
 .vhero-name{font-size:19px;font-weight:800;letter-spacing:.02em;line-height:1.15}
-.vhero-reg{margin:2px 0 4px}
+.vhero-reg{font-size:26px;font-weight:800;letter-spacing:.01em;margin:2px 0}
 .plate.big{height:38px;font-size:24px;border-width:2px;border-radius:8px;padding-right:10px;gap:8px;box-shadow:0 2px 6px rgba(15,35,65,.15)}
 .plate.big i{font-size:12px;padding:0 6px 5px}
 .plate.big i::before{font-size:10px;top:4px}
@@ -1128,8 +1128,8 @@ function carHero(c,act){
   return `<div class="vhero"${act?` data-act="openCar" data-car="${c.id}"`:''}>${bg}
     ${m&&!act?`<button class="vhero-gear" data-act="editCar" data-car="${c.id}" aria-label="Редактирай">${icon('gear')}</button>`:''}
     <div class="vhero-top"><span class="vhero-logo">${esc(ini)}</span><b class="vhero-name">${esc(carName(c).toUpperCase())}</b></div>
-    <div class="vhero-reg"><span class="plate big"><i>BG</i>${esc(regText(c.reg)).replace(/ /g,'\u2009')}</span></div>
-    <div class="vhero-row"><span>${drvIds(c).length>1?'Шофьори':'Шофьор'}</span><b>${esc(drvIds(c).map(uname).join(', ')||'—')}</b></div>
+    <div class="vhero-reg">${esc(regText(c.reg))}</div>
+    <div class="vhero-row"><span>Пробег</span><b>${fint(c.odo)} км</b></div>
     <div class="vhero-row"><span>Гориво</span><b>${esc(c.fuel||'—')}</b></div>
   </div>`;
 }
@@ -1215,7 +1215,7 @@ function vCar(){
   const m=canManage(c),tk=tank(c),lvl=c.active===false?'off':carLevel(c);
   HEAD={title:isStaff()?'Детайли за автомобил':'Моят автомобил',back:(isStaff()||scopeCars().length>1)?R.carBack:'home'};
   const secs=[['overview','Информация'],['book','Книжка'],['fuel','Гориво'],['service','Сервиз'],['docs','Документи'],['tyres','Гуми'],['problems','Проблеми'],['history','История']];
-  let h=heroRail(c)+`<div class="vhero-meta"><span class="status ${lvl}">${lvl==='off'?'Неактивен':lvl==='ok'?'Изправен':lvl==='crit'?'Критично':'Има предстоящи задачи'}</span><span class="small muted">${esc(dname(c.dept))} · ${fint(c.odo)} км</span>
+  let h=heroRail(c)+`<div class="vhero-meta"><span class="status ${lvl}">${lvl==='off'?'Неактивен':lvl==='ok'?'Изправен':lvl==='crit'?'Критично':'Има предстоящи задачи'}</span><span class="small muted">Отдел: ${esc(dname(c.dept))}</span>
     ${c.session?`<span class="pill acc">Временно: ${esc(uname(c.session.userId))} от ${fds(c.session.date)} ${esc(c.session.time||'')}</span>`:''}</div>
     ${m?`<div class="grid2"><button class="btn sm" data-act="editCar" data-car="${c.id}">Редактирай</button><button class="btn sm" data-act="toggleCar" data-car="${c.id}">${c.active===false?'Активирай':'Деактивирай'}</button></div>`:''}`;
   if(c.session)h+=sessionCard(c);
