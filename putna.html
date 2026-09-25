@@ -338,6 +338,17 @@ body{background:linear-gradient(180deg,#E4ECF6 0,#EEF3F9 320px,#F2F5FA 100%) fix
 .fl-ic.oil{background:linear-gradient(145deg,#FFB547,#E07B00)}
 .fl-ic.af{background:linear-gradient(145deg,#4FD1E8,#0E8FB0)}
 .fl-ic.ty{background:linear-gradient(145deg,#5B9BFF,#1E5FD0)}
+.fl-ic.lt{background:linear-gradient(145deg,#FFD84D,#E0A800)}
+.lvl label[class^=lt-]{text-align:center}
+.lvl label.lt-ok{--c:#1E9E4A}.lvl label.lt-bad{--c:#E5484D}.lvl label.lt-no{--c:#E08A00}
+.lt-x{display:none;flex-direction:column;gap:10px}
+.fluid:has(input[value=bad]:checked) .lt-x{display:flex}
+.lt-q{font-size:13px;font-weight:600;color:var(--muted)}
+.lt-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lt-list input{position:absolute;opacity:0;pointer-events:none}
+.lt-list label{padding:10px 8px;border-radius:12px;border:1.5px solid var(--line);background:#F6F8FB;text-align:center;font-weight:700;font-size:14px;color:#5D6B80;cursor:pointer}
+.lt-list input:checked+label{border-color:#E5484D;color:#E5484D;background:#FDECEC;box-shadow:0 0 0 3px rgba(229,72,77,.15)}
+.fluid:has(input[value=bad]:checked) .fl-warn{display:block}
 .fluid .kv{margin:0}
 .fl-h b{font-size:17px}.fl-h small{display:block;color:var(--muted);font-weight:500;font-size:13px}
 .lvl{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -609,7 +620,7 @@ function carAlerts(car){
   if(car.tyreSeason!=='all'&&(car.tyreSeason?car.tyreSeason!==tgt:(tm===10||tm===4)))
     out.push({lvl:'warn',kind:'tyres',car,text:tgt==='winter'?'Смяна на гуми: летни → зимни':'Смяна на гуми: зимни → летни',sub:'Сезонно напомняне'});
   {const lc=lastOf(car.id,'check');const age=lc?daysBetween(lc.date,td):null;
-    if(!lc||age>=s.pressureDays)out.push({lvl:'warn',kind:'pressure',car,text:'Периодична проверка: масло, антифриз, гуми',sub:lc?`Последна преди ${age} дни (${fd(lc.date)})`:'Още няма отбелязана проверка'});
+    if(!lc||age>=s.pressureDays)out.push({lvl:'warn',kind:'pressure',car,text:'Периодична проверка: масло, антифриз, гуми, светлини',sub:lc?`Последна преди ${age} дни (${fd(lc.date)})`:'Още няма отбелязана проверка'});
     if(lc)for(const fk of['oil','af','ty']){const F=FLUIDS[fk],v=lc[F.k];if(!v)continue;
       const tu=entries().filter(e=>e.carId===car.id&&e.t==='topup'&&e.fluid===fk&&(e.date>lc.date||(e.date===lc.date&&(e.ts||'')>(lc.ts||'')))).pop();
       let vv=v,topped=!!lc[F.add]||!!tu;
@@ -626,6 +637,20 @@ function carAlerts(car){
           sub:`${tu&&tu.lvl?'Гумите проверени на '+fd(tu.date)+' от '+uname(tu.driver||tu.by):'Проверка на '+fd(lc.date)+' от '+uname(lc.driver||lc.by)}${tu&&!tu.lvl?` · ${F.topDone} на ${fd(tu.date)} от ${uname(tu.driver||tu.by)}`:lc[F.add]?` · ${F.topDone} при проверката`:''}`});
       }else if(!good&&!topped)
         out.push({lvl:(vv==='min'||vv==='low')?'crit':'warn',kind:'fluid',fluid:fk,key:F.k+':'+lc.id,car,text:`${F.name}: ${what} ${L} – ${F.remind}`,sub:`Натисни тук, когато ${F.remind==='надуй'?'надуеш':'долееш'}`});
+    }
+    if(lc&&lc.ltLvl){
+      const tu=entries().filter(e=>e.carId===car.id&&e.t==='topup'&&e.fluid==='lt'&&(e.date>lc.date||(e.date===lc.date&&(e.ts||'')>(lc.ts||'')))).pop();
+      let v=lc.ltLvl,bad=lc.ltBad||[],fixed=!!lc.ltFix,src=lc;
+      if(tu){if(tu.lvl){v=tu.lvl;bad=tu.ltBad||[];fixed=!!tu.fixed;src=tu}else fixed=true}
+      const which=ltNames(bad),key='ltLvl:'+lc.id+(tu?':'+tu.id:''),who=`${fd(src.date)} от ${uname(src.driver||src.by)}`;
+      if(v==='no'){
+        if(isStaff())out.push({lvl:'warn',kind:'fluid',fluid:'lt',key,car,text:'Светлини: не са проверени',sub:`Проверка на ${who} – светлините са пропуснати`});
+        else out.push({lvl:'warn',kind:'fluid',fluid:'lt',ltNo:true,key,car,text:'Светлини: не са проверени – провери',sub:'Натисни тук, когато провериш светлините'});
+      }else if(isStaff())
+        out.push({lvl:(v==='ok'||fixed)?'good':'crit',kind:'fluid',fluid:'lt',key,car,text:v==='ok'?'Светлини: всички светят':fixed?'Светлини: сменена крушка':'Светлини: изгоряла крушка',
+          sub:`${which&&v!=='ok'?'Не светеше: '+which+' · ':''}Проверка на ${who}${tu&&!tu.lvl?` · сменена на ${fd(tu.date)} от ${uname(tu.driver||tu.by)}`:fixed?' · сменена при проверката':''}`});
+      else if(v==='bad'&&!fixed)
+        out.push({lvl:'crit',kind:'fluid',fluid:'lt',key,car,text:'Светлини: смени крушката',sub:`${which?'Не свети: '+which+' · ':''}Натисни тук, когато я смениш`});
     }}
   for(const p of Object.values(S.problems)){if(p.carId!==car.id||p.status==='resolved')continue;
     out.push({lvl:p.priority==='high'?'crit':'warn',kind:'problem',id:p.id,car,text:`Ремонт: ${p.cat}${p.desc?' – '+p.desc.slice(0,60):''}`,sub:`${PSTAT[p.status]||'Нов'} · сигнал от ${uname(p.by)} на ${fd(p.date)}`});}
@@ -924,7 +949,7 @@ function alertAct(a){
   if(a.kind==='svc')return m?`data-act="service" data-car="${c}"`:`data-act="openCar" data-car="${c}"`;
   if(a.kind==='tyres')return `data-act="tyres" data-car="${c}"`;
   if(a.kind==='pressure')return `data-act="check" data-car="${c}"`;
-  if(a.kind==='fluid')return isStaff()?`data-act="openCar" data-car="${c}"`:a.tyNo?`data-act="tyCheck" data-car="${c}"`:`data-act="topup" data-car="${c}" data-fluid="${a.fluid}"`;
+  if(a.kind==='fluid')return isStaff()?`data-act="openCar" data-car="${c}"`:a.tyNo?`data-act="tyCheck" data-car="${c}"`:a.ltNo?`data-act="ltCheck" data-car="${c}"`:`data-act="topup" data-car="${c}" data-fluid="${a.fluid}"`;
   if(a.kind==='problem')return `data-act="viewProblem" data-id="${a.id}"`;
   return `data-act="openCar" data-car="${c}"`;
 }
@@ -1084,7 +1109,7 @@ function entryText(e){
     case 'expense':return `Разход: ${e.cat} · ${eur(e.sum)}`;
     case 'tyres':return `Гумите са сменени: ${e.kind==='winter'?'летни → зимни':'зимни → летни'} при ${fint(e.km)} км`;
     case 'topup':return e.lvl?`${e.text} при ${fint(e.km)} км`:`${(FLUIDS[e.fluid]||{}).hist||'Доливане'} при ${fint(e.km)} км${e.note?' · '+e.note:''}`;
-    case 'check':return `Проверка (${e.oil===undefined?'гуми':'масло, антифриз, гуми'}) при ${fint(e.km)} км${e.oilLvl?' · масло: '+LVLTXT[e.oilLvl]:''}${e.afLvl?' · антифриз: '+LVLTXT[e.afLvl]:''}${e.tyLvl?' · налягане: '+LVLTXT[e.tyLvl]:''}${e.oilAdd?' · долято масло':''}${e.afAdd?' · долят антифриз':''}${e.inflated?' · надути гуми':''}${e.note?' · '+e.note:''}`;
+    case 'check':return `Проверка (${e.oil===undefined?'гуми':'масло, антифриз, гуми'}) при ${fint(e.km)} км${e.oilLvl?' · масло: '+LVLTXT[e.oilLvl]:''}${e.afLvl?' · антифриз: '+LVLTXT[e.afLvl]:''}${e.tyLvl?' · налягане: '+LVLTXT[e.tyLvl]:''}${e.oilAdd?' · долято масло':''}${e.afAdd?' · долят антифриз':''}${e.inflated?' · надути гуми':''}${e.ltLvl?' · светлини: '+(e.ltLvl==='ok'?'светят':e.ltLvl==='no'?'не са проверени':'не свети '+ltNames(e.ltBad)):''}${e.ltFix?' · сменена крушка':''}${e.note?' · '+e.note:''}`;
     case 'session':return e.phase==='start'?`Поемане на автомобила: ${uname(e.user)} при ${fint(e.km)} км${e.note?' · '+e.note:''}`:`Приключено управление: ${uname(e.user)} при ${fint(e.km)} км`;
     case 'edit':return e.text||'Промяна';
     default:return e.text||e.t;
@@ -1382,6 +1407,14 @@ const FL_IC={
  oil:'<svg viewBox="0 0 32 32" fill="none"><path d="M5 13h13l3.5-3.5 7 2.6-6.5 9.4H7.5A2.5 2.5 0 0 1 5 19V13Z" fill="#fff" fill-opacity=".95"/><path d="M9 13V10h6v3" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.5 9h9" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><path d="M28.5 16.5c0 0-1.8 2.4-1.8 3.6a1.8 1.8 0 0 0 3.6 0c0-1.2-1.8-3.6-1.8-3.6Z" fill="#fff"/><rect x="9" y="15" width="6" height="2.2" rx="1.1" fill="#E07B00" fill-opacity=".55"/></svg>',
  af:'<svg viewBox="0 0 32 32" fill="none"><path d="M15 4.5v14.2a5 5 0 1 0 4 0V4.5a2 2 0 0 0-4 0Z" fill="#fff" fill-opacity=".95"/><circle cx="17" cy="23" r="3" fill="#0E8FB0" fill-opacity=".6"/><path d="M17 20V11" stroke="#0E8FB0" stroke-opacity=".6" stroke-width="2" stroke-linecap="round"/><path d="M21.5 8h3M21.5 12h3M21.5 16h3" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M3.5 22.5c1.3-1.2 2.7-1.2 4 0s2.7 1.2 4 0M3.5 27c1.3-1.2 2.7-1.2 4 0s2.7 1.2 4 0" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>'
 };
+FL_IC.lt='<svg viewBox="0 0 32 32" fill="none"><path d="M14 7C8 7 4.5 11 4.5 16s3.5 9 9.5 9c2 0 3-1 3-3V10c0-2-1-3-3-3Z" fill="#fff" fill-opacity=".95"/><path d="M20.5 10.5h7M20.5 16h7M20.5 21.5h7" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="11" cy="16" r="3" fill="#E0A800" fill-opacity=".55"/></svg>';
+/* светлини */
+const LIGHTS=[['low','Къси'],['high','Дълги'],['drl','Дневни'],['pos','Габарити'],['turn','Мигачи'],['stop','Стоп'],['plate','Номер']];
+const ltNames=a=>(a||[]).map(k=>(LIGHTS.find(x=>x[0]===k)||[])[1]).filter(Boolean).join(', ').toLowerCase();
+const ltPick=(pre,withNo)=>`<div class="lvl" style="grid-template-columns:repeat(${withNo?3:2},1fr)">${[['ok','Всички светят','✓'],['bad','Има изгоряла','✕'],...(withNo?[['no','Не са проверени','?']]:[])].map(([v,l,q])=>`<input type="radio" name="ltLvl" id="${pre}_${v}" value="${v}"><label class="lt-${v}" for="${pre}_${v}"><span class="q">${q}</span>${l}</label>`).join('')}</div>
+  <div class="lt-x"><div class="lt-q">Коя не свети? Избери една или повече.</div><div class="lt-list">${LIGHTS.map(([k,l])=>`<input type="checkbox" name="lt_${k}" id="${pre}x_${k}"><label for="${pre}x_${k}">${l}</label>`).join('')}</div>
+  <div class="fl-warn">Смени крушката възможно най-скоро.</div>${chk('ltFix','Смених крушката')}</div>`;
+const ltRead=f=>{if(!f.ltLvl)return null;const bad=f.ltLvl==='bad'?LIGHTS.map(x=>x[0]).filter(k=>f['lt_'+k]):[];if(f.ltLvl==='bad'&&!bad.length)fail('Избери коя лампа не свети.');return bad};
 FL_IC.ty='<svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" fill="#fff" fill-opacity=".95"/><circle cx="16" cy="16" r="7.2" fill="#1E5FD0" fill-opacity=".55"/><circle cx="16" cy="16" r="2.6" fill="#fff"/><path d="M16 3v4M16 25v4M3 16h4M25 16h4M6.8 6.8l2.8 2.8M22.4 22.4l2.8 2.8M6.8 25.2l2.8-2.8M22.4 9.6l2.8-2.8" stroke="#1E5FD0" stroke-opacity=".45" stroke-width="2.2" stroke-linecap="round"/></svg>';
 /* нива: масло, антифриз, гуми */
 const FLUIDS={
@@ -1389,6 +1422,7 @@ const FLUIDS={
    topT:'Доливане на масло',topB:'Долях масло',topDone:'долято',hist:'Долято масло',remind:'долей',addLabel:'Долях масло'},
  af:{k:'afLvl',add:'afAdd',name:'Антифриз',lvls:[['min','Мин',18],['mid','Средно',50],['max','Макс',85]],good:['max','mid'],warn:'Нивото е ниско – долей.',
    topT:'Доливане на антифриз',topB:'Долях антифриз',topDone:'долят',hist:'Долят антифриз',remind:'долей',addLabel:'Долях антифриз'},
+ lt:{name:'Светлини',topT:'Смяна на крушка',topB:'Смених крушката',topDone:'сменена',hist:'Сменена крушка',remind:'смени'},
  ty:{k:'tyLvl',add:'inflated',name:'Гуми',lvls:[['low','Ниско',25],['ok','Нормално',85],['no','Не са проверени',0]],good:['ok'],warn:'Налягането е ниско – надуй гумите.',
    topT:'Надуване на гумите',topB:'Надух гумите',topDone:'надути',hist:'Надути гуми',remind:'надуй',addLabel:'Надух гумите'}
 };
@@ -1404,13 +1438,17 @@ const openCheck=guard(carId=>{
   openSheet('Периодична проверка',cf.html+`<p class="small muted">Проверява се на всеки ${S.settings.pressureDays} дни. Отбележи какво си проверил.</p>
   <fieldset><legend>Масло и антифриз</legend>${fluidBox('oil','Масло в двигателя','Какво е нивото по щеката?')}${fluidBox('af','Антифриз','Какво е нивото в разширителния съд?')}</fieldset>
   <fieldset><legend>Гуми</legend>${fluidBox('ty','Налягане в гумите','Какво е налягането?',`<div class="kv" id="presRec"><div><span>Предни гуми</span><b>${p.front?fnum(+p.front,1)+' bar':'—'}</b></div><div><span>Задни гуми</span><b>${p.rear?fnum(+p.rear,1)+' bar':'—'}</b></div></div><span class="small muted" style="margin-top:-4px">Препоръчително налягане</span>`)}</fieldset>
+  <fieldset><legend>Светлини</legend><div class="fluid"><div class="fl-h"><span class="fl-ic lt">${FL_IC.lt}</span><div><b>Светлини</b><small>Светят ли всички лампи?</small></div></div>${ltPick('lt',true)}
+  <div class="fl-warn2">Можеш да приключиш проверката, но напомнянето ще остане, докато не провериш светлините.</div></div></fieldset>
   <div class="grid2">${fld('Дата',inp('date',today(),'date'))}${fld('Километраж',ninp('km',car.odo||''))}</div>
   ${fld('Бележка',inp('note','','text','placeholder="напр. маслото е близо до MIN"'))}
   <div id="dz">${driverField(car)}</div>`,async f=>{
     if(!f.oilLvl)fail('Избери нивото на маслото: Мин, Средно или Макс.');
     if(!f.afLvl)fail('Избери нивото на антифриза: Мин, Средно или Макс.');
     if(!f.tyLvl)fail('Избери за гумите: Ниско, Нормално или Не са проверени.');
-    await addEntry(f.car,{t:'check',date:f.date,km:num(f.km),driver:f.driver,oil:true,antifreeze:true,oilLvl:f.oilLvl,afLvl:f.afLvl,tyLvl:f.tyLvl,tyresOk:true,oilAdd:!!f.oilAdd,afAdd:!!f.afAdd,inflated:!!f.inflated,note:f.note.trim()});toast('Проверката е отбелязана');
+    if(!f.ltLvl)fail('Избери за светлините: Всички светят, Има изгоряла или Не са проверени.');
+    const ltBad=ltRead(f);
+    await addEntry(f.car,{ltLvl:f.ltLvl,ltBad,ltFix:f.ltLvl==='bad'&&!!f.ltFix,t:'check',date:f.date,km:num(f.km),driver:f.driver,oil:true,antifreeze:true,oilLvl:f.oilLvl,afLvl:f.afLvl,tyLvl:f.tyLvl,tyresOk:true,oilAdd:!!f.oilAdd,afAdd:!!f.afAdd,inflated:!!f.inflated,note:f.note.trim()});toast('Проверката е отбелязана');
   },'Проверката е извършена');
 });
 const openTyCheck=guard(carId=>{
@@ -1424,11 +1462,20 @@ const openTyCheck=guard(carId=>{
     await addEntry(carId,{t:'topup',fluid:'ty',lvl:f.tyLvl,inflated:!!f.inflated,date:f.date,km:num(f.km),driver:meId,text:'Проверени гуми: '+LVLTXT[f.tyLvl]+(f.inflated?' · надути':'')});toast('Гумите са отбелязани');
   },'Запиши');
 });
+const openLtCheck=guard(carId=>{
+  const car=S.cars[carId];
+  openSheet('Проверка на светлините',sheetCar(car)+`<div class="fluid"><div class="fl-h"><span class="fl-ic lt">${FL_IC.lt}</span><div><b>Светлини</b><small>Светят ли всички лампи?</small></div></div>${ltPick('ltc',false)}</div>
+  <div class="grid2">${fld('Дата',inp('date',today(),'date'))}${fld('Километраж',ninp('km',car.odo||''))}</div>`,async f=>{
+    if(!f.ltLvl)fail('Избери: Всички светят или Има изгоряла.');
+    const ltBad=ltRead(f),fixed=f.ltLvl==='bad'&&!!f.ltFix;
+    await addEntry(carId,{t:'topup',fluid:'lt',lvl:f.ltLvl,ltBad,fixed,date:f.date,km:num(f.km),driver:meId,text:'Проверени светлини: '+(f.ltLvl==='ok'?'всички светят':'не свети '+ltNames(ltBad))+(fixed?' · сменена крушка':'')});toast('Светлините са отбелязани');
+  },'Запиши');
+});
 const openTopup=guard((carId,fluid)=>{
   const car=S.cars[carId],F=FLUIDS[fluid];
-  openSheet(F.topT,sheetCar(car)+`<div class="fluid"><div class="fl-h"><span class="fl-ic ${fluid}">${FL_IC[fluid]}</span><div><b>${F.topB}</b><small>Отбележи, след като ${fluid==='ty'?'надуеш гумите до препоръчителното налягане':'долееш до нужното ниво'}.</small></div></div></div>
+  openSheet(F.topT,sheetCar(car)+`<div class="fluid"><div class="fl-h"><span class="fl-ic ${fluid}">${FL_IC[fluid]}</span><div><b>${F.topB}</b><small>Отбележи, след като ${fluid==='ty'?'надуеш гумите до препоръчителното налягане':fluid==='lt'?'смениш изгорялата крушка':'долееш до нужното ниво'}.</small></div></div></div>
   <div class="grid2">${fld('Дата',inp('date',today(),'date'))}${fld('Километраж',ninp('km',car.odo||''))}</div>
-  ${fld('Бележка',inp('note','','text',`placeholder="${fluid==='ty'?'напр. предна лява':'напр. 0,5 л'}"`))}`,async f=>{
+  ${fld('Бележка',inp('note','','text',`placeholder="${fluid==='ty'||fluid==='lt'?'напр. предна лява':'напр. 0,5 л'}"`))}`,async f=>{
     await addEntry(carId,{t:'topup',fluid,date:f.date,km:num(f.km),driver:meId,text:F.hist+(f.note.trim()?' · '+f.note.trim():''),note:f.note.trim()});toast('Отбелязано: '+F.hist.toLowerCase());
   },F.topB);
 });
@@ -1654,7 +1701,7 @@ function openSettings(){
   openSheet('Настройки',`<fieldset><legend>Сезонни норми</legend><div class="grid2">${fld('Зимна надбавка, %',ninp('winterPct',s.winterPct))}${fld('Зимни месеци',inp('winterMonths',(s.winterMonths||[]).join(', ')),'Номера на месеци, напр. 11, 12, 1, 2, 3')}</div>
   <div class="grid2">${fld('Лятна надбавка, %',ninp('summerPct',s.summerPct),'Напр. за климатик')}${fld('Летни месеци',inp('summerMonths',(s.summerMonths||[]).join(', ')))}</div></fieldset>
   <fieldset><legend>Пътна помощ</legend><div class="grid2">${fld('Телефон',inp('roadHelpPhone',s.roadHelpPhone,'tel','placeholder="напр. 0888 123 456"'))}${fld('Име / фирма',inp('roadHelpName',s.roadHelpName,'text','placeholder="напр. Пътна помощ Варна"'))}</div><small class="muted">Мениджърите ще виждат бутон „Звънни на пътна помощ“ на началния екран.</small></fieldset>
-  <fieldset><legend>Известия</legend><div class="grid3">${fld('Срок, дни',ninp('warnDays',s.warnDays))}${fld('Сервиз, км',ninp('serviceWarnKm',s.serviceWarnKm))}${fld('Проверка на, дни',ninp('pressureDays',s.pressureDays),'Масло, антифриз, гуми')}</div></fieldset>`,async f=>{
+  <fieldset><legend>Известия</legend><div class="grid3">${fld('Срок, дни',ninp('warnDays',s.warnDays))}${fld('Сервиз, км',ninp('serviceWarnKm',s.serviceWarnKm))}${fld('Проверка на, дни',ninp('pressureDays',s.pressureDays),'Масло, антифриз, гуми, светлини')}</div></fieldset>`,async f=>{
     const ms=v=>String(v).split(/[,\s]+/).map(Number).filter(n=>n>=1&&n<=12);
     const w=ms(f.winterMonths),su=ms(f.summerMonths);if(w.some(m=>su.includes(m)))fail('Един месец не може да е едновременно зимен и летен.');
     await withRetry(()=>db.doc('meta/settings').set({...S.settings,winterPct:num(f.winterPct)||0,summerPct:num(f.summerPct)||0,winterMonths:w,summerMonths:su,warnDays:num(f.warnDays)||30,serviceWarnKm:num(f.serviceWarnKm)||500,pressureDays:num(f.pressureDays)||14,roadHelpPhone:f.roadHelpPhone.trim(),roadHelpName:f.roadHelpName.trim()}));toast('Настройките са запазени');
@@ -1825,7 +1872,7 @@ const ACT={
   carFilter:d=>{R.carFilter=d.k;render()},toggleInactive:()=>{R.showInactive=!R.showInactive;render()},
   rep:d=>{R.rep=d.k;render()},
   closeSheet:closeSheet,
-  morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
+  morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
   takeover:d=>openTakeover(d.car),endSession:d=>openEndSession(d.car),viewProblem:d=>viewProblem(d.id),
   editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car),expense:d=>openExpense(d.car),editDocs:d=>openDocs(d.car),
   newTask:openNewTask,doneTask:d=>doneTask(d.id),delEntry:d=>delEntry(d.car,d.id),
