@@ -387,6 +387,7 @@ body:not(.noscroll){overflow:visible!important;overflow-x:clip!important}
 #shell>.tabs{position:sticky;bottom:0;left:auto;right:auto;flex:0 0 auto}
 #scroller .wrap{padding-block:16px 24px}
 .drvlist{display:flex;flex-direction:column;gap:6px;margin:4px 0}
+.li.idle{background:#F6F8FB}
 </style>
 </head>
 <body>
@@ -511,9 +512,29 @@ const scopeIds=()=>new Set(scopeCars(true).map(c=>c.id));
 /* entries */
 let _EA=null,_E=null;
 function invalidate(){_EA=_E=null}
+/* Сутрешният километраж е НАЧАЛНИЯТ за деня. Изминатото за деня = следващият начален − този (минус отделните пътни записи между тях). */
+function chainMorning(all){
+  const by={};
+  for(const e of all){if(e.t!=='trip'||e.del)continue;(by[e.carId]=by[e.carId]||[]).push(e)}
+  for(const list of Object.values(by)){
+    const mo=list.filter(e=>e.morning).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.time||'').localeCompare(b.time||'')||(a.endKm||0)-(b.endKm||0));
+    const routes=list.filter(e=>!e.morning);
+    mo.forEach((e,i)=>{const rd=+e.endKm||0,nx=mo[i+1];
+      e.reading=rd;e.startKm=rd;
+      if(nx){const nr=+nx.endKm||0;const inRoute=routes.filter(r=>(r.startKm??-1)>=rd&&(r.endKm??Infinity)<=nr).reduce((t,r)=>t+(r.km||0),0);
+        e.endKm=nr;e.km=Math.max(0,nr-rd-inRoute);e.pending=false;
+        /* дни без запис между двата начални километража: колата не е карана → 0 км */
+        let d=addDays(e.date,1);let n=0;
+        while(d<nx.date&&n<62){all.push({t:'trip',morning:true,idle:true,virtual:true,id:'v_'+e.id+'_'+d,carId:e.carId,date:d,driver:e.driver,road:e.road,startKm:nr,endKm:nr,reading:nr,km:0,pending:false});d=addDays(d,1);n++}}
+      else{e.endKm=null;e.km=0;e.pending=true}});
+  }
+  all.sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.startKm??a.km??0)-(b.startKm??b.km??0)||(a.ts||'').localeCompare(b.ts||''));
+}
+function addDays(ds,k){const d=new Date(ds+'T12:00:00');d.setDate(d.getDate()+k);return d.toISOString().slice(0,10)}
 function allEntriesRaw(){
   if(!_EA){_EA=[];for(const d of Object.values(S.logs))for(const[id,e]of Object.entries(d.e||{}))_EA.push({...e,id,carId:d.carId});
-    _EA.sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.startKm??a.km??0)-(b.startKm??b.km??0)||(a.ts||'').localeCompare(b.ts||''));}
+    _EA.sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.startKm??a.km??0)-(b.startKm??b.km??0)||(a.ts||'').localeCompare(b.ts||''));
+    chainMorning(_EA);}
   return _EA;
 }
 function entries(){if(!_E)_E=allEntriesRaw().filter(e=>!e.del);return _E}
@@ -538,7 +559,7 @@ const tripNorm=(car,e)=>(e.km||0)*normRate(car,e.road||'mixed',e.date)/100;
 function agg(list){
   const r={km:0,fuelL:0,fuelCost:0,normL:0,service:0,other:0,trips:0,fuels:0,gasL:0,petrolL:0,bi:false};
   for(const e of list){const car=S.cars[e.carId];
-    if(e.t==='trip'){r.km+=e.km||0;r.normL+=tripNorm(car,e);r.trips++}
+    if(e.t==='trip'){r.km+=e.km||0;r.normL+=tripNorm(car,e);if(!e.idle)r.trips++}
     else if(e.t==='fuel'){r.fuelL+=eqL(car,e);r.fuelCost+=e.sum||0;r.fuels++;const t=ftOf(car,e);if(t!=='main'){r.bi=true;r[t+'L']+=e.liters||0}}
     else if(e.t==='service'){r.service+=e.cost||0}
     else if(e.t==='expense'){r.other+=e.sum||0}}
@@ -908,10 +929,11 @@ function alertAct(a){
   return `data-act="openCar" data-car="${c}"`;
 }
 function tripLi(e){
-  const c=S.cars[e.carId],desc=e.route||[e.from,e.to].filter(Boolean).join(' – ')||(e.morning?'Сутрешен километраж':'Без маршрут');
+  if(e.idle){const c=S.cars[e.carId];return `<div class="li idle"><div class="l"><b style="color:var(--muted)">Не е карана</b><span>${fd(e.date)}${R.tab!=='car'?' · '+esc(regText(c?.reg)):''} · изчислено автоматично</span><span class="num">Километраж: ${fint(e.reading)}</span></div><div class="r"><b class="num" style="color:var(--muted)">0 км</b></div></div>`}
+  const c=S.cars[e.carId],desc=e.route||[e.from,e.to].filter(Boolean).join(' – ')||(e.morning?'Начален километраж':'Без маршрут');
   const tags=[e.temp?'<span class="pill acc">Временно</span>':'',e.by&&e.by!==e.driver?`<span class="small muted">въвел: ${esc(uname(e.by))}</span>`:''].join(' ');
-  return `<div class="li"><div class="l"><b>${esc(desc)}</b><span>${fd(e.date)}${e.time?' '+esc(e.time):''} · ${esc(uname(e.driver))}${R.tab!=='car'?' · '+esc(regText(c?.reg)):''}${e.purpose?' · '+esc(e.purpose):''}</span><span class="num">${fint(e.startKm)} → ${fint(e.endKm)}</span></div>
-  <div class="r"><b class="num">${fint(e.km)} км</b>${tags}${isAdmin()||(isMgr()&&canManage(c))?`<button class="linkbtn small" data-act="delEntry" data-car="${e.carId}" data-id="${e.id}">Изтрий</button>`:''}</div></div>`;
+  return `<div class="li"><div class="l"><b>${esc(desc)}</b><span>${fd(e.date)}${e.time?' '+esc(e.time):''} · ${esc(uname(e.driver))}${R.tab!=='car'?' · '+esc(regText(c?.reg)):''}${e.purpose?' · '+esc(e.purpose):''}</span><span class="num">${e.morning?`Начален: ${fint(e.startKm)}${e.pending?'':' → следващ: '+fint(e.endKm)}`:`${fint(e.startKm)} → ${fint(e.endKm)}`}</span></div>
+  <div class="r">${e.morning&&e.pending?'<span class="small muted" style="text-align:right">км за деня –<br>при следващия запис</span>':`<b class="num">${fint(e.km)} км</b>`}${tags}${isAdmin()||(isMgr()&&canManage(c))?`<button class="linkbtn small" data-act="delEntry" data-car="${e.carId}" data-id="${e.id}">Изтрий</button>`:''}</div></div>`;
 }
 
 /* ---- cars ---- */
@@ -1046,7 +1068,7 @@ function secProblems(c){
 }
 function histItems(filterFn){
   const out=[];
-  for(const e of allEntriesRaw()){if(!filterFn(e))continue;out.push({ts:e.ts,date:e.date,carId:e.carId,by:e.by,del:e.del,delBy:e.delBy,delTs:e.delTs,kind:e.t,text:entryText(e)})}
+  for(const e of allEntriesRaw()){if(e.virtual||!filterFn(e))continue;out.push({ts:e.ts,date:e.date,carId:e.carId,by:e.by,del:e.del,delBy:e.delBy,delTs:e.delTs,kind:e.t,text:entryText(e)})}
   for(const p of Object.values(S.problems)){if(!filterFn({...p,t:'problem'}))continue;out.push({ts:p.ts,date:p.date,carId:p.carId,by:p.by,kind:'problem',text:`Сигнал за проблем: ${p.cat}${p.desc?' – '+p.desc:''}`});
     for(const s of p.statusHist||[])out.push({ts:s.ts,date:s.ts?.slice(0,10),carId:p.carId,by:s.by,text:`Проблем „${p.cat}“ → ${PSTAT[s.status]}${s.note?': '+s.note:''}`});}
   for(const t of Object.values(S.tasks)){if(!filterFn({...t,t:'task',date:t.ts?.slice(0,10)}))continue;out.push({ts:t.ts,date:t.ts?.slice(0,10),carId:t.carId,by:t.by,text:`Задача създадена: ${t.title}`});
@@ -1055,7 +1077,8 @@ function histItems(filterFn){
 }
 function entryText(e){
   switch(e.t){
-    case 'trip':return `${e.temp?'Временно управление':'Пътен запис'}: ${uname(e.driver)}, ${fint(e.startKm)} → ${fint(e.endKm)} (${fint(e.km)} км)${e.route||e.from?' · '+(e.route||[e.from,e.to].filter(Boolean).join(' – ')):''}`;
+    case 'trip':if(e.morning)return `Начален километраж: ${uname(e.driver)}, ${fint(e.reading??e.endKm)} км${e.route||e.from?' · '+(e.route||[e.from,e.to].filter(Boolean).join(' – ')):''}`;
+    return `${e.temp?'Временно управление':'Пътен запис'}: ${uname(e.driver)}, ${fint(e.startKm)} → ${fint(e.endKm)} (${fint(e.km)} км)${e.route||e.from?' · '+(e.route||[e.from,e.to].filter(Boolean).join(' – ')):''}`;
     case 'fuel':return `Зареждане${ftLabel(S.cars[e.carId],e)?' ('+ftLabel(S.cars[e.carId],e).toLowerCase()+')':''}: ${fnum(e.liters)} л, ${eur(e.sum)} при ${fint(e.km)} км${e.station?' · '+e.station:''}`;
     case 'service':return `Сервиз: ${e.what||''}${e.cost?' · '+eur(e.cost):''}`;
     case 'expense':return `Разход: ${e.cat} · ${eur(e.sum)}`;
@@ -1257,7 +1280,7 @@ const openTrip=guard((carId,morning)=>{
   const cf=carField(carId),car=S.cars[cf.id];
   const html=cf.html+`<div id="dz">${driverField(car)}</div>`+
     `${fld('Дата',inp('date',today(),'date'))}<input type="hidden" name="time" value="${nowTime()}">${fld('Вид път',sel('road',Object.entries(ROADS),'mixed'))}`+
-    (morning?`${fld('Текущ километраж (сутрин)',ninp('endKm','','required'))}<input type="hidden" name="startKm" id="f_startKm" value="${car.odo||0}">`
+    (morning?`${fld('Начален километраж днес',ninp('endKm','','required'),'Километражът сутрин, преди да тръгнеш. Изминатите км за предния ден се смятат сами.')}<input type="hidden" name="startKm" id="f_startKm" value="${car.odo||0}">`
             :`<div class="grid2">${fld('Начален км',ninp('startKm',car.odo||''))}${fld('Краен км',ninp('endKm',''))}</div>`)+
     `<div class="calc" id="kmCalc"></div><div class="note" id="kmWarn" hidden></div>`+
     (morning?`<fieldset><legend>Маршрут (по желание)</legend>`:'')+
@@ -1269,17 +1292,19 @@ const openTrip=guard((carId,morning)=>{
     if(s==null||isNaN(s))fail('Въведи начален километраж.');
     if(s<(c.odo||0))fail(`Километражът не може да намалява. Последен запис: ${fint(c.odo)} км.`);
     if(e<s)fail(`Крайният километраж (${fint(e)}) е по-малък от началния (${fint(s)}).`);
-    if(e===s&&morning)fail('Километражът е същият като последния запис – няма изминати км.');
+    if(morning&&entries().some(x=>x.carId===c.id&&x.t==='trip'&&x.morning&&!x.virtual&&x.date===f.date))fail('За тази дата вече има начален километраж. Ако е грешен, помоли мениджъра или администратора да го изтрие.');
     if(c.session&&c.session.userId!==f.driver)fail(`Автомобилът е поет временно от ${uname(c.session.userId)}. Първо приключи временното управление.`);
     await addEntry(c.id,{t:'trip',date:f.date,time:f.time,driver:f.driver,road:f.road,from:f.from.trim(),to:f.to.trim(),route:f.route.trim(),purpose:f.purpose.trim(),note:f.note.trim(),startKm:s,endKm:e,km:e-s,morning:!!morning});
     if(e>(c.odo||0))await carUpdate(c.id,{odo:e});
-    toast(`Записано: ${fint(e-s)} км`);
+    toast(morning?`Записан начален километраж: ${fint(e)} км`:`Записано: ${fint(e-s)} км`);
   },'Запиши');
   const form=$('#sheetForm');
   const upd=()=>{const c=S.cars[form.car.value];const s=num(form.startKm.value),e=num(form.endKm.value);
     const calc=$('#kmCalc'),w=$('#kmWarn');
     if(morning){form.startKm.value=c.odo||0}
-    calc.innerHTML=`Предишен запис: <span class="num">${fint(c.odo)} км</span>`+(e!=null&&!isNaN(e)&&s!=null?` · Изминати: <span class="num">${fint(e-s)} км</span>`:'');
+    if(morning){const pm=entries().filter(x=>x.carId===c.id&&x.t==='trip'&&x.morning&&!x.virtual).pop();
+      calc.innerHTML=`Предишен начален: <span class="num">${pm?fint(pm.reading)+' км':'—'}</span>${pm?' ('+fd(pm.date)+')':''}`+(pm&&e!=null&&!isNaN(e)&&e>=pm.reading?` · Изминати на ${fd(pm.date)}: <span class="num">${fint(e-pm.reading)} км</span>`:'');}
+    else calc.innerHTML=`Предишен запис: <span class="num">${fint(c.odo)} км</span>`+(e!=null&&!isNaN(e)&&s!=null?` · Изминати: <span class="num">${fint(e-s)} км</span>`:'');
     w.hidden=true;
     if(s!=null&&!isNaN(s)&&s<(c.odo||0)){w.textContent=`Началният км е под последния запис (${fint(c.odo)} км) – записът ще бъде отказан.`;w.hidden=false}
     else if(!morning&&s!=null&&s>(c.odo||0)){w.textContent=`Пропуск от ${fint(s-(c.odo||0))} км спрямо последния запис.`;w.hidden=false}
