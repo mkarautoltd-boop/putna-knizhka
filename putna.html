@@ -496,7 +496,10 @@ body:not(.noscroll){overflow:visible!important;overflow-x:clip!important}
 
 /* ---- проверка (визия 5) ---- */
 .fl-ic{background:#FFF3E0!important;box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.04),0 6px 14px -8px rgba(15,35,65,.35);font-size:28px;line-height:1;font-family:"Apple Color Emoji","Noto Color Emoji",sans-serif;width:50px;height:50px;border-radius:16px}
-.fl-ic.af{background:#E3F6FB!important}.fl-ic.ty{background:#EAF2FF!important}.fl-ic.lt{background:#FFF8D6!important}
+.fl-ic.af{background:#E3F6FB!important}.fl-ic.ty{background:#EAF2FF!important}.fl-ic.lt{background:#E6F0FF!important}
+.fl-ic svg{width:38px;height:38px}
+.fl-ic.oil svg{width:44px;height:30px}
+.isq.emo svg{width:30px;height:30px}
 .fluid{border-radius:20px;padding:16px;box-shadow:0 10px 24px -16px rgba(15,35,65,.35),0 1px 2px rgba(15,35,65,.05)}
 .fl-h b{font-size:17px}
 #sheetForm fieldset:has(.fluid){background:none;box-shadow:none;padding:0;gap:10px}
@@ -1548,7 +1551,7 @@ const ltPick=(pre,withNo)=>`<div class="lvl" style="grid-template-columns:repeat
 const ltRead=f=>{if(!f.ltLvl)return null;const bad=f.ltLvl==='bad'?LIGHTS.map(x=>x[0]).filter(k=>f['lt_'+k]):[];if(f.ltLvl==='bad'&&!bad.length)fail('Избери коя лампа не свети.');return bad};
 FL_IC.ty='<svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" fill="#fff" fill-opacity=".95"/><circle cx="16" cy="16" r="7.2" fill="#1E5FD0" fill-opacity=".55"/><circle cx="16" cy="16" r="2.6" fill="#fff"/><path d="M16 3v4M16 25v4M3 16h4M25 16h4M6.8 6.8l2.8 2.8M22.4 22.4l2.8 2.8M6.8 25.2l2.8-2.8M22.4 9.6l2.8-2.8" stroke="#1E5FD0" stroke-opacity=".45" stroke-width="2.2" stroke-linecap="round"/></svg>';
 /* цветни иконки вместо рисунките */
-Object.assign(FL_IC,{oil:'🛢️',af:'🌡️',ty:'🛞',lt:'💡'});
+Object.assign(FL_IC,{oil:'<svg viewBox="0 6 48 32" fill="none"><path d="M9.5 21.5 3.8 18.6a1.6 1.6 0 0 0-2.3 1.4v3.6l8 4" fill="none" stroke="#E07000" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/><rect x="15" y="14.5" width="8" height="3.2" rx="1.2" fill="#E07000"/><rect x="17.6" y="17" width="2.8" height="4" fill="#E07000"/><path d="M9 21H29.5l6.2-4.2 9.3-2.8.9 2-9.2 5.4-5.8 9.6H11.6A2.6 2.6 0 0 1 9 28.4Z" fill="#F58A07" stroke="#D96A00" stroke-width="1.2" stroke-linejoin="round"/><path d="M11 22.8h17.6l-1.6 2.4H11Z" fill="#fff" fill-opacity=".35"/><path d="M44.6 21.2s-2.5 3.3-2.5 5a2.5 2.5 0 0 0 5 0c0-1.7-2.5-5-2.5-5Z" fill="#F58A07" stroke="#D96A00" stroke-width="1"/></svg>',af:'🌡️',ty:'🛞',lt:'<svg viewBox="3 6 42 36" fill="none"><path d="M21 9.5C11.5 9.5 5.5 15.6 5.5 24S11.5 38.5 21 38.5c3 0 4.5-1.6 4.5-4.5V14c0-2.9-1.5-4.5-4.5-4.5Z" fill="#2F7BEF" stroke="#1C5ED6" stroke-width="1.4"/><path d="M19 13.5c-6 .6-9.6 4.8-9.6 10.5" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2.4" stroke-linecap="round"/><g stroke="#2F7BEF" stroke-width="3.6" stroke-linecap="round"><path d="M31 14.5h11.5M31 21.2h11.5M31 27.8h11.5M31 34.5h11.5"/></g></svg>'});
 /* нива: масло, антифриз, гуми */
 const FLUIDS={
  oil:{k:'oilLvl',add:'oilAdd',name:'Масло',lvls:[['min','Мин',18],['mid','Средно',50],['max','Макс',85]],good:['max','mid'],warn:'Нивото е ниско – долей.',
