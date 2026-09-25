@@ -625,6 +625,14 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .dcard .dc-ic{box-shadow:0 4px 10px -4px var(--dc);background:#fff!important}
 .dc-bar{background:rgba(255,255,255,.8);box-shadow:inset 0 0 0 1px var(--dcs)}
 .dc-btn{background:linear-gradient(100deg,var(--dc2) 0%,var(--dc) 70%)!important}
+
+/* горната част на картата в стила на бутона „Отбележи смяна“ */
+.dcard{padding-top:0}
+.dcard .dc-h{margin:0 -18px 2px;padding:12px 18px;background:linear-gradient(100deg,var(--dc2) 0%,var(--dc) 70%);color:#fff;box-shadow:inset 0 -1px 0 rgba(0,0,0,.06)}
+.dcard .dc-h b{color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.12)}
+.dcard .dc-ic{box-shadow:0 3px 8px rgba(0,0,0,.15)}
+.dcard .dc-tag{background:#fff;color:var(--dc)}
+.dcard::before{display:none}
 </style>
 </head>
 <body>
