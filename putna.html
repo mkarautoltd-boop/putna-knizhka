@@ -124,6 +124,9 @@ p{margin:0}
 
 /* cards */
 .card{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:14px;display:flex;flex-direction:column;gap:10px}
+.mk-row{display:flex;gap:8px}.mk-row input{flex:1;font-size:20px;font-weight:700}.mk-row .btn{flex:none;padding:0 18px;min-height:46px}
+.card.mk.done{flex-direction:row;align-items:center;gap:12px}.card.mk.done b{display:block}.card.mk.done span{color:var(--muted);font-size:14px}
+.mk-ok{width:40px;height:40px;border-radius:12px;background:var(--t-green);color:#fff;display:grid;place-items:center;flex:none}.mk-ok svg{width:22px;height:22px}
 .card-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .panel{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:16px;display:flex;flex-direction:column;gap:12px}
 .sec{display:flex;flex-direction:column;gap:10px}
@@ -850,7 +853,7 @@ function vMyCar(){
   if(!my.length)return `<div class="empty">${icon('car')}<b>Нямаш избран автомобил.</b>Избери се за „Постоянен шофьор“ в Редактирай автомобил.</div>`;
   let h='';
   for(const c of my){const al=carAlerts(c).filter(a=>a.lvl!=='good');
-    h+=`<div class="sec">${carCard(c)}${al.length?`<div style="margin-top:10px">${alertList(al.slice(0,4))}</div>`:''}
+    h+=`<div class="sec">${carCard(c)}<div style="margin-top:10px">${morningCard(c)}</div>${al.length?`<div style="margin-top:10px">${alertList(al.slice(0,4))}</div>`:''}
       ${al.some(a=>a.kind==='pressure')?`<button class="btn go wide" style="margin-top:10px" data-act="check" data-car="${c.id}">${icon('plus')} Направи проверката</button>`:''}
       <h3 style="margin-top:14px">Бързи действия</h3>${myCarTiles(c)}</div>`;
     const last=entries().filter(e=>e.carId===c.id&&e.t==='trip').slice(-3).reverse();
@@ -888,6 +891,15 @@ function kpis(cars){
     <button class="kpi green" data-act="tab" data-k="cars"><b>${cars.length-crit-warn}</b><span>Изправни</span></button>
     <button class="kpi plain" data-act="tab" data-k="cars"><b>${cars.length}</b><span>Общо</span></button></div>`;
 }
+function morningCard(c){
+  if(c.session&&c.session.userId!==meId)return '';
+  const td=entries().filter(x=>x.carId===c.id&&x.t==='trip'&&x.morning&&!x.virtual);
+  const done=td.find(x=>x.date===today()),pm=td[td.length-1];
+  if(done)return `<div class="card mk done"><div class="mk-ok">${icon('check')}</div><div><b>Начален километраж днес</b><span class="num">${fint(done.reading??done.endKm)} км · записан</span></div></div>`;
+  return `<form class="card mk" data-mk="${c.id}"><div class="card-h"><h3>Начален километраж днес</h3></div>
+    <div class="mk-row"><input name="km" value="${esc(R['mk_'+c.id]||'')}" inputmode="numeric" autocomplete="off" placeholder="${c.odo?fint(c.odo):'напр. 125 430'}" aria-label="Начален километраж днес"><button type="submit" class="btn go">Потвърди</button></div>
+    <small class="muted">Предишен начален: <span class="num">${pm?fint(pm.reading??pm.endKm)+' км ('+fd(pm.date)+')':'—'}</span></small></form>`;
+}
 function vHome(){
   const u=me(),cars=scopeCars();
   let h=sessionCards();
@@ -896,7 +908,7 @@ function vHome(){
     if(!my.length)return h+`<div class="empty">${icon('car')}<b>Нямаш назначен автомобил.</b>Обърни се към администратора или мениджъра на отдела.</div>`;
     for(const c of my){
       const al=carAlerts(c);
-      h+=carCard(c);
+      h+=carCard(c)+morningCard(c);
       if(al.length)h+=`<div class="card"><div class="card-h"><h3>Моите задачи</h3><button class="linkbtn" data-act="tab" data-k="tasks">Всички</button></div>${alertList(al.slice(0,4))}
         ${al.some(a=>a.kind==='pressure')?`<button class="btn go wide" data-act="check" data-car="${c.id}">${icon('plus')} Направи проверката</button>`:''}</div>`;
       h+=`<div class="sec"><h3>Бързи действия</h3>${actionTiles(c)}</div>`;
@@ -1885,11 +1897,22 @@ const ACT={
   pf:d=>{R.pf=d.k;render()},
   copyText:()=>{const t=$('#f_msg');const done=()=>toast('Копирано');try{navigator.clipboard.writeText(t.value).then(done,()=>{t.select();document.execCommand('copy');done()})}catch(e){t.select();document.execCommand('copy');done()}}
 };
+document.addEventListener('submit',async e=>{const f=e.target.closest('form[data-mk]');if(!f)return;e.preventDefault();
+  const c=S.cars[f.dataset.mk],km=num(f.km.value),b=f.querySelector('button');
+  try{if(km==null||isNaN(km))fail('Въведи километража.');
+    if(km<(c.odo||0))fail(`Километражът не може да намалява. Последен запис: ${fint(c.odo)} км.`);
+    if(entries().some(x=>x.carId===c.id&&x.t==='trip'&&x.morning&&!x.virtual&&x.date===today()))fail('За днес вече има начален километраж.');
+    if(c.session&&c.session.userId!==meId)fail(`Автомобилът е поет временно от ${uname(c.session.userId)}.`);
+    b.disabled=true;const s=c.odo||0;
+    await addEntry(c.id,{t:'trip',date:today(),time:nowTime(),driver:meId,road:'mixed',from:'',to:'',route:'',purpose:'',note:'',startKm:s,endKm:km,km:km-s,morning:true});
+    if(km>(c.odo||0))await carUpdate(c.id,{odo:km});
+    delete R['mk_'+c.id];toast(`Записан начален километраж: ${fint(km)} км`);
+  }catch(err){b.disabled=false;toast(err.message)}});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;e.preventDefault();const f=ACT[b.dataset.act];if(f)f(b.dataset,b)});
 document.addEventListener('change',e=>{const t=e.target;if(t.closest('#sheet'))return;
   if(t.dataset.bind){R[t.dataset.bind]=t.value;if(t.dataset.bind==='repMonth'&&t.value){R.repFrom=t.value+'-01';R.repTo=monthEnd(t.value)}render()}
   if(t.dataset.bindCheck){R[t.dataset.bindCheck]=t.checked;render()}});
-document.addEventListener('input',e=>{const t=e.target;if(t.id==='q'){R.q=t.value;clearTimeout(ACT._q);ACT._q=setTimeout(()=>{render();const q=$('#q');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}},250)}});
+document.addEventListener('input',e=>{const t=e.target;const mk=t.closest&&t.closest('form[data-mk]');if(mk)R['mk_'+mk.dataset.mk]=t.value;if(t.id==='q'){R.q=t.value;clearTimeout(ACT._q);ACT._q=setTimeout(()=>{render();const q=$('#q');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}},250)}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#sheet').hidden)closeSheet()});
 
 /* ============ Google Apps Script bridge ============ */
