@@ -1215,7 +1215,7 @@ function vCar(){
   const m=canManage(c),tk=tank(c),lvl=c.active===false?'off':carLevel(c);
   HEAD={title:isStaff()?'Детайли за автомобил':'Моят автомобил',back:(isStaff()||scopeCars().length>1)?R.carBack:'home'};
   const secs=[['overview','Информация'],['book','Книжка'],['fuel','Гориво'],['service','Сервиз'],['docs','Документи'],['tyres','Гуми'],['problems','Проблеми'],['history','История']];
-  let h=heroRail(c)+`<div class="vhero-meta"><span class="status ${lvl}">${lvl==='off'?'Неактивен':lvl==='ok'?'Изправен':lvl==='crit'?'Критично':'Има предстоящи задачи'}</span><span class="small muted">Отдел: ${esc(dname(c.dept))}</span>
+  let h=heroRail(c)+`<div class="vhero-meta"><span class="status ${lvl}">${lvl==='off'?'Неактивен':lvl==='ok'?'Изправен':lvl==='crit'?'Критично':'Има предстоящи задачи'}</span>${isStaff()?`<span class="small muted">Отдел: ${esc(dname(c.dept))}</span>`:''}
     ${c.session?`<span class="pill acc">Временно: ${esc(uname(c.session.userId))} от ${fds(c.session.date)} ${esc(c.session.time||'')}</span>`:''}</div>
     ${m?`<div class="grid2"><button class="btn sm" data-act="editCar" data-car="${c.id}">Редактирай</button><button class="btn sm" data-act="toggleCar" data-car="${c.id}">${c.active===false?'Активирай':'Деактивирай'}</button></div>`:''}`;
   if(c.session)h+=sessionCard(c);
