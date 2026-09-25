@@ -1304,11 +1304,12 @@ function onCarChange(form,cb){const s=form.querySelector('#f_car');if(s&&s.tagNa
 
 const openTrip=guard((carId,morning)=>{
   const cf=carField(carId),car=S.cars[cf.id];
-  const html=cf.html+`<div id="dz">${driverField(car)}</div>`+
+  const kmBox=`<div class="calc" id="kmCalc"></div><div class="note" id="kmWarn" hidden></div>`;
+  const html=cf.html+
+    (morning?`${fld('Начален километраж днес',`<div class="mk-row">${ninp('endKm','','required')}<button type="submit" class="btn go">Потвърди</button></div>`,'Километражът сутрин, преди да тръгнеш. Изминатите км за предния ден се смятат сами.')}<input type="hidden" name="startKm" id="f_startKm" value="${car.odo||0}">`+kmBox:'')+
+    `<div id="dz">${driverField(car)}</div>`+
     `${fld('Дата',inp('date',today(),'date'))}<input type="hidden" name="time" value="${nowTime()}">${fld('Вид път',sel('road',Object.entries(ROADS),'mixed'))}`+
-    (morning?`${fld('Начален километраж днес',`<div class="mk-row">${ninp('endKm','','required')}<button type="submit" class="btn go">Потвърди</button></div>`,'Километражът сутрин, преди да тръгнеш. Изминатите км за предния ден се смятат сами.')}<input type="hidden" name="startKm" id="f_startKm" value="${car.odo||0}">`
-            :`<div class="grid2">${fld('Начален км',ninp('startKm',car.odo||''))}${fld('Краен км',ninp('endKm',''))}</div>`)+
-    `<div class="calc" id="kmCalc"></div><div class="note" id="kmWarn" hidden></div>`+
+    (morning?'':`<div class="grid2">${fld('Начален км',ninp('startKm',car.odo||''))}${fld('Краен км',ninp('endKm',''))}</div>`+kmBox)+
     (morning?`<fieldset><legend>Маршрут (по желание)</legend>`:'')+
     `<div class="grid2">${fld('От',inp('from','','text','placeholder="Варна"'))}${fld('До',inp('to','','text','placeholder="Добрич"'))}</div>${fld('Маршрут',inp('route','','text','placeholder="Варна – Аксаково – Добрич"'))}${fld('Цел на пътуването',inp('purpose','','text','placeholder="Доставка на стока"'))}`+
     (morning?'</fieldset>':'')+fld('Бележка',ta('note'));
