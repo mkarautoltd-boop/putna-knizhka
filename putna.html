@@ -400,6 +400,31 @@ body:not(.noscroll){overflow:visible!important;overflow-x:clip!important}
 #scroller .wrap{padding-block:16px 24px}
 .drvlist{display:flex;flex-direction:column;gap:6px;margin:4px 0}
 .li.idle{background:#F6F8FB}
+
+/* ---- нова визия: цветни плочки с емоджи ---- */
+.qa,.qa.three{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.qt,.qa:not(.three) .qt{min-height:104px;padding:12px 12px 12px 14px;align-items:flex-start;justify-content:space-between;gap:6px;text-align:left;font-size:14px;letter-spacing:-.02em;font-weight:700;border-radius:20px;text-shadow:0 1px 2px rgba(0,0,0,.12);background-image:none;box-shadow:0 8px 18px -8px var(--qs,rgba(15,35,65,.4))}
+.qemo{font-size:32px;line-height:1;font-family:"Apple Color Emoji","Noto Color Emoji",sans-serif;filter:drop-shadow(0 2px 3px rgba(0,0,0,.18))}
+.qemo .ic{width:30px;height:30px}
+.qt .ql{line-height:1.15;overflow-wrap:normal;word-break:normal;hyphens:manual;max-width:100%}
+.qt .qch{position:absolute;right:9px;top:12px;width:16px;height:16px;stroke:#fff;opacity:.8;stroke-width:2.6}
+.qt.orange{background:linear-gradient(135deg,#F39A55,#E4683A);--qs:rgba(228,104,58,.55)}
+.qt.blue{background:linear-gradient(135deg,#62A6EC,#3E7ED6);--qs:rgba(62,126,214,.55)}
+.qt.green{background:linear-gradient(135deg,#72C584,#4CA468);--qs:rgba(76,164,104,.55)}
+.qt.purple{background:linear-gradient(135deg,#A084E6,#7456CC);--qs:rgba(116,86,204,.55)}
+.qt.red{background:linear-gradient(135deg,#F2706A,#D8433F);--qs:rgba(216,67,63,.55)}
+.qt.grey{background:linear-gradient(135deg,#F2BD55,#DE9A36);--qs:rgba(222,154,54,.55)}
+.qt.navy{background:linear-gradient(135deg,#3E5C8C,#1F3660);--qs:rgba(31,54,96,.55)}
+.qt i{top:10px;right:10px}
+.kpi,.kpi:not(.plain){background:#fff!important;background-image:none!important;box-shadow:var(--shadow);border:1px solid #E6ECF3}
+.kpi b{text-shadow:none}.kpi span{color:#5B6B80;font-size:11.5px;font-weight:500}
+.kpi.red b{color:#E0342F}.kpi.orange b{color:#E4683A}.kpi.green b{color:#3E9A5A}.kpi.plain b{color:#0F1B2D}
+.temo{font-size:25px;line-height:26px;height:26px;font-family:"Apple Color Emoji","Noto Color Emoji",sans-serif}
+.tab{gap:2px;padding-top:8px;padding-bottom:9px}
+.tab[aria-current="true"]{color:#E4683A}
+.tab[aria-current="true"]::after{content:"";position:absolute;bottom:3px;left:50%;width:26px;height:3px;margin-left:-13px;border-radius:2px;background:#E4683A}
+.tab:not([aria-current="true"]) .temo{opacity:.85}
+.greet b .gemo{font-family:"Apple Color Emoji","Noto Color Emoji",sans-serif;margin-right:6px}
 </style>
 </head>
 <body>
@@ -762,7 +787,12 @@ const IC={
   euro:'<path d="M18 6.5A7 7 0 1 0 18 17.5M4 10h9M4 14h9"/>'
 };
 const icon=(k,cls='')=>`<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${IC[k]||''}</svg>`;
-const ICONS=Object.fromEntries(['home','cars','tasks','reports','more','mycar'].map(k=>[k,`<svg viewBox="0 0 24 24">${IC[k==='cars'?'car':k==='mycar'?'wheel':k]}</svg>`]));
+const TAB_EMO={home:'🏠',mycar:'🚙',cars:'🚗',tasks:'📋',reports:'📊',more:'🗂️'};
+const ICONS=Object.fromEntries(Object.entries(TAB_EMO).map(([k,e])=>[k,`<span class="temo">${e}</span>`]));
+/* цветни иконки (емоджи) за плочките */
+const QT_EMO={'Километраж':'🛣️','Километри':'🛣️','Зареждане':'⛽','Гориво':'⛽','Проверка':'🔍','Проблем':'⚠️','Проблеми':'⚠️','Пътен запис':'📝','Книжка':'📒','Ще управлявам':'🔑','Документи':'📄','Моите задачи':'📋','Задачи':'📋','Автомобили':'🚗','Отдели':'🏢','Шофьори':'🧑‍✈️','Потребители':'👥','Сервиз':'🔧','Гуми':'🛞','Отчети':'📊','Съобщения':'💬','Настройки':'⚙️'};
+const QT_SHY={'Потребители':'Потреби&shy;тели','Автомобили':'Автомо&shy;били','Документи':'Доку&shy;менти','Километраж':'Кило&shy;метраж','Километри':'Кило&shy;метри','Зареждане':'Зареж&shy;дане','Съобщения':'Съоб&shy;щения'};
+const qtIn=(i,l)=>`<span class="qemo">${QT_EMO[l]||icon(i)}</span><span class="ql">${QT_SHY[l]||l}</span>${icon('chev','qch')}`;
 const VAN=/master|ducato|sprinter|transit|vito|crafter|boxer|jumper|trafic|vivaro|movano|daily|transporter|kangoo|berlingo|partner|caddy|doblo|proace|expert|combo|мастер|дукато|спринтер|транзит|вито|крафтер|боксер|джъмпер|трафик|виваро|мовано|дейли|транспортер|кангу|берлинго|партнер|кади|добло|проейс|експерт|комбо|бус|ван/i;
 function carSvg(c,cls=''){
   const van=VAN.test(`${c?.make||''} ${c?.model||''}`);
@@ -821,7 +851,7 @@ function renderHead(){
   }
   const h=d.getHours(),hi=h<11?'Добро утро':h<18?'Здравей':'Добър вечер';
   const sub=u.role==='driver'?'Карай отговорно!':u.role==='manager'?`Отдел: ${dname(u.dept)}`:'Администратор · пълен контрол';
-  $('#topIn').innerHTML=`<div class="greet"><small class="rl">${{driver:'ШОФЬОР',manager:'МЕНИДЖЪР',admin:'АДМИНИСТРАТОР'}[u.role]}</small><b>${hi}, ${esc(u.name.split(' ')[0])}!</b><span>${esc(sub)}</span></div>
+  $('#topIn').innerHTML=`<div class="greet"><small class="rl">${{driver:'ШОФЬОР',manager:'МЕНИДЖЪР',admin:'АДМИНИСТРАТОР'}[u.role]}</small><b><span class="gemo">${h<11?'☀️':h<18?'👋':'🌙'}</span>${hi}, ${esc(u.name.split(' ')[0])}!</b><span>${esc(sub)}</span></div>
     <div class="hdate">${['Неделя','Понеделник','Вторник','Сряда','Четвъртък','Петък','Събота'][d.getDay()]}<br>${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()}</div>
     <button class="bell" data-act="tab" data-k="tasks" aria-label="Известия">${icon('bell')}${n?`<i>${n}</i>`:''}</button>`;
 }
@@ -860,14 +890,14 @@ function vMyCar(){
 }
 function myCarTiles(car){const cid=`data-car="${car.id}"`;
   const t=[['morning','purple','road','Километраж'],['fuel','blue','fuel','Зареждане'],['check','green','tyre','Проверка'],['problem','orange','alert','Проблем'],['trip','grey','doc','Пътен запис'],['myBook','navy','doc','Книжка']];
-  return `<div class="qa three">${t.map(([a,c,i,l])=>`<button class="qt ${c}" data-act="${a}" ${cid}>${icon(i)}${l}</button>`).join('')}</div>`}
+  return `<div class="qa three">${t.map(([a,c,i,l])=>`<button class="qt ${c}" data-act="${a}" ${cid}>${qtIn(i,l)}</button>`).join('')}</div>`}
 function actionTiles(car){
   const cid=car?`data-car="${car.id}"`:'';
   const t=[['fuel','blue','fuel','Зареждане'],['morning','purple','road','Километраж'],['check','green','tyre','Проверка'],['problem','orange','alert','Проблем']];
   if(isStaff())t.push(['trip','grey','doc','Пътен запис'],['takeover','navy','wheel','Ще управлявам']);
   else t.push(['carDocs','grey','doc','Документи'],['tab" data-k="tasks','red','tasks','Моите задачи']);
   const n=!isStaff()&&car?allAlerts().filter(a=>a.car.id===car.id&&!isRead(a)).length:0;
-  return `<div class="qa three">${t.map(([a,c,i,l])=>`<button class="qt ${c}" data-act="${a}" ${cid}>${icon(i)}${l}${a.startsWith('tab')&&n?`<i>${n}</i>`:''}</button>`).join('')}</div>`+
+  return `<div class="qa three">${t.map(([a,c,i,l])=>`<button class="qt ${c}" data-act="${a}" ${cid}>${qtIn(i,l)}${a.startsWith('tab')&&n?`<i>${n}</i>`:''}</button>`).join('')}</div>`+
     (!isStaff()&&car?`<button class="btn wide" data-act="trip" ${cid}>${icon('plus')} Пътен запис с маршрут</button>`:'');
 }
 function sessionCards(){
@@ -920,7 +950,7 @@ function vHome(){
     :[[T('cars'),'blue','car','Автомобили'],[T('tasks'),'purple','tasks','Задачи'],[T('reports'),'green','reports','Отчети'],
       [T('staff'),'grey','users','Шофьори'],[T('messages'),'orange','bell','Съобщения'],[T('docsAll'),'grey','doc','Документи'],
       ['fuel','blue','fuel','Зареждане'],[T('serviceAll'),'orange','wrench','Сервиз'],['takeover','navy','wheel','Ще управлявам']];
-  h+=`<div class="sec"><h3>Бързи действия</h3><div class="qa${isAdmin()?'':' three'}">${qa.map(([a,c,i,l])=>`<button class="qt ${c}" data-act="${a}">${icon(i)}${l}</button>`).join('')}</div>${isMgr()?sosBtn():''}</div>`;
+  h+=`<div class="sec"><h3>Бързи действия</h3><div class="qa three">${qa.map(([a,c,i,l])=>`<button class="qt ${c}" data-act="${a}">${qtIn(i,l)}</button>`).join('')}</div>${isMgr()?sosBtn():''}</div>`;
   const al=allAlerts();
   const worst=cars.slice().sort((a,b)=>({crit:0,warn:1,ok:2}[carLevel(a)])-({crit:0,warn:1,ok:2}[carLevel(b)]));
   h+=`<div class="sec"><div class="sec-head"><h3>Автомобили</h3><button class="linkbtn" data-act="tab" data-k="cars">Виж всички (${cars.length})</button></div><div class="carlist">${worst.slice(0,5).map(carCard).join('')}</div></div>`;
