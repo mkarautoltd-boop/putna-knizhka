@@ -425,6 +425,45 @@ body:not(.noscroll){overflow:visible!important;overflow-x:clip!important}
 .tab[aria-current="true"]::after{content:"";position:absolute;bottom:3px;left:50%;width:26px;height:3px;margin-left:-13px;border-radius:2px;background:#E4683A}
 .tab:not([aria-current="true"]) .temo{opacity:.85}
 .greet b .gemo{font-family:"Apple Color Emoji","Noto Color Emoji",sans-serif;margin-right:6px}
+/* ---- визия 2 ---- */
+.top{border-radius:0 0 28px 28px;overflow:hidden;background:radial-gradient(circle at 110% -10%,rgba(255,153,90,.45) 0,rgba(255,153,90,0) 45%),linear-gradient(135deg,#0B2244 0%,#133A6E 70%,#1B4A8A 100%)}
+.top::after{content:"";position:absolute;right:-40px;bottom:-70px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.05);pointer-events:none}
+.greet .nw{white-space:nowrap;font-size:inherit;color:inherit;margin:0}
+.greet .gemo{font-size:inherit;margin:0}
+#main{position:relative;z-index:6}
+.top.hero .top-in{padding-bottom:56px;padding-top:18px;align-items:flex-start}
+.greet b{font-size:24px;letter-spacing:-.02em}
+.greet span{font-size:13.5px;margin-top:2px}
+.greet .rl{font-size:10.5px;background:rgba(255,255,255,.12);align-self:flex-start;padding:4px 9px;border-radius:99px;margin-bottom:6px;color:#CFE0F7;letter-spacing:.1em}
+.gemo,.temo,.qemo,.tip-e,.isq.emo,.greet .rl{font-family:"Onest","Apple Color Emoji","Noto Color Emoji",sans-serif}
+.hdate{display:none}
+.bell{background:rgba(255,255,255,.12)!important;width:48px;height:48px;display:grid;place-items:center;border-radius:16px!important;flex-shrink:0}
+.bell i{border-color:#133A6E}
+.top.hero+#main{margin-top:-60px}
+.kpis.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.kpi{padding:14px 4px 12px!important;border-radius:20px!important;border:0!important;box-shadow:0 10px 24px -10px rgba(15,35,65,.30),0 1px 2px rgba(15,35,65,.06)!important}
+.kpis.three .kpi b{font-size:22px}
+.qemo{width:48px;height:48px;border-radius:16px;background:rgba(255,255,255,.26);box-shadow:inset 0 1px 0 rgba(255,255,255,.45);display:grid;place-items:center;font-size:28px;filter:none}
+.qt,.qa:not(.three) .qt{min-height:118px;padding:12px}
+.qt .qch{top:14px;right:12px;width:15px;height:15px}
+.qt i{right:32px!important;top:11px!important}
+.qt .ql{font-size:14.5px}
+.qt::before{content:"";position:absolute;right:-26px;top:-26px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.12);pointer-events:none}
+.qt{overflow:hidden}
+.plate{display:inline-flex;align-self:flex-start;border:1.5px solid #1B2A3F;border-radius:6px;background:#fff;font-family:var(--mono);font-weight:700;font-size:14px;letter-spacing:.04em;line-height:1;overflow:hidden;margin:3px 0 2px;white-space:nowrap;padding-right:7px;gap:6px;align-items:center;height:24px;color:#0F1B2D}
+.plate i{font-style:normal;background:#1646B3;color:#fff;font-size:9px;font-family:var(--sans);font-weight:700;height:100%;display:flex;align-items:flex-end;padding:0 4px 3px;letter-spacing:0;position:relative}
+.plate i::before{content:"★";position:absolute;top:2px;left:50%;transform:translateX(-50%);font-size:7px;color:#FFD400}
+.isq.emo{background:#F3F6FA!important;background-image:none!important;box-shadow:inset 0 0 0 1px #E6ECF3;font-size:24px;display:grid;place-items:center}
+.isq.emo.red{background:#FDECEB!important}.isq.emo.orange{background:#FFF1E3!important}.isq.emo.blue{background:#EAF2FF!important}.isq.emo.green{background:#E6F6EC!important}
+.tip{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#16233A,#0E1828);color:#fff;border-radius:22px;padding:18px 18px 18px 20px;box-shadow:0 12px 26px -12px rgba(10,20,35,.6);position:relative;overflow:hidden}
+.tip::after{content:"";position:absolute;left:-30px;bottom:-60px;width:160px;height:160px;border-radius:50%;background:rgba(228,104,58,.12)}
+.tip-t{flex:1;display:flex;flex-direction:column;gap:6px;position:relative;z-index:1}
+.tip-t small{font-size:13px;color:#A9B6C9}
+.tip-t b{font-size:17px;line-height:1.3;letter-spacing:-.01em}
+.tip-t span{font-size:12.5px;font-weight:700;color:#F0874E;letter-spacing:.04em;text-transform:uppercase}
+.tip-e{font-size:54px;line-height:1;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4));position:relative;z-index:1}
+.tab[aria-current="true"] .temo{transform:translateY(-1px) scale(1.08)}
+.temo{transition:transform .15s}
 </style>
 </head>
 <body>
@@ -851,8 +890,9 @@ function renderHead(){
   }
   const h=d.getHours(),hi=h<11?'Добро утро':h<18?'Здравей':'Добър вечер';
   const sub=u.role==='driver'?'Карай отговорно!':u.role==='manager'?`Отдел: ${dname(u.dept)}`:'Администратор · пълен контрол';
-  $('#topIn').innerHTML=`<div class="greet"><small class="rl">${{driver:'ШОФЬОР',manager:'МЕНИДЖЪР',admin:'АДМИНИСТРАТОР'}[u.role]}</small><b><span class="gemo">${h<11?'☀️':h<18?'👋':'🌙'}</span>${hi}, ${esc(u.name.split(' ')[0])}!</b><span>${esc(sub)}</span></div>
-    <div class="hdate">${['Неделя','Понеделник','Вторник','Сряда','Четвъртък','Петък','Събота'][d.getDay()]}<br>${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()}</div>
+  const MN=['януари','февруари','март','април','май','юни','юли','август','септември','октомври','ноември','декември'];
+  $('.top').classList.toggle('hero',R.tab==='home');
+  $('#topIn').innerHTML=`<div class="greet"><small class="rl">${{driver:'🚗 ШОФЬОР',manager:'🏢 МЕНИДЖЪР',admin:'⭐ АДМИНИСТРАТОР'}[u.role]}</small><b>${hi}, <span class="nw">${esc(u.name.split(' ')[0])}! <span class="gemo">${h<11?'☀️':h<18?'👋':'🌙'}</span></span></b><span>${['неделя','понеделник','вторник','сряда','четвъртък','петък','събота'][d.getDay()]}, ${d.getDate()} ${MN[d.getMonth()]} · ${esc(sub)}</span></div>
     <button class="bell" data-act="tab" data-k="tasks" aria-label="Известия">${icon('bell')}${n?`<i>${n}</i>`:''}</button>`;
 }
 function render(){
@@ -861,7 +901,7 @@ function render(){
   const u=me();
   if(!u||u.active===false){showLogin();return}
   $('#boot').hidden=true;$('#loginView').hidden=true;$('#shell').hidden=false;
-  HEAD=null;
+  HEAD=null;$('.top').classList.remove('hero');
   const V={home:vHome,mycar:vMyCar,cars:vCars,car:vCar,tasks:vTasks,reports:vReports,more:vMore,users:vUsers,depts:vDepts,settings:vSettings,staff:vStaff,messages:vMessages,docsAll:vDocsAll,problemsAll:vProblemsAll,serviceAll:vServiceAll,tyresAll:vTyresAll,fuelAll:vFuelAll,tripsAll:vTripsAll};
   const html=(V[R.tab]||vHome)();
   renderTabs();renderHead();
@@ -927,7 +967,7 @@ function vHome(){
     if(!my.length)return h+`<div class="empty">${icon('car')}<b>Нямаш назначен автомобил.</b>Обърни се към администратора или мениджъра на отдела.</div>`;
     for(const c of my){
       const al=carAlerts(c);
-      h+=carCard(c);
+      h=drvStats(c)+h+carCard(c);
       if(al.length)h+=`<div class="card"><div class="card-h"><h3>Моите задачи</h3><button class="linkbtn" data-act="tab" data-k="tasks">Всички</button></div>${alertList(al.slice(0,4))}
         ${al.some(a=>a.kind==='pressure')?`<button class="btn go wide" data-act="check" data-car="${c.id}">${icon('plus')} Направи проверката</button>`:''}</div>`;
       h+=`<div class="sec"><h3>Бързи действия</h3>${actionTiles(c)}</div>`;
@@ -936,12 +976,12 @@ function vHome(){
       const last=entries().filter(e=>e.carId===c.id&&e.t==='trip').slice(-3).reverse();
       if(last.length)h+=`<div class="sec"><h3>Последни записи</h3><div class="list">${last.map(tripLi).join('')}</div></div>`;
     }
-    return h;
+    return h+tipCard();
   }
   if(!cars.length){
     return h+`<div class="empty">${icon('car')}<b>Още няма автомобили${isMgr()?' в твоя отдел':''}.</b>${isAdmin()?`Започни с отдел, потребители и първия автомобил или зареди примерните данни от спецификацията.<div class="row" style="justify-content:center"><button class="btn primary" data-act="editCar">Добави автомобил</button><button class="btn" data-act="demo">Зареди примерни данни</button></div>`:''}</div>`;
   }
-  h+=kpis(cars);
+  h=kpis(cars)+h;
   const T=k=>`tab" data-k="${k}`;
   const qa=isAdmin()?[[T('cars'),'blue','car','Автомобили'],[T('depts'),'purple','building','Отдели'],[T('staff'),'green','user','Шофьори'],[T('users'),'grey','users','Потребители'],
       [T('tasks'),'purple','tasks','Задачи'],[T('problemsAll'),'red','alert','Проблеми'],[T('serviceAll'),'orange','wrench','Сервиз'],[T('docsAll'),'grey','doc','Документи'],
@@ -959,20 +999,31 @@ function vHome(){
   if(recent.length)h+=`<div class="card"><div class="card-h"><h3>Последни събития</h3></div><div class="alerts">${recent.map(i=>`<div class="irow" style="box-shadow:none;padding:4px 0;cursor:default"><span class="isq ${i.kind==='fuel'?'blue':i.kind==='problem'?'red':i.kind==='service'?'orange':i.kind==='trip'?'purple':'grey'}">${icon(i.kind==='fuel'?'fuel':i.kind==='problem'?'alert':i.kind==='service'?'wrench':i.kind==='trip'?'road':'history')}</span><div class="tx"><b style="font-weight:600;font-size:14px">${esc(i.text)}</b><span class="d">${esc(regText(S.cars[i.carId]?.reg))} · ${fts(i.ts)} · ${esc(uname(i.by))}</span></div></div>`).join('')}</div></div>`;
   const depts=isAdmin()?Object.values(S.depts):[];
   if(depts.length>1)h+=`<div class="card"><div class="card-h"><h3>По отдели</h3></div><div class="list" style="box-shadow:none">${depts.map(d=>{const n=cars.filter(c=>c.dept===d.id).length;return `<div class="li" style="padding:9px 2px;align-items:center"><div class="row" style="gap:10px">${icon('car')}<b style="font-weight:500">${esc(d.name)}</b></div><b>${n}</b></div>`}).join('')}</div></div>`;
-  return h;
+  return h+tipCard();
 }
+function drvStats(c){
+  const ym=today().slice(0,7),ms=entries().filter(e=>e.carId===c.id&&e.t==='trip'&&!e.idle&&String(e.date||'').startsWith(ym)).reduce((a,e)=>a+(+e.km||0),0);
+  const n=carAlerts(c).filter(a=>a.lvl!=='good').length;
+  return `<div class="kpis three"><button class="kpi plain" data-act="openCar" data-car="${c.id}"><b>${fint(ms)}</b><span>км този месец</span></button>
+    <button class="kpi plain" data-act="openCar" data-car="${c.id}"><b>${fint(c.odo)}</b><span>км пробег</span></button>
+    <button class="kpi ${n?'red':'green'}" data-act="tab" data-k="tasks"><b>${n}</b><span>${n===1?'задача':'задачи'}</span></button></div>`;
+}
+const TIPS=['Провери гумите преди дълъг път – правилното налягане пести гориво.','Дистанцията е твоят въздушен възглавник. Пази поне 2 секунди.','Карай плавно – рязкото потегляне гори до 20% повече гориво.','Телефонът може да почака. Пътят – не.','Уморен ли си? 15 минути почивка спасяват животи.','Светлините винаги включени – да те виждат е толкова важно, колкото да виждаш.','Чиста кола, чисти стъкла, ясен поглед.','Предпазният колан – всеки път, дори за 500 метра.','Записвай километрите всяка сутрин – отнема 10 секунди.','Забелязал си проблем по колата? Сигнализирай веднага в „Проблем“.','Скоростта се усеща на спидометъра, а се плаща на пътя.','Зимата идва – провери чистачките и антифриза навреме.','Паркирай така, че да тръгнеш напред. По-лесно и по-безопасно.','Добрият шофьор стига не най-бързо, а винаги.'];
+function tipCard(){const d=new Date(),k=Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);
+  return `<div class="tip"><div class="tip-t"><small>Съвет за деня</small><b>${TIPS[k%TIPS.length]}</b><span>Карай безопасно! 🛡️</span></div><div class="tip-e">🚦</div></div>`}
 function carCard(c){
   const lvl=c.active===false?'off':carLevel(c),al=carAlerts(c);
   const st=c.active===false?'Неактивен':lvl==='ok'?'Изправен':lvl==='crit'?(al[0]?.text||'Критично'):(al[0]?.text||'Предстоящо');
   return `<button class="vcard${c.active===false?' off':''}" data-act="openCar" data-car="${c.id}">${carPic(c)}
-    <div class="vi"><b>${esc(carName(c))}</b><span class="reg">${esc(regText(c.reg))}</span><span class="status ${lvl}">${esc(st.length>34?st.slice(0,33)+'…':st)}</span>
+    <div class="vi"><b>${esc(carName(c))}</b><span class="plate"><i>BG</i>${esc(regText(c.reg))}</span><span class="status ${lvl}">${esc(st.length>34?st.slice(0,33)+'…':st)}</span>
     <span class="vd">${esc(dname(c.dept))} · ${fint(c.odo)} км${c.session?' · временно: '+esc(uname(c.session.userId)):''}</span></div>${icon('chev','chev')}</button>`;
 }
+const KIND_EMO={doc:'📄',svc:'🔧',tyres:'❄️',pressure:'🔍',problem:'⚠️'};
 const KIND_IC={doc:['doc','grey'],svc:['wrench','orange'],tyres:['snow','orange'],pressure:['tyre','blue'],problem:['alert','red'],fluid:['alert','orange']};
 function alertList(al,withOk){
   if(!al.length)return withOk?`<div class="irow ok" style="cursor:default"><span class="isq green">${icon('check')}</span><div class="tx"><b>Всичко е в срок</b><span class="s">Няма просрочени документи, сервизи или задачи</span></div></div>`:'';
   return `<div class="alerts">${al.map(a=>{const[ic,col]=KIND_IC[a.kind]||['alert','grey'];const sq=a.lvl==='crit'?'red':a.lvl==='good'?'green':col;
-    return `<button class="irow ${a.lvl==='good'?'ok':a.lvl}" ${alertAct(a)}><span class="isq ${sq}">${a.kind==='fluid'?FL_IC[a.fluid].replace('<svg ','<svg class="ic" '):icon(ic)}</span><div class="tx"><b>${esc(a.text)}</b><span class="s">${esc(a.sub||'')}</span>${R.tab!=='car'?`<span class="d">${esc(carName(a.car))} · ${esc(regText(a.car.reg))}</span>`:''}</div>${isRead(a)?'':'<span class="udot" title="Непрочетено"></span>'}${icon('chev','chev')}</button>`}).join('')}</div>`;
+    return `<button class="irow ${a.lvl==='good'?'ok':a.lvl}" ${alertAct(a)}><span class="isq ${sq}${a.kind==='fluid'?'':' emo'}">${a.kind==='fluid'?FL_IC[a.fluid].replace('<svg ','<svg class="ic" '):(KIND_EMO[a.kind]||icon(ic))}</span><div class="tx"><b>${esc(a.text)}</b><span class="s">${esc(a.sub||'')}</span>${R.tab!=='car'?`<span class="d">${esc(carName(a.car))} · ${esc(regText(a.car.reg))}</span>`:''}</div>${isRead(a)?'':'<span class="udot" title="Непрочетено"></span>'}${icon('chev','chev')}</button>`}).join('')}</div>`;
 }
 function alertAct(a){
   const c=a.car.id,m=canManage(a.car);
