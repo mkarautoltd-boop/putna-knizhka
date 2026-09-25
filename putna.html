@@ -455,8 +455,8 @@ body:not(.noscroll){overflow:visible!important;overflow-x:clip!important}
 .plate i::before{content:"★";position:absolute;top:2px;left:50%;transform:translateX(-50%);font-size:7px;color:#FFD400}
 .isq.emo{background:#F3F6FA!important;background-image:none!important;box-shadow:inset 0 0 0 1px #E6ECF3;font-size:24px;display:grid;place-items:center}
 .isq.emo.red{background:#FDECEB!important}.isq.emo.orange{background:#FFF1E3!important}.isq.emo.blue{background:#EAF2FF!important}.isq.emo.green{background:#E6F6EC!important}
-.tip{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#16233A,#0E1828);color:#fff;border-radius:22px;padding:18px 18px 18px 20px;box-shadow:0 12px 26px -12px rgba(10,20,35,.6);position:relative;overflow:hidden}
-.tip::after{content:"";position:absolute;left:-30px;bottom:-60px;width:160px;height:160px;border-radius:50%;background:rgba(228,104,58,.12)}
+.daytip{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#16233A,#0E1828);color:#fff;border-radius:22px;padding:18px 18px 18px 20px;box-shadow:0 12px 26px -12px rgba(10,20,35,.6);position:relative;overflow:hidden}
+.daytip::after{content:"";position:absolute;left:-30px;bottom:-60px;width:160px;height:160px;border-radius:50%;background:rgba(228,104,58,.12)}
 .tip-t{flex:1;display:flex;flex-direction:column;gap:6px;position:relative;z-index:1}
 .tip-t small{font-size:13px;color:#A9B6C9}
 .tip-t b{font-size:17px;line-height:1.3;letter-spacing:-.01em}
@@ -931,21 +931,23 @@ function renderTabs(){
   if(isStaff())t.push(['reports','Отчети']);
   t.push(['more','Още']);
   $('#tabs').classList.toggle('six',t.length>5);
-  $('#tabs').innerHTML=t.map(([k,l])=>`<button class="tab" data-act="tab" data-k="${k}" aria-current="${R.tab===k||(k==='cars'&&R.tab==='car')||(k==='more'&&['users','depts','settings'].includes(R.tab))}">${ICONS[k]}${l}${k==='tasks'&&nAlerts?`<span class="dot">${nAlerts}</span>`:''}</button>`).join('');
+  setHTML($('#tabs'),t.map(([k,l])=>`<button class="tab" data-act="tab" data-k="${k}" aria-current="${R.tab===k||(k==='cars'&&R.tab==='car')||(k==='more'&&['users','depts','settings'].includes(R.tab))}">${ICONS[k]}${l}${k==='tasks'&&nAlerts?`<span class="dot">${nAlerts}</span>`:''}</button>`).join(''));
 }
 function renderHead(){
   const u=me(),d=new Date(),n=unreadN();
   if(HEAD){
-    $('#topIn').innerHTML=`<button class="hback" data-act="tab" data-k="${HEAD.back}" aria-label="Назад">${icon('back')}</button><div class="htitle">${esc(HEAD.title)}</div>${HEAD.plus?`<button class="hplus" data-act="${HEAD.plus}" aria-label="Добави">${icon('plus')}</button>`:'<span class="hspace"></span>'}`;
+    setHTML($('#topIn'),`<button class="hback" data-act="tab" data-k="${HEAD.back}" aria-label="Назад">${icon('back')}</button><div class="htitle">${esc(HEAD.title)}</div>${HEAD.plus?`<button class="hplus" data-act="${HEAD.plus}" aria-label="Добави">${icon('plus')}</button>`:'<span class="hspace"></span>'}`);
     return;
   }
   const h=d.getHours(),hi=h<11?'Добро утро':h<18?'Здравей':'Добър вечер';
   const sub=u.role==='driver'?'Карай отговорно!':u.role==='manager'?`Отдел: ${dname(u.dept)}`:'Администратор · пълен контрол';
   const MN=['януари','февруари','март','април','май','юни','юли','август','септември','октомври','ноември','декември'];
   $('.top').classList.toggle('hero',R.tab==='home');
-  $('#topIn').innerHTML=`<div class="greet"><small class="rl">${{driver:'🚗 ШОФЬОР',manager:'🏢 МЕНИДЖЪР',admin:'⭐ АДМИНИСТРАТОР'}[u.role]}</small><b>${hi}, <span class="nw">${esc(u.name.split(' ')[0])}! <span class="gemo">${h<11?'☀️':h<18?'👋':'🌙'}</span></span></b><span>${['неделя','понеделник','вторник','сряда','четвъртък','петък','събота'][d.getDay()]}, ${d.getDate()} ${MN[d.getMonth()]} · ${esc(sub)}</span></div>
-    <button class="bell" data-act="tab" data-k="tasks" aria-label="Известия">${icon('bell')}${n?`<i>${n}</i>`:''}</button>`;
+  setHTML($('#topIn'),`<div class="greet"><small class="rl">${{driver:'🚗 ШОФЬОР',manager:'🏢 МЕНИДЖЪР',admin:'⭐ АДМИНИСТРАТОР'}[u.role]}</small><b>${hi}, <span class="nw">${esc(u.name.split(' ')[0])}! <span class="gemo">${h<11?'☀️':h<18?'👋':'🌙'}</span></span></b><span>${['неделя','понеделник','вторник','сряда','четвъртък','петък','събота'][d.getDay()]}, ${d.getDate()} ${MN[d.getMonth()]} · ${esc(sub)}</span></div>
+    <button class="bell" data-act="tab" data-k="tasks" aria-label="Известия">${icon('bell')}${n?`<i>${n}</i>`:''}</button>`);
 }
+/* сменя съдържанието само ако е различно – без прескачане при опресняване */
+function setHTML(el,h){if(el._h!==h){el.innerHTML=h;el._h=h}}
 function render(){
   if(!db)return;
   if(!S.loaded.has('users')&&!Object.keys(S.users).length)return;
@@ -956,7 +958,7 @@ function render(){
   const V={home:vHome,mycar:vMyCar,cars:vCars,car:vCar,tasks:vTasks,reports:vReports,more:vMore,users:vUsers,depts:vDepts,settings:vSettings,staff:vStaff,messages:vMessages,docsAll:vDocsAll,problemsAll:vProblemsAll,serviceAll:vServiceAll,tyresAll:vTyresAll,fuelAll:vFuelAll,tripsAll:vTripsAll};
   const html=(V[R.tab]||vHome)();
   renderTabs();renderHead();
-  $('#main').innerHTML=html;
+  setHTML($('#main'),html);
 }
 function showLogin(){$('#boot').hidden=true;$('#shell').hidden=true;$('#loginView').hidden=false}
 
@@ -1061,7 +1063,7 @@ function drvStats(c){
 }
 const TIPS=['Провери гумите преди дълъг път – правилното налягане пести гориво.','Дистанцията е твоят въздушен възглавник. Пази поне 2 секунди.','Карай плавно – рязкото потегляне гори до 20% повече гориво.','Телефонът може да почака. Пътят – не.','Уморен ли си? 15 минути почивка спасяват животи.','Светлините винаги включени – да те виждат е толкова важно, колкото да виждаш.','Чиста кола, чисти стъкла, ясен поглед.','Предпазният колан – всеки път, дори за 500 метра.','Записвай километрите всяка сутрин – отнема 10 секунди.','Забелязал си проблем по колата? Сигнализирай веднага в „Проблем“.','Скоростта се усеща на спидометъра, а се плаща на пътя.','Зимата идва – провери чистачките и антифриза навреме.','Паркирай така, че да тръгнеш напред. По-лесно и по-безопасно.','Добрият шофьор стига не най-бързо, а винаги.'];
 function tipCard(){const d=new Date(),k=Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);
-  return `<div class="tip"><div class="tip-t"><small>Съвет за деня</small><b>${TIPS[k%TIPS.length]}</b><span>Карай безопасно! 🛡️</span></div><div class="tip-e">🚦</div></div>`}
+  return `<div class="daytip"><div class="tip-t"><small>Съвет за деня</small><b>${TIPS[k%TIPS.length]}</b><span>Карай безопасно! 🛡️</span></div><div class="tip-e">🚦</div></div>`}
 function carCard(c){
   const lvl=c.active===false?'off':carLevel(c),al=carAlerts(c);
   const st=c.active===false?'Неактивен':lvl==='ok'?'Изправен':lvl==='crit'?(al[0]?.text||'Критично'):(al[0]?.text||'Предстоящо');
@@ -2073,7 +2075,7 @@ const gasDb={
 };
 function logoutLocal(){TOKEN=null;meId=null;try{localStorage.removeItem('pk_token');localStorage.removeItem('pk_cache')}catch(e){}
   for(const c of ['users','depts','cars','logs','problems','tasks'])S[c]={};S.loaded.clear();invalidate();R.tab='home';closeSheet();showLogin()}
-async function refresh(){if(!TOKEN)return;try{applyData(await gs('getAll',TOKEN))}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
+async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyData(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
 const APP_VER='23';let _verAt=0;
