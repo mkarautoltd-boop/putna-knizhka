@@ -656,14 +656,15 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .qt .qch{opacity:.6}
 .qt:active{transform:scale(.97)}
 
-/* елегантна, по-приглушена палитра за плочките */
-.qt.blue{background:linear-gradient(160deg,#5B8BDB 0%,#3A67B8 100%)!important;--qs:rgba(58,103,184,.5)}
-.qt.purple{background:linear-gradient(160deg,#8C7BDE 0%,#6452BE 100%)!important;--qs:rgba(100,82,190,.5)}
-.qt.green{background:linear-gradient(160deg,#4DB38A 0%,#2F8C68 100%)!important;--qs:rgba(47,140,104,.5)}
-.qt.orange{background:linear-gradient(160deg,#EE9A6E 0%,#D36F45 100%)!important;--qs:rgba(211,111,69,.5)}
-.qt.red{background:linear-gradient(160deg,#E77B7B 0%,#C8505A 100%)!important;--qs:rgba(200,80,90,.5)}
-.qt.grey{background:linear-gradient(160deg,#E9BC5F 0%,#C99534 100%)!important;--qs:rgba(201,149,52,.5)}
-.qt.navy{background:linear-gradient(160deg,#4A5F86 0%,#2A3B5E 100%)!important;--qs:rgba(42,59,94,.5)}
+/* плочките: бели и чисти като картите; цветът е само в квадратчето с иконката */
+.qt,.qa:not(.three) .qt{background:radial-gradient(120% 90% at 100% 0%,rgba(174,184,198,.18) 0%,rgba(255,255,255,0) 60%),linear-gradient(160deg,#F1F4F8 0%,#fff 55%)!important;color:#0F1B2D!important;box-shadow:0 1px 2px rgba(15,35,65,.06),0 10px 24px -16px rgba(15,35,65,.35)!important}
+.qt::before,.qt::after{display:none!important}
+.qt .ql{color:#0F1B2D;text-shadow:none!important}
+.qt .qch{stroke:#AEB8C6!important;opacity:1}
+.qemo{box-shadow:0 4px 10px -4px rgba(15,35,65,.25)!important;border:0}
+.qt.blue .qemo{background:#EAF1FC!important}.qt.purple .qemo{background:#F0ECFB!important}.qt.green .qemo{background:#E6F5EC!important}
+.qt.orange .qemo{background:#FDEEE6!important}.qt.red .qemo{background:#FCEBEC!important}.qt.grey .qemo{background:#FBF3E1!important}.qt.navy .qemo{background:#E9EDF3!important}
+.qt i{box-shadow:0 0 0 2px #fff}
 </style>
 </head>
 <body>
