@@ -643,6 +643,8 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .dcard::before{background:#AEB8C6!important}
 .dcard .dc-ic{background:#fff!important;box-shadow:0 4px 10px -4px rgba(15,35,65,.25)!important}
 .dc-bar{background:#EEF2F6!important;box-shadow:none!important}
+
+.dcard .dc-left.dc-ok{color:#1FA35A!important}.dcard .dc-left.dc-warn{color:#F08A18!important}.dcard .dc-left.dc-crit{color:#E0342F!important}.dcard .dc-left.dc-none{color:#8A97AB!important;font-weight:600}
 </style>
 </head>
 <body>
@@ -1411,9 +1413,12 @@ function svcCards(c,m){
     const lvl=R2.reduce((w,[,r])=>LV_RANK[r.lvl]>LV_RANK[w]?r.lvl:w,'none');
     const ic=g==='oil'?FL_IC.oil:SVC_EMO[g];
     const hint=lvl==='crit'?'Просрочена':lvl==='warn'?'Наближава':'';
-    const body=keys.length===1?(()=>{const r=R2[0][1],lv=svcOf(c,keys[0]);return `${g==='battery'?`<div class="dc-r"><span>Сменен</span><b class="dc-was">${lv.lastDate||lv.lastKm!=null?[lv.lastDate?fd(lv.lastDate):'',lv.lastKm!=null?fint(lv.lastKm)+' км':''].filter(Boolean).join(' · '):'Няма данни'}</b></div>`:''}<div class="dc-r"><span>Следваща смяна</span><b class="dc-left">${r.next||'Няма данни'}</b></div>${r.pc!=null?`<div class="dc-bar"><i style="width:${Math.round(r.pc*100)}%"></i></div>`:''}`})()
-      :`<div class="dc-sub">${R2.map(([k,r])=>`<div class="dc-srow ${r.lvl}"><div class="dc-sh"><span>${SVC_SHORT[k]}</span><b>${r.next||'Няма данни'}</b></div>${r.pc!=null?`<div class="dc-bar"><i style="width:${Math.round(r.pc*100)}%"></i></div>`:''}</div>`).join('')}</div>`;
-    return `<div class="dcard sv ${lvl}"><div class="dc-h"><span class="dc-ic ${g==='timing'?'':'svg '}${g}">${ic}</span><b>${l}</b>${hint?`<em class="dc-tag">${hint}</em>`:''}</div>
+    const row=(k,lab)=>{const r=svcRow(c,k).st,rl=svcRow(c,k).lvl;if(!r)return `<div class="dc-r"><span>${lab}</span><b class="dc-left dc-none">Няма данни</b></div>`;
+      return `${r.nextKm!=null?`<div class="dc-r"><span>${lab}</span><b class="dc-left dc-${rl}">${fint(r.nextKm)} км</b></div>`:''}${r.nextDate?`<div class="dc-r"><span>${r.nextKm!=null?'или до дата':lab}</span><b class="dc-left dc-${rl}">${fd(r.nextDate)}</b></div>`:''}`};
+    const lv=svcOf(c,keys[0]);
+    const body=(g==='battery'?`<div class="dc-r"><span>Сменен</span><b>${lv.lastDate||lv.lastKm!=null?[lv.lastDate?fd(lv.lastDate):'',lv.lastKm!=null?fint(lv.lastKm)+' км':''].filter(Boolean).join(' · '):'—'}</b></div>`:'')+
+      (keys.length===1?row(keys[0],'Следваща смяна'):keys.map(k=>row(k,SVC_SHORT[k])).join(''));
+    return `<div class="dcard ${lvl}"><div class="dc-h"><span class="dc-ic ${g==='timing'?'':'svg '}${g}">${ic}</span><b>${l}</b>${hint?`<em class="dc-tag">${hint}</em>`:''}</div>
       ${body}
 </div>`}).join('')}</div>`;
 }
