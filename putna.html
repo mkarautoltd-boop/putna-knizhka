@@ -655,6 +655,21 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .dc-pen .ic{width:17px;height:17px}
 .dc-pen{background:linear-gradient(145deg,#4C8DF6,#1F5FD0)!important;color:#fff!important;box-shadow:0 4px 10px -3px rgba(31,95,208,.55)}.dc-pen .ic{stroke:#fff;stroke-width:2.2}
 .daytip.winter{background:linear-gradient(135deg,#1B3556,#0E1D33)}
+
+/* ---- лаптоп и по-голям екран: подредено в средата, повече колони ---- */
+@media (min-width:900px){
+  #main.wrap,.wrap{max-width:1080px!important;margin-left:auto!important;margin-right:auto!important;width:100%}
+  .top-in{max-width:1080px!important;margin:0 auto!important}
+  .qa,.qa.three{grid-template-columns:repeat(6,minmax(0,1fr))!important}
+  .qt,.qa:not(.three) .qt{min-height:112px}
+  .vhero-rail{margin:0!important;padding:4px 0 14px!important;gap:16px}
+  .vhero-slot{flex:0 0 440px!important}
+  .vhero-one{max-width:520px}
+  .dcards{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+  .carlist{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .sheet-card{max-width:560px}
+}
+@media (min-width:1300px){.dcards{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style>
 </head>
 <body>
