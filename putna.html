@@ -2099,7 +2099,7 @@ function parseFuelLines(c,txt){
     if(!dm){r.err='Няма дата';out.push(r);continue}
     let y=dm[3]?+dm[3]:lastY;if(y<100)y+=2000;lastY=y;r.date=`${y}-${String(dm[2]).padStart(2,'0')}-${String(dm[1]).padStart(2,'0')}`;
     let rest=line.replace(dm[0],' ');
-    const lo=rest.toLowerCase();r.ft=/бенз/.test(lo)?'petrol':/газ|метан/.test(lo)?'gas':null;
+    const lo=rest.toLowerCase();r.note=/лично/.test(lo)?'Лично гориво':'';r.ft=/бенз/.test(lo)?'petrol':/газ|метан/.test(lo)?'gas':null;
     const kmM=rest.match(/(\d[\d\s]{2,})\s*км/i);if(kmM){r.km=+kmM[1].replace(/\s/g,'');rest=rest.replace(kmM[0],' ')}
     const nums=[...rest.matchAll(/\d+(?:[.,]\d+)?/g)].map(m=>+m[0].replace(',','.'));
     const lM=rest.match(/(\d+(?:[.,]\d+)?)\s*(?:л|l)(?![а-я])/i),sM=rest.match(/(\d+(?:[.,]\d+)?)\s*(?:€|евро|eur|лв)/i);
@@ -2126,7 +2126,7 @@ function openBulkFuel(id){
   openSheet('Много зареждания',html,async f=>{
     const rows=bulkFuelCheck(c,f.txt).filter(r=>r.ok);if(!rows.length)fail('Няма редове за запис.');
     const drv=drvIds(c)[0]||meId,byM={};
-    for(const r of rows){const e={id:uid(),ts:new Date().toISOString(),by:meId,t:'fuel',...(bi?{ft:r.ft==='petrol'?'petrol':'gas'}:{}),date:r.date,time:'12:00',driver:drv,km:r.km,liters:r.liters,sum:r.sum,ppl:+(r.sum/r.liters).toFixed(3),station:'',note:'Въведено наведнъж'};
+    for(const r of rows){const e={id:uid(),ts:new Date().toISOString(),by:meId,t:'fuel',...(bi?{ft:r.ft==='petrol'?'petrol':'gas'}:{}),date:r.date,time:'12:00',driver:drv,km:r.km,liters:r.liters,sum:r.sum,ppl:+(r.sum/r.liters).toFixed(3),station:'',note:r.note||'Въведено наведнъж'};
       (byM[r.date.slice(0,7)]=byM[r.date.slice(0,7)]||{})[e.id]=clean(e)}
     for(const[mo,es]of Object.entries(byM)){const ref=db.doc(`logs/${id}_${mo}`),body={e:es};
       try{await withRetry(()=>ref.update(body))}catch(err){if(err?.code!=='invalid_argument')throw err;const sn=await ref.get();if(sn.exists)await ref.update(body);else await ref.set({carId:id,month:mo,...body})}}
@@ -2134,7 +2134,7 @@ function openBulkFuel(id){
   },'Запиши');
   const form=$('#sheetForm');
   const upd=()=>{const R2=bulkFuelCheck(c,form.txt.value),ok=R2.filter(r=>r.ok).length;
-    $('#bkPrev').innerHTML=R2.length?`<div class="list">${R2.map(r=>`<div class="li"><div class="l"><b>${r.date?fd(r.date):esc(r.line)}${bi&&r.date?` <span class="ftpill ${r.ft==='petrol'?'petrol':''}">${r.ft==='petrol'?'Бензин':'Газ'}</span>`:''}</b><span>${r.liters?fnum(r.liters)+' л':''}${r.sum?' · '+eur(r.sum):''}${r.km!=null?' · '+fint(r.km)+' км':''}</span></div><div class="r">${r.ok?'<span class="pill ok">OK</span>':`<span class="pill crit">${esc(r.err)}</span>`}</div></div>`).join('')}</div><div class="calc">Ще се запишат <span class="num">${ok}</span> от ${R2.length} реда</div>`:'';
+    $('#bkPrev').innerHTML=R2.length?`<div class="list">${R2.map(r=>`<div class="li"><div class="l"><b>${r.date?fd(r.date):esc(r.line)}${bi&&r.date?` <span class="ftpill ${r.ft==='petrol'?'petrol':''}">${r.ft==='petrol'?'Бензин':'Газ'}</span>`:''}</b><span>${r.liters?fnum(r.liters)+' л':''}${r.sum?' · '+eur(r.sum):''}${r.km!=null?' · '+fint(r.km)+' км':''}${r.note?' · '+r.note:''}</span></div><div class="r">${r.ok?'<span class="pill ok">OK</span>':`<span class="pill crit">${esc(r.err)}</span>`}</div></div>`).join('')}</div><div class="calc">Ще се запишат <span class="num">${ok}</span> от ${R2.length} реда</div>`:'';
     $('#sheetOk').disabled=!ok};
   form.addEventListener('input',upd);upd();
 }
