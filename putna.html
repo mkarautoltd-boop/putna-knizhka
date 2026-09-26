@@ -646,6 +646,7 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 
 .dcard .dc-left.dc-ok{color:#1FA35A!important}.dcard .dc-left.dc-warn{color:#F08A18!important}.dcard .dc-left.dc-crit{color:#E0342F!important}.dcard .dc-left.dc-none{color:#8A97AB!important;font-weight:600}
 .dc-ic.oil svg{width:38px;height:38px}.dc-ic.pads svg{width:38px;height:38px}
+.vcard.nopic{padding:16px 14px 16px 18px}
 </style>
 </head>
 <body>
@@ -1249,7 +1250,7 @@ function docCards(c,m){
 function carCard(c){
   const lvl=c.active===false?'off':carLevel(c),al=carAlerts(c);
   const st=c.active===false?'Неактивен':lvl==='ok'?'Изправен':lvl==='crit'?(al[0]?.text||'Критично'):(al[0]?.text||'Предстоящо');
-  return `<button class="vcard${c.active===false?' off':''}" data-act="openCar" data-car="${c.id}">${carPic(c)}
+  return `<button class="vcard nopic${c.active===false?' off':''}" data-act="openCar" data-car="${c.id}">
     <div class="vi"><b>${esc(carName(c))}</b><span class="plate"><i>BG</i>${esc(regText(c.reg)).replace(/ /g,'\u2009')}</span><span class="status ${lvl}">${esc(st.length>34?st.slice(0,33)+'…':st)}</span>
     <span class="vd">${esc(dname(c.dept))} · ${fint(c.odo)} км${c.session?' · временно: '+esc(uname(c.session.userId)):''}</span></div>${icon('chev','chev')}</button>`;
 }
