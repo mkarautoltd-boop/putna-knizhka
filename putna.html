@@ -670,11 +670,6 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
   .sheet-card{max-width:560px}
 }
 @media (min-width:1300px){.dcards{grid-template-columns:repeat(3,minmax(0,1fr))}}
-.vhero-nav{display:flex;align-items:center;justify-content:center;gap:10px}
-.vhero-arr{display:none;width:40px;height:40px;border-radius:50%;border:0;background:#fff;box-shadow:0 3px 10px -3px rgba(15,35,65,.3);color:#2E55D6;cursor:pointer;place-items:center;flex:none}
-.vhero-arr .ic{width:20px;height:20px;stroke-width:2.4}.vhero-arr.nx .ic{transform:scaleX(-1)}
-.vhero-dots i{cursor:pointer}.vhero-slot[data-act]{cursor:pointer}
-@media (hover:hover) and (pointer:fine){.vhero-arr{display:grid}}
 </style>
 </head>
 <body>
@@ -1251,14 +1246,13 @@ function heroStatus(c){const lvl=c.active===false?'off':carLevel(c),al=carAlerts
 function heroRail(c){
   let L=R.carBack==='cars'&&isStaff()?listCars():scopeCars().filter(x=>x.active!==false);if(!L.some(x=>x.id===c.id))L=[...L,c];
   if(L.length<2)return `<div class="vhero-one">${carHero(c)}</div>`;
-  return `<div class="vhero-rail" id="heroRail">${L.map(x=>`<div class="vhero-slot${x.id===c.id?' on':''}" data-id="${x.id}"${x.id===c.id?'':' data-act="heroGo"'}>${carHero(x)}</div>`).join('')}</div>
+  return `<div class="vhero-rail" id="heroRail">${L.map(x=>`<div class="vhero-slot${x.id===c.id?' on':''}" data-id="${x.id}">${carHero(x)}</div>`).join('')}</div>
     ${heroDots(L,c)}`;
 }
 /* точки: най-много 9, крайните по-малки, и брояч при много коли */
 function heroDots(L,c){const n=L.length,i=L.findIndex(x=>x.id===c.id),W=9,a=Math.max(0,Math.min(i-4,n-W)),b=Math.min(n,a+W);
-  let h='';for(let k=a;k<b;k++){const edge=(k===a&&a>0)||(k===b-1&&b<n);h+=k===i?`<span class="on">${icon('car')}</span>`:`<i class="${edge?'sm':''}" data-act="heroGo" data-id="${L[k].id}"></i>`}
-  const pv=L[(i-1+n)%n].id,nx=L[(i+1)%n].id;
-  return `<div class="vhero-nav"><button class="vhero-arr" data-act="heroGo" data-id="${pv}" aria-label="Предишна">${icon('back')}</button><div class="vhero-dots">${h}</div><button class="vhero-arr nx" data-act="heroGo" data-id="${nx}" aria-label="Следваща">${icon('back')}</button></div>${n>W?`<div class="vhero-count">${i+1} от ${n}</div>`:''}`;
+  let h='';for(let k=a;k<b;k++){const edge=(k===a&&a>0)||(k===b-1&&b<n);h+=k===i?`<span class="on">${icon('car')}</span>`:`<i class="${edge?'sm':''}"></i>`}
+  return `<div class="vhero-dots">${h}</div>${n>W?`<div class="vhero-count">${i+1} от ${n}</div>`:''}`;
 }
 const DOC_EMO={gtp:'🔧',go:'🛡️',kasko:'🚘',vignette:'🛣️'};
 function leftText(td,dt){const a=new Date(td+'T12:00:00'),b=new Date(dt+'T12:00:00');
@@ -2270,7 +2264,6 @@ async function printPdf(){
 const ACT={
   tab:d=>{R.tab=d.k;if(d.k==='cars')R.carBack='cars';toTop();render()},
   myBook:d=>{R.carBack=R.tab;R.tab='car';R.carId=d.car;R.carSec='book';toTop();render()},
-  heroGo:d=>{if(R.tab==='car')R.carId=d.id;else R.listCar=d.id;render()},
   openCar:d=>{R.carBack=R.tab==='car'?R.carBack:R.tab;R.tab='car';R.carId=d.car;R.listCar=d.car;R.carSec='overview';toTop();render()},
   carSec:d=>{R.carSec=d.k;render()},
   carFilter:d=>{R.carFilter=d.k;render()},toggleInactive:()=>{R.showInactive=!R.showInactive;render()},
