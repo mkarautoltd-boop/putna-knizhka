@@ -662,7 +662,8 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
   .top-in{max-width:1080px!important;margin:0 auto!important}
   .qa,.qa.three{grid-template-columns:repeat(6,minmax(0,1fr))!important}
   .qt,.qa:not(.three) .qt{min-height:112px}
-  .vhero-rail{margin:0!important;padding:4px calc(50% - 220px) 14px!important;gap:16px}
+  .vhero-rail{margin:0!important;padding:4px 0 14px!important;gap:16px}
+  .vhero-rail::before,.vhero-rail::after{content:"";flex:0 0 calc(50% - 236px)}
   .vhero-slot{flex:0 0 440px!important}
   .vhero-one{max-width:520px}
   .dcards{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
@@ -2341,7 +2342,7 @@ function logoutLocal(){TOKEN=null;meId=null;try{localStorage.removeItem('pk_toke
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyData(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='35';let _verAt=0;
+const APP_VER='36';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
