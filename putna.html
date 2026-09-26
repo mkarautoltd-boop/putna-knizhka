@@ -1203,7 +1203,7 @@ function tipCard(){const d=new Date(),k=Math.floor((d-new Date(d.getFullYear(),0
 /* ---- карта на колата (стил „документи в телефона“) ---- */
 function carHero(c,act){
   const m=canManage(c),mk=String(c.make||'?').trim(),ini=mk.slice(0,1).toUpperCase();
-  const bg=c.photo?`<img class="vhero-bg" src="${c.photo}" alt="">`:`<div class="vhero-bg svg">${carSvg(c)}</div>`;
+  const bg=`<img class="vhero-bg" src="${c.photo||'car-bg.jpg'}" alt="">`;
   return `<div class="vhero"${act?` data-act="openCar" data-car="${c.id}"`:''}>${bg}
     ${m&&!act?`<button class="vhero-gear" data-act="editCar" data-car="${c.id}" aria-label="Редактирай">${icon('gear')}</button>`:''}
     <div class="vhero-top"><span class="vhero-logo">${esc(ini)}</span><b class="vhero-name">${esc(carName(c).toUpperCase())}</b></div>
