@@ -647,6 +647,8 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .dcard .dc-left.dc-ok{color:#1FA35A!important}.dcard .dc-left.dc-warn{color:#F08A18!important}.dcard .dc-left.dc-crit{color:#E0342F!important}.dcard .dc-left.dc-none{color:#8A97AB!important;font-weight:600}
 .dc-ic.oil svg{width:38px;height:38px}.dc-ic.pads svg{width:38px;height:38px}
 .vcard.nopic{padding:16px 14px 16px 18px}
+#kmWarn.bad{background:#FDECEB;color:#E0342F}
+.mk-row .btn:disabled{opacity:.45}
 </style>
 </head>
 <body>
@@ -1659,7 +1661,7 @@ const openTrip=guard((carId,morning)=>{
   const cf=carField(carId),car=S.cars[cf.id];
   const kmBox=`<div class="calc" id="kmCalc"></div><div class="note" id="kmWarn" hidden></div>`;
   const html=cf.html+
-    (morning?`${fld('Начален километраж днес',`<div class="mk-row">${ninp('endKm','','required placeholder="напр. '+((car.odo||0)>=100000?fint(car.odo+50):'123 456')+'"')}<button type="submit" class="btn go">✓ Потвърди</button></div>`,'Километражът сутрин, преди да тръгнеш. Изминатите км за предния ден се смятат сами.')}<input type="hidden" name="startKm" id="f_startKm" value="${car.odo||0}">`+kmBox:'')+
+    (morning?`${fld('Начален километраж днес',`<div class="mk-row">${ninp('endKm',car.odo?String(car.odo):'','required placeholder="напр. 123 456"')}<button type="submit" class="btn go">✓ Потвърди</button></div>`,'Километражът сутрин, преди да тръгнеш. Изминатите км за предния ден се смятат сами.')}<input type="hidden" name="startKm" id="f_startKm" value="${car.odo||0}">`+kmBox:'')+
     `<div id="dz">${driverField(car)}</div>`+
     `${fld('Дата',inp('date',today(),'date'))}<input type="hidden" name="time" value="${nowTime()}">${fld('Вид път',sel('road',Object.entries(ROADS),'mixed'))}`+
     (morning?'':`<div class="grid2">${fld('Начален км',ninp('startKm',car.odo||''))}${fld('Краен км',ninp('endKm',''))}</div>`+kmBox)+
@@ -1685,12 +1687,15 @@ const openTrip=guard((carId,morning)=>{
     if(morning){const pm=entries().filter(x=>x.carId===c.id&&x.t==='trip'&&x.morning&&!x.virtual).pop();
       calc.innerHTML=`<div><span class="cemo">📍</span>Предишен начален: <span class="num">${pm?fint(pm.reading)+' км':'—'}</span>${pm?' <small>('+fd(pm.date)+')</small>':''}</div>`+(pm&&e!=null&&!isNaN(e)&&e>=pm.reading?`<div class="cgo"><span class="cemo">✅</span>Изминати на ${fds(pm.date)}: <span class="num">${fint(e-pm.reading)} км</span></div>`:'');}
     else calc.innerHTML=`Предишен запис: <span class="num">${fint(c.odo)} км</span>`+(e!=null&&!isNaN(e)&&s!=null?` · Изминати: <span class="num">${fint(e-s)} км</span>`:'');
-    w.hidden=true;
-    if(s!=null&&!isNaN(s)&&s<(c.odo||0)){w.textContent=`Началният км е под последния запис (${fint(c.odo)} км) – записът ще бъде отказан.`;w.hidden=false}
+    w.hidden=true;w.classList.remove('bad');
+    const blk=morning&&e!=null&&!isNaN(e)&&e<(c.odo||0);
+    form.querySelectorAll('button[type=submit]').forEach(b=>b.disabled=blk);
+    if(blk){w.textContent=`Километражът не може да е по-малък от предишния (${fint(c.odo)} км).`;w.hidden=false;w.classList.add('bad')}
+    else if(s!=null&&!isNaN(s)&&s<(c.odo||0)){w.textContent=`Началният км е под последния запис (${fint(c.odo)} км) – записът ще бъде отказан.`;w.hidden=false}
     else if(!morning&&s!=null&&s>(c.odo||0)){w.textContent=`Пропуск от ${fint(s-(c.odo||0))} км спрямо последния запис.`;w.hidden=false}
     else if(e!=null&&s!=null&&e<s){w.textContent='Крайният километраж е по-малък от началния.';w.hidden=false}};
   form.addEventListener('input',upd);
-  onCarChange(form,c=>{if(!morning)form.startKm.value=c.odo||'';$('#dz').innerHTML=driverField(c);upd()});
+  onCarChange(form,c=>{if(!morning)form.startKm.value=c.odo||'';else form.endKm.value=c.odo?String(c.odo):'';$('#dz').innerHTML=driverField(c);upd()});
   upd();
 });
 
