@@ -653,6 +653,7 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .dc-pen{margin-left:auto;width:34px;height:34px;border-radius:50%;background:#EEF2F8;display:grid;place-items:center;color:#5B6B80;flex:none}
 .dc-tag+.dc-pen{margin-left:8px}
 .dc-pen .ic{width:17px;height:17px}
+.dc-pen{background:linear-gradient(145deg,#4C8DF6,#1F5FD0)!important;color:#fff!important;box-shadow:0 4px 10px -3px rgba(31,95,208,.55)}.dc-pen .ic{stroke:#fff;stroke-width:2.2}
 </style>
 </head>
 <body>
@@ -2321,7 +2322,7 @@ function logoutLocal(){TOKEN=null;meId=null;try{localStorage.removeItem('pk_toke
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyData(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='31';let _verAt=0;
+const APP_VER='32';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
