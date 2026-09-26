@@ -649,6 +649,10 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .vcard.nopic{padding:16px 14px 16px 18px}
 #kmWarn.bad{background:#FDECEB;color:#E0342F}
 .mk-row .btn:disabled{opacity:.45}
+.dcard.tap{cursor:pointer;transition:transform .1s}.dcard.tap:active{transform:scale(.98)}
+.dc-pen{margin-left:auto;width:34px;height:34px;border-radius:50%;background:#EEF2F8;display:grid;place-items:center;color:#5B6B80;flex:none}
+.dc-tag+.dc-pen{margin-left:8px}
+.dc-pen .ic{width:17px;height:17px}
 </style>
 </head>
 <body>
@@ -1240,11 +1244,11 @@ function leftText(td,dt){const a=new Date(td+'T12:00:00'),b=new Date(dt+'T12:00:
   return [mo>0?P(mo,'месец','месеца'):'',d>0||mo===0?P(d,'ден','дни'):''].filter(Boolean).join(' и ')}
 function docCards(c,m){
   const d=c.docs||{},td=today();
-  const all=[...DOCS.map(([k,l])=>[k,l,d[k]]),...(d.others||[]).filter(o=>o?.name).map(o=>['other',o.name,o.until])];
+  const all=[...DOCS.map(([k,l])=>[k,l,d[k]]),...(d.others||[]).map((o,i)=>[o,i]).filter(([o])=>o?.name).map(([o,i])=>['other:'+i,o.name,o.until])];
   return `<div class="dcards">${all.map(([k,l,dt])=>{const left=dt?daysBetween(td,dt):null;
     const lvl=left==null?'none':left<0?'crit':left<=S.settings.warnDays?'warn':'ok';
     const val=left==null?'Не е въведена':left<0?`Изтекла преди ${-left} дни`:left===0?'Изтича днес':leftText(td,dt);
-    return `<div class="dcard ${lvl}"><div class="dc-h"><span class="dc-ic">${DOC_EMO[k]||'📄'}</span><b>${esc(l)}</b></div>
+    return `<div class="dcard ${lvl}${m?' tap':''}"${m?` data-act="editDoc" data-car="${c.id}" data-k="${k}"`:''}><div class="dc-h"><span class="dc-ic">${DOC_EMO[k]||'📄'}</span><b>${esc(l)}</b>${m?`<span class="dc-pen">${icon('edit')}</span>`:''}</div>
       <div class="dc-r"><span>Валидна до</span><b>${dt?fd(dt):'—'}</b></div>
       <div class="dc-r"><span>${left!=null&&left<0?'Статус':'Валидна за още'}</span><b class="dc-left">${val}</b></div>
 </div>`}).join('')}</div>`;
@@ -1423,7 +1427,7 @@ function svcCards(c,m){
     const lv=svcOf(c,keys[0]);
     const body=(g==='battery'?`<div class="dc-r"><span>Сменен</span><b>${lv.lastDate||lv.lastKm!=null?[lv.lastDate?fd(lv.lastDate):'',lv.lastKm!=null?fint(lv.lastKm)+' км':''].filter(Boolean).join(' · '):'—'}</b></div>`:'')+
       (keys.length===1?row(keys[0],'Следваща смяна'):keys.map(k=>row(k,SVC_SHORT[k])).join(''));
-    return `<div class="dcard ${lvl}"><div class="dc-h"><span class="dc-ic ${g==='oil'||g==='pads'?'svg ':''}${g}">${ic}</span><b>${l}</b>${hint?`<em class="dc-tag">${hint}</em>`:''}</div>
+    return `<div class="dcard ${lvl}${m?' tap':''}"${m?` data-act="service" data-car="${c.id}" data-k="${g}"`:''}><div class="dc-h"><span class="dc-ic ${g==='oil'||g==='pads'?'svg ':''}${g}">${ic}</span><b>${l}</b>${hint?`<em class="dc-tag">${hint}</em>`:''}${m?`<span class="dc-pen">${icon('edit')}</span>`:''}</div>
       ${body}
 </div>`}).join('')}</div>`;
 }
@@ -2006,6 +2010,16 @@ function openDocs(id){
     await withRetry(()=>db.doc('cars/'+id).update({docs}));await logEdit(id,'Обновени документи: '+DOCS.filter(([k])=>docs[k]).map(([k,l])=>`${l} до ${fd(docs[k])}`).join(', '));toast('Документите са запазени');
   });
 }
+function openDoc(id,k){
+  const c=S.cars[id],d=c.docs||{};
+  const oi=k.startsWith('other:')?+k.slice(6):null,o=oi!=null?(d.others||[])[oi]||{}:null;
+  const name=o?o.name:(DOCS.find(x=>x[0]===k)||[])[1]||'Документ',val=o?o.until:d[k];
+  openSheet(name,`${sheetCar(c)}${fld('Валиден до',inp('until',val||'','date'),val?'Сега: до '+fd(val):'Още не е въведен')}`,async f=>{
+    const docs={...d,others:[...(d.others||[])]};
+    if(o)docs.others[oi]={...o,until:f.until||null};else docs[k]=f.until||null;
+    await withRetry(()=>db.doc('cars/'+id).update({docs}));await logEdit(id,`${name}: валиден до ${f.until?fd(f.until):'—'}`);toast('Запазено');
+  });
+}
 function openNewTask(){
   const cars=scopeCars();if(!cars.length){toast('Няма автомобили.');return}
   const us=Object.values(S.users).filter(u=>u.active!==false&&(isAdmin()||u.dept===me().dept));
@@ -2238,7 +2252,7 @@ const ACT={
   closeSheet:closeSheet,
   morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
   takeover:d=>openTakeover(d.car),endSession:d=>openEndSession(d.car),viewProblem:d=>viewProblem(d.id),
-  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDocs:d=>openDocs(d.car),
+  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),editDocs:d=>openDocs(d.car),
   newTask:openNewTask,doneTask:d=>doneTask(d.id),delEntry:d=>delEntry(d.car,d.id),
   editUser:d=>openEditUser(d.id),editDept:d=>openEditDept(d.id),editSettings:openSettings,myPass:openMyPass,demo:loadDemo,csv:downloadCsv,
   logout:()=>{const t=TOKEN;logoutLocal();if(t)gs('logout',t).catch(()=>{})},
