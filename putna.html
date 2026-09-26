@@ -1378,10 +1378,11 @@ function secOverview(c,m){
   <div class="sec"><div class="sec-head"><h3>Норми за разход</h3>${m?`<button class="linkbtn" data-act="editCar" data-car="${c.id}">Промени</button>`:''}</div>
   <div class="kv"><div><span>Градско</span><b>${fnum(+n.city||null,1)}</b></div><div><span>Извънградско</span><b>${fnum(+n.highway||null,1)}</b></div><div><span>Смесено</span><b>${fnum(+n.mixed||null,1)}</b></div><div><span>Сезонен коефициент днес</span><b>×${sf.toFixed(2)}</b></div></div></div>`;
 }
-function secBook(c){
+function secBook(c,m){
   const list=entries().filter(e=>e.carId===c.id&&e.t==='trip').slice().reverse().slice(0,120);
-  if(!list.length)return `<div class="empty">Още няма записи в пътната книжка.</div>`;
-  let h='<div class="list">',cur='';
+  const bulk=m?`<div class="sec-head"><h3>Пътна книжка</h3><button class="btn sm primary" data-act="bulkKm" data-car="${c.id}">+ Много дни наведнъж</button></div>`:'';
+  if(!list.length)return bulk+`<div class="empty">Още няма записи в пътната книжка.</div>`;
+  let h=bulk+'<div class="list">',cur='';
   for(const e of list){if(e.date!==cur){cur=e.date;h+=`<div class="date-h">${fd(cur)}</div>`}h+=tripLi(e)}
   return h+'</div>';
 }
@@ -2041,6 +2042,54 @@ function openDoc(id,k){
     await withRetry(()=>db.doc('cars/'+id).update({docs}));await logEdit(id,`${name}: валиден до ${f.until?fd(f.until):'—'}`);toast('Запазено');
   });
 }
+/* въвеждане на начални километражи за много дни наведнъж (поставя се текст: „248 180 км 02.09.26“ на ред) */
+function parseKmLines(txt){
+  const out=[],yr=new Date().getFullYear();let lastY=yr;
+  for(const raw of String(txt).split(/\n+/)){const line=raw.trim();if(!line)continue;
+    const dm=line.match(/(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?/);
+    const km=line.replace(dm?dm[0]:'','').match(/(\d[\d\s.]{2,}\d)/);
+    if(!dm||!km){out.push({line,err:'Не разпознах километраж и дата'});continue}
+    let y=dm[3]?+dm[3]:lastY;if(y<100)y+=2000;lastY=y;
+    const d=`${y}-${String(dm[2]).padStart(2,'0')}-${String(dm[1]).padStart(2,'0')}`;
+    const v=+km[1].replace(/[\s.]/g,'');
+    out.push({line,date:d,km:v})}
+  return out;
+}
+function openBulkKm(id){
+  const c=S.cars[id];
+  const html=`${sheetCar(c)}${fld('Постави километражите',`<textarea name="txt" id="f_txt" rows="9" placeholder="248 180 км 02.09.26\n248 254 км 03.09.26\n…"></textarea>`,'Всеки ред: километраж и дата. Записват се като начален километраж за съответния ден.')}<div id="bkPrev"></div>`;
+  openSheet('Километраж за много дни',html,async f=>{
+    const rows=bulkCheck(c,f.txt).filter(r=>r.ok);
+    if(!rows.length)fail('Няма редове за запис.');
+    const drv=drvIds(c)[0]||meId,byM={};
+    for(const r of rows){const e={id:uid(),ts:new Date().toISOString(),by:meId,t:'trip',morning:true,date:r.date,time:'08:00',driver:drv,road:'mixed',from:'',to:'',route:'',purpose:'',note:'Въведено наведнъж',startKm:r.km,endKm:r.km,km:0};
+      (byM[r.date.slice(0,7)]=byM[r.date.slice(0,7)]||{})[e.id]=clean(e)}
+    for(const[mo,es]of Object.entries(byM)){const ref=db.doc(`logs/${id}_${mo}`),body={e:es};
+      try{await withRetry(()=>ref.update(body))}catch(err){if(err?.code!=='invalid_argument')throw err;const sn=await ref.get();if(sn.exists)await ref.update(body);else await ref.set({carId:id,month:mo,...body})}}
+    const mx=Math.max(...rows.map(r=>r.km));if(mx>(c.odo||0))await carUpdate(id,{odo:mx});
+    await logEdit(id,`Въведени ${rows.length} начални километража (${fd(rows[0].date)} – ${fd(rows[rows.length-1].date)})`);
+    toast(`Записани ${rows.length} дни`);
+  },'Запиши');
+  const form=$('#sheetForm');
+  const upd=()=>{const R2=bulkCheck(c,form.txt.value),ok=R2.filter(r=>r.ok).length;
+    $('#bkPrev').innerHTML=R2.length?`<div class="list">${R2.map(r=>`<div class="li"><div class="l"><b>${r.date?fd(r.date):esc(r.line)}</b><span>${r.km!=null?fint(r.km)+' км':''}</span></div><div class="r">${r.ok?'<span class="pill ok">OK</span>':`<span class="pill crit">${esc(r.err)}</span>`}</div></div>`).join('')}</div><div class="calc">Ще се запишат <span class="num">${ok}</span> от ${R2.length} реда</div>`:'';
+    $('#sheetOk').disabled=!ok};
+  form.addEventListener('input',upd);upd();
+}
+function bulkCheck(c,txt){
+  const have=new Set(entries().filter(x=>x.carId===c.id&&x.t==='trip'&&x.morning&&!x.virtual).map(x=>x.date)),seen=new Set();
+  const rows=parseKmLines(txt);let prev=-1;
+  const all=entries().filter(x=>x.carId===c.id&&x.t==='trip'&&x.morning&&!x.virtual);
+  for(const r of rows){if(r.err)continue;
+    if(isNaN(new Date(r.date+'T12:00:00')))r.err='Грешна дата';
+    else if(have.has(r.date)||seen.has(r.date))r.err='Вече има запис за този ден';
+    else if(r.km<prev)r.err='По-малко от предния ред';
+    else{const before=all.filter(x=>x.date<r.date).pop(),after=all.find(x=>x.date>r.date);
+      if(before&&r.km<(+before.reading||0))r.err='По-малко от записа преди него';
+      else if(after&&r.km>(+after.reading||0))r.err='Повече от записа след него';
+      else{r.ok=true;prev=r.km;seen.add(r.date)}}}
+  return rows;
+}
 function openNewTask(){
   const cars=scopeCars();if(!cars.length){toast('Няма автомобили.');return}
   const us=Object.values(S.users).filter(u=>u.active!==false&&(isAdmin()||u.dept===me().dept));
@@ -2273,7 +2322,7 @@ const ACT={
   closeSheet:closeSheet,
   morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
   takeover:d=>openTakeover(d.car),endSession:d=>openEndSession(d.car),viewProblem:d=>viewProblem(d.id),
-  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),editDocs:d=>openDocs(d.car),
+  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),editDocs:d=>openDocs(d.car),
   newTask:openNewTask,doneTask:d=>doneTask(d.id),delEntry:d=>delEntry(d.car,d.id),
   editUser:d=>openEditUser(d.id),editDept:d=>openEditDept(d.id),editSettings:openSettings,myPass:openMyPass,demo:loadDemo,csv:downloadCsv,
   logout:()=>{const t=TOKEN;logoutLocal();if(t)gs('logout',t).catch(()=>{})},
