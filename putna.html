@@ -1390,7 +1390,7 @@ function fuelLi(e){const c=S.cars[e.carId];return `<div class="li"><div class="l
 function secFuel(c){
   const list=entries().filter(e=>e.carId===c.id&&e.t==='fuel').slice().reverse();
   const tk=tank(c);
-  return `${tk!=null?`<div class="calc">Приблизителен остатък: <span class="num">${fnum(tk,1)} л</span> от ${fint(c.tankCap)} л <span class="small">(изчислен по норма, не е измерване)</span></div>`:''}
+  return `${isAdmin()?`<div class="sec-head"><h3>Зареждания</h3><button class="btn sm primary" data-act="bulkFuel" data-car="${c.id}">+ Много зареждания наведнъж</button></div>`:''}${tk!=null?`<div class="calc">Приблизителен остатък: <span class="num">${fnum(tk,1)} л</span> от ${fint(c.tankCap)} л <span class="small">(изчислен по норма, не е измерване)</span></div>`:''}
   ${list.length?`<div class="list">${list.slice(0,100).map(fuelLi).join('')}</div>`:'<div class="empty">Още няма зареждания.</div>'}`;
 }
 
@@ -2090,6 +2090,54 @@ function bulkCheck(c,txt){
       else{r.ok=true;prev=r.km;seen.add(r.date)}}}
   return rows;
 }
+/* много зареждания наведнъж: „05.09.26 29,394 л 19,40 евро“, по желание „газ/бензин“ и „40182 км“ */
+const kmOn=(c,d)=>{const m=entries().filter(x=>x.carId===c.id&&x.t==='trip'&&x.morning&&x.date<=d).pop();return m?(+m.reading||+m.startKm||null):null};
+function parseFuelLines(c,txt){
+  const out=[];let lastY=new Date().getFullYear();
+  for(const raw of String(txt).split(/\n+/)){let line=raw.trim();if(!line)continue;const r={line};
+    const dm=line.match(/(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?(?!\d)/);
+    if(!dm){r.err='Няма дата';out.push(r);continue}
+    let y=dm[3]?+dm[3]:lastY;if(y<100)y+=2000;lastY=y;r.date=`${y}-${String(dm[2]).padStart(2,'0')}-${String(dm[1]).padStart(2,'0')}`;
+    let rest=line.replace(dm[0],' ');
+    const lo=rest.toLowerCase();r.ft=/бенз/.test(lo)?'petrol':/газ|метан/.test(lo)?'gas':null;
+    const kmM=rest.match(/(\d[\d\s]{2,})\s*км/i);if(kmM){r.km=+kmM[1].replace(/\s/g,'');rest=rest.replace(kmM[0],' ')}
+    const nums=[...rest.matchAll(/\d+(?:[.,]\d+)?/g)].map(m=>+m[0].replace(',','.'));
+    const lM=rest.match(/(\d+(?:[.,]\d+)?)\s*(?:л|l)(?![а-я])/i),sM=rest.match(/(\d+(?:[.,]\d+)?)\s*(?:€|евро|eur|лв)/i);
+    r.liters=lM?+lM[1].replace(',','.'):nums[0];r.sum=sM?+sM[1].replace(',','.'):(lM?nums.find(n=>n!==r.liters):nums[1]);
+    if(r.km==null)r.km=kmOn(c,r.date);
+    out.push(r)}
+  return out;
+}
+function bulkFuelCheck(c,txt){
+  const have=entries().filter(x=>x.carId===c.id&&x.t==='fuel');
+  const rows=parseFuelLines(c,txt);
+  for(const r of rows){if(r.err)continue;
+    if(!r.liters||!(r.liters>0))r.err='Няма литри';
+    else if(!r.sum||!(r.sum>0))r.err='Няма сума';
+    else if(r.km==null)r.err='Няма километраж за деня';
+    else if(c.tankCap&&r.liters>+c.tankCap*1.05)r.err='Повече от резервоара';
+    else if(have.some(x=>x.date===r.date&&Math.abs((+x.liters||0)-r.liters)<.01))r.err='Вече е записано';
+    else r.ok=true}
+  return rows;
+}
+function openBulkFuel(id){
+  if(!isAdmin())return;const c=S.cars[id],bi=isBi(c);
+  const html=`${sheetCar(c)}${fld('Постави зарежданията',`<textarea name="txt" id="f_txt" rows="7" placeholder="05.09.26 29,394 л 19,40 евро\n08.09.26 28,925 л 19,38 евро${bi?' бензин':''}"></textarea>`,`Всеки ред: дата, литри и сума.${bi?' По подразбиране е газ – напиши „бензин“, ако е бензин.':''} Километражът се взима от Книжката за деня, ако не е написан.`)}<div id="bkPrev"></div>`;
+  openSheet('Много зареждания',html,async f=>{
+    const rows=bulkFuelCheck(c,f.txt).filter(r=>r.ok);if(!rows.length)fail('Няма редове за запис.');
+    const drv=drvIds(c)[0]||meId,byM={};
+    for(const r of rows){const e={id:uid(),ts:new Date().toISOString(),by:meId,t:'fuel',...(bi?{ft:r.ft==='petrol'?'petrol':'gas'}:{}),date:r.date,time:'12:00',driver:drv,km:r.km,liters:r.liters,sum:r.sum,ppl:+(r.sum/r.liters).toFixed(3),station:'',note:'Въведено наведнъж'};
+      (byM[r.date.slice(0,7)]=byM[r.date.slice(0,7)]||{})[e.id]=clean(e)}
+    for(const[mo,es]of Object.entries(byM)){const ref=db.doc(`logs/${id}_${mo}`),body={e:es};
+      try{await withRetry(()=>ref.update(body))}catch(err){if(err?.code!=='invalid_argument')throw err;const sn=await ref.get();if(sn.exists)await ref.update(body);else await ref.set({carId:id,month:mo,...body})}}
+    await logEdit(id,`Въведени ${rows.length} зареждания наведнъж`);toast(`Записани ${rows.length} зареждания`);
+  },'Запиши');
+  const form=$('#sheetForm');
+  const upd=()=>{const R2=bulkFuelCheck(c,form.txt.value),ok=R2.filter(r=>r.ok).length;
+    $('#bkPrev').innerHTML=R2.length?`<div class="list">${R2.map(r=>`<div class="li"><div class="l"><b>${r.date?fd(r.date):esc(r.line)}${bi&&r.date?` <span class="ftpill ${r.ft==='petrol'?'petrol':''}">${r.ft==='petrol'?'Бензин':'Газ'}</span>`:''}</b><span>${r.liters?fnum(r.liters)+' л':''}${r.sum?' · '+eur(r.sum):''}${r.km!=null?' · '+fint(r.km)+' км':''}</span></div><div class="r">${r.ok?'<span class="pill ok">OK</span>':`<span class="pill crit">${esc(r.err)}</span>`}</div></div>`).join('')}</div><div class="calc">Ще се запишат <span class="num">${ok}</span> от ${R2.length} реда</div>`:'';
+    $('#sheetOk').disabled=!ok};
+  form.addEventListener('input',upd);upd();
+}
 function openNewTask(){
   const cars=scopeCars();if(!cars.length){toast('Няма автомобили.');return}
   const us=Object.values(S.users).filter(u=>u.active!==false&&(isAdmin()||u.dept===me().dept));
@@ -2322,7 +2370,7 @@ const ACT={
   closeSheet:closeSheet,
   morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
   takeover:d=>openTakeover(d.car),endSession:d=>openEndSession(d.car),viewProblem:d=>viewProblem(d.id),
-  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),editDocs:d=>openDocs(d.car),
+  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),
   newTask:openNewTask,doneTask:d=>doneTask(d.id),delEntry:d=>delEntry(d.car,d.id),
   editUser:d=>openEditUser(d.id),editDept:d=>openEditDept(d.id),editSettings:openSettings,myPass:openMyPass,demo:loadDemo,csv:downloadCsv,
   logout:()=>{const t=TOKEN;logoutLocal();if(t)gs('logout',t).catch(()=>{})},
