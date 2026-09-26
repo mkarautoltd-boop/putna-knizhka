@@ -1442,6 +1442,7 @@ function svcCards(c,m){
     const ic=g==='oil'?SVC_OIL:SVC_EMO[g];
     const hint=lvl==='crit'?'Просрочена':lvl==='warn'?'Наближава':'';
     const row=(k,lab)=>{const r=svcRow(c,k).st,rl=svcRow(c,k).lvl;if(!r)return `<div class="dc-r"><span>${lab}</span><b class="dc-left dc-none">Няма данни</b></div>`;
+      if(r.nextKm==null&&!r.nextDate){const sv=svcOf(c,k);return `<div class="dc-r"><span>${keys.length>1?lab:'Сменено'}</span><b>${[sv.lastDate?fd(sv.lastDate):'',sv.lastKm!=null?fint(sv.lastKm)+' км':''].filter(Boolean).join(' · ')}</b></div><div class="dc-r"><span>${keys.length>1?'':'Следваща смяна'}</span><b class="dc-left dc-none">Няма зададен интервал</b></div>`}
       return `${r.nextKm!=null?`<div class="dc-r"><span>${lab}</span><b class="dc-left dc-${rl}">${fint(r.nextKm)} км</b></div>`:''}${r.nextDate?`<div class="dc-r"><span>${r.nextKm!=null?'или до дата':lab}</span><b class="dc-left dc-${rl}">${fd(r.nextDate)}</b></div>`:''}`};
     const lv=svcOf(c,keys[0]);
     const body=(g==='battery'?`<div class="dc-r"><span>Сменен</span><b>${lv.lastDate||lv.lastKm!=null?[lv.lastDate?fd(lv.lastDate):'',lv.lastKm!=null?fint(lv.lastKm)+' км':''].filter(Boolean).join(' · '):'—'}</b></div>`:'')+
