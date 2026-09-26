@@ -1380,7 +1380,7 @@ function secOverview(c,m){
 }
 function secBook(c,m){
   const list=entries().filter(e=>e.carId===c.id&&e.t==='trip').slice().reverse().slice(0,120);
-  const bulk=m?`<div class="sec-head"><h3>Пътна книжка</h3><button class="btn sm primary" data-act="bulkKm" data-car="${c.id}">+ Много дни наведнъж</button></div>`:'';
+  const bulk=isAdmin()?`<div class="sec-head"><h3>Пътна книжка</h3><button class="btn sm primary" data-act="bulkKm" data-car="${c.id}">+ Много дни наведнъж</button></div>`:'';
   if(!list.length)return bulk+`<div class="empty">Още няма записи в пътната книжка.</div>`;
   let h=bulk+'<div class="list">',cur='';
   for(const e of list){if(e.date!==cur){cur=e.date;h+=`<div class="date-h">${fd(cur)}</div>`}h+=tripLi(e)}
@@ -2056,7 +2056,7 @@ function parseKmLines(txt){
   return out;
 }
 function openBulkKm(id){
-  const c=S.cars[id];
+  if(!isAdmin())return;const c=S.cars[id];
   const html=`${sheetCar(c)}${fld('Постави километражите',`<textarea name="txt" id="f_txt" rows="9" placeholder="248 180 км 02.09.26\n248 254 км 03.09.26\n…"></textarea>`,'Всеки ред: километраж и дата. Записват се като начален километраж за съответния ден.')}<div id="bkPrev"></div>`;
   openSheet('Километраж за много дни',html,async f=>{
     const rows=bulkCheck(c,f.txt).filter(r=>r.ok);
@@ -2391,7 +2391,7 @@ function logoutLocal(){TOKEN=null;meId=null;try{localStorage.removeItem('pk_toke
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyData(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='36';let _verAt=0;
+const APP_VER='37';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
