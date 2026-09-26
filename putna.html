@@ -1202,9 +1202,10 @@ function vHome(){
     if(!my.length)return h+`<div class="empty">${icon('car')}<b>Нямаш назначен автомобил.</b>Обърни се към администратора или мениджъра на отдела.</div>`;
     for(const c of my){
       const al=carAlerts(c);
-      h=drvStats(c)+h+carHero(c,true)+`<div class="sec"><h3>Бързи действия</h3>${actionTiles(c)}</div>`;
+      h=drvStats(c)+h+carHero(c,true);
       if(al.length)h+=`<div class="card"><div class="card-h"><h3>Моите задачи</h3><button class="linkbtn" data-act="tab" data-k="tasks">Всички</button></div>${alertList(al.slice(0,4))}
         ${al.some(a=>a.kind==='pressure')?`<button class="btn go wide" data-act="check" data-car="${c.id}">${icon('plus')} Направи проверката</button>`:''}</div>`;
+      h+=`<div class="sec"><h3>Бързи действия</h3>${actionTiles(c)}</div>`;
       const ms=visibleMsgs().slice(0,2);
       if(ms.length)h+=`<div class="sec"><div class="sec-head"><h3>Съобщения</h3><button class="linkbtn" data-act="tab" data-k="messages">Всички</button></div>${ms.map(msgCard).join('')}</div>`;
       const last=entries().filter(e=>e.carId===c.id&&e.t==='trip').slice(-3).reverse();
