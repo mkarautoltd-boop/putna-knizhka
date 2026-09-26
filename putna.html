@@ -671,6 +671,26 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
   .sheet-card{max-width:560px}
 }
 @media (min-width:1300px){.dcards{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* шофьор – началото да се събира на един екран */
+@media (max-width:899px){
+ .drvhome .kpis.three .kpi{padding:9px 4px 8px!important}
+ .drvhome .kpis.three .kpi b{font-size:20px}
+ .drvhome .kpis.three .kpi span{font-size:11px}
+ .drvhome .vhero{min-height:0;padding:12px 16px;gap:4px}
+ .drvhome .vhero-logo{width:38px;height:38px;font-size:18px}
+ .drvhome .vhero-name{font-size:16px}
+ .drvhome .vhero-reg{font-size:19px;margin:0}
+ .drvhome .vhero-row{font-size:14px}
+ .drvhome .vhero-st{padding-top:6px;margin-top:0}
+ .drvhome .vhero-reg+.vhero-row{display:none}
+ .drvhome .sec h3{margin-bottom:6px}
+ .drvhome .qa{gap:8px}
+ .drvhome .qt,.drvhome .qa:not(.three) .qt{min-height:84px!important;padding:9px 10px!important;border-radius:18px}
+ .drvhome .qemo{width:38px;height:38px;font-size:22px;border-radius:12px}
+ .drvhome .qt .ql{font-size:13.5px}
+ .drvhome.wrap{gap:12px}
+}
 </style>
 </head>
 <body>
@@ -1118,6 +1138,7 @@ function render(){
   const V={home:vHome,mycar:vMyCar,cars:vCars,car:vCar,tasks:vTasks,reports:vReports,more:vMore,users:vUsers,depts:vDepts,settings:vSettings,staff:vStaff,messages:vMessages,docsAll:vDocsAll,problemsAll:vProblemsAll,serviceAll:vServiceAll,tyresAll:vTyresAll,fuelAll:vFuelAll,tripsAll:vTripsAll};
   const html=(V[R.tab]||vHome)();
   renderTabs();renderHead();
+  $('#main').classList.toggle('drvhome',!isStaff()&&(R.tab==='home'||!R.tab));
   setHTML($('#main'),html);
   for(const rail of document.querySelectorAll('.vhero-rail')){const on=rail.querySelector('.vhero-slot.on');if(on)rail.scrollLeft=on.offsetLeft-(rail.clientWidth-on.clientWidth)/2}
 }
@@ -1181,10 +1202,9 @@ function vHome(){
     if(!my.length)return h+`<div class="empty">${icon('car')}<b>Нямаш назначен автомобил.</b>Обърни се към администратора или мениджъра на отдела.</div>`;
     for(const c of my){
       const al=carAlerts(c);
-      h=drvStats(c)+h+carHero(c,true);
+      h=drvStats(c)+h+carHero(c,true)+`<div class="sec"><h3>Бързи действия</h3>${actionTiles(c)}</div>`;
       if(al.length)h+=`<div class="card"><div class="card-h"><h3>Моите задачи</h3><button class="linkbtn" data-act="tab" data-k="tasks">Всички</button></div>${alertList(al.slice(0,4))}
         ${al.some(a=>a.kind==='pressure')?`<button class="btn go wide" data-act="check" data-car="${c.id}">${icon('plus')} Направи проверката</button>`:''}</div>`;
-      h+=`<div class="sec"><h3>Бързи действия</h3>${actionTiles(c)}</div>`;
       const ms=visibleMsgs().slice(0,2);
       if(ms.length)h+=`<div class="sec"><div class="sec-head"><h3>Съобщения</h3><button class="linkbtn" data-act="tab" data-k="messages">Всички</button></div>${ms.map(msgCard).join('')}</div>`;
       const last=entries().filter(e=>e.carId===c.id&&e.t==='trip').slice(-3).reverse();
