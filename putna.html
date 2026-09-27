@@ -1313,7 +1313,8 @@ function docCards(c,m){
       <div class="dc-r"><span>${g?'Валиден до':'Валидна до'}</span><b>${dt?fd(dt):'—'}</b></div>
       <div class="dc-r"><span>${left!=null&&left<0?'Статус':g?'Валиден за още':'Валидна за още'}</span><b class="dc-left">${v2}</b></div>
       ${k==='vignette'&&chk?.ts?`<div class="dc-r small"><span>Последна проверка</span><b>${chkTime(chk.ts)}</b></div>`:''}
-      ${auto&&bad?`<div class="dc-two">${g?`<button type="button" data-act="editDoc" data-car="${c.id}" data-k="gtp">Въведи нова дата ✏️</button>`:`<button type="button" data-act="docCheck" data-car="${c.id}" data-k="${k}">Проверка 🔄</button>`}</div>`:''}
+      ${g&&bad&&m?`<div class="dc-two"><button type="button" data-act="editDoc" data-car="${c.id}" data-k="gtp">Въведи нова дата ✏️</button></div>`:''}
+      ${k==='vignette'?`<div class="dc-two"><button type="button" data-act="docCheck" data-car="${c.id}" data-k="vignette">Проверка 🔄</button></div>`:''}
 </div>`}).join('')}</div>`;
 }
 function carCard(c){
@@ -2482,7 +2483,7 @@ function logoutLocal(){TOKEN=null;meId=null;try{localStorage.removeItem('pk_toke
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyData(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='41';let _verAt=0;
+const APP_VER='42';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
