@@ -721,15 +721,74 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .btn.shine{position:relative;overflow:hidden}
 .btn.shine::after{content:"";position:absolute;top:-10%;left:-70%;width:45%;height:120%;background:linear-gradient(100deg,transparent 0,rgba(255,255,255,.75) 50%,transparent 100%);transform:skewX(-18deg);animation:btnShine 2.4s ease-in-out infinite;pointer-events:none}
 @keyframes btnShine{0%,35%{left:-70%}100%{left:130%}}
-@media (prefers-reduced-motion:reduce){.btn.shine::after{animation:none;display:none}}
 @keyframes lxShine{0%,60%{left:-60%}100%{left:130%}}
 @keyframes lxRoad{from{transform:translateX(0)}to{transform:translateX(-52px)}}
 @media (prefers-reduced-motion:reduce){.lx *{animation:none!important}}
+
+/* ===== живи ефекти ===== */
+/* 7 бутоните хлътват */
+.btn,.qa>*,.kpi,.irow,.vcard,.chip,.dcard.tap,.li{transition:transform .12s ease}
+.btn:active,.qa>*:active,.kpi:active,.irow:active,.vcard:active,.chip:active,.dcard.tap:active{transform:scale(.96)}
+/* 6 картите изплуват при отваряне на страница */
+#main.anim>*{animation:fxRise .5s cubic-bezier(.2,.8,.2,1) both}
+#main.anim>*:nth-child(2){animation-delay:.06s}#main.anim>*:nth-child(3){animation-delay:.12s}#main.anim>*:nth-child(4){animation-delay:.18s}
+#main.anim>*:nth-child(5){animation-delay:.24s}#main.anim>*:nth-child(6){animation-delay:.3s}#main.anim>*:nth-child(n+7){animation-delay:.34s}
+@keyframes fxRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+/* 3 пулсираща точка */
+.irow .isq{position:relative}
+.pdot{position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:#E0342F;border:2px solid #fff}
+.pdot::after{content:"";position:absolute;inset:-2px;border-radius:50%;background:inherit;animation:fxPing 1.6s ease-out infinite}
+.pdot.warn{background:#F08A18}
+@keyframes fxPing{from{transform:scale(1);opacity:.7}to{transform:scale(3);opacity:0}}
+/* 1 записано */
+#fxOk{position:fixed;inset:0;z-index:99;display:grid;place-items:center;pointer-events:none}
+#fxOk .box{background:rgba(255,255,255,.97);border-radius:26px;padding:22px 34px;display:grid;justify-items:center;gap:8px;box-shadow:0 24px 50px -18px rgba(15,35,65,.55);animation:fxOkBox 1.5s ease forwards}
+#fxOk svg{width:76px;height:76px;animation:fxPop .45s cubic-bezier(.2,1.6,.4,1) both}
+#fxOk circle{fill:#1FA35A}#fxOk path{fill:none;stroke:#fff;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:60;stroke-dashoffset:60;animation:fxDraw .35s .25s ease forwards}
+#fxOk b{color:#1FA35A;font-size:18px}
+@keyframes fxOkBox{0%{opacity:0;transform:scale(.9)}10%{opacity:1;transform:none}78%{opacity:1}100%{opacity:0}}
+@keyframes fxPop{from{transform:scale(.3)}to{transform:scale(1)}}
+@keyframes fxDraw{to{stroke-dashoffset:0}}
+/* 2 резервоар */
+.tgc{display:flex;align-items:center;gap:16px}
+.tg{width:150px;height:84px;flex:none}.tg svg{width:100%;height:100%;overflow:visible}
+.tg .trk{fill:none;stroke:#E3E9F2;stroke-width:14;stroke-linecap:round}
+.tg .val{fill:none;stroke:url(#tgGrad);stroke-width:14;stroke-linecap:round;stroke-dasharray:188.5}
+.tg .ndl{transform-origin:75px 75px}.tg .ndl line{stroke:#0F1B2D;stroke-width:3.5;stroke-linecap:round}.tg .ndl circle{fill:#0F1B2D}
+#main.anim .tg .val{animation:fxGauge 1.4s cubic-bezier(.2,.8,.2,1) both}
+#main.anim .tg .ndl{animation:fxNeedle 1.4s cubic-bezier(.2,.8,.2,1) both}
+@keyframes fxGauge{from{stroke-dashoffset:188.5}}
+@keyframes fxNeedle{from{transform:rotate(-90deg)}}
+.tgt b{display:block;font-size:26px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.tgt span{color:#5B6778;font-size:13px}.tgt .lo{color:#E0342F;font-weight:700}
+/* 4 кръгче за сервиза */
+.sring{position:relative;width:46px;height:46px;flex:none;margin-left:auto}
+.sring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.sring .bg{fill:none;stroke:#E3E9F2;stroke-width:9}
+.sring .fg{fill:none;stroke:#1FA35A;stroke-width:9;stroke-linecap:round;stroke-dasharray:239}
+.sring.warn .fg{stroke:#F08A18}.sring.crit .fg{stroke:#E0342F}
+.sring em{position:absolute;inset:0;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:11.5px;font-variant-numeric:tabular-nums;color:#0F1B2D}
+#main.anim .sring .fg{animation:fxRing 1.4s cubic-bezier(.2,.8,.2,1) both}
+@keyframes fxRing{from{stroke-dashoffset:239}}
+.dc-h .sring+.dc-pen{margin-left:8px}
+.dc-tt{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}.dc-tt .dc-tag{margin:0!important}
+/* 8 кола при зареждане */
+.fxRoad{position:relative;height:66px;border-radius:16px;background:#1D2B40;overflow:hidden;margin-top:6px}
+.fxRoad i{position:absolute;left:0;right:0;top:46px;height:4px;background:repeating-linear-gradient(90deg,#FFD400 0 22px,transparent 22px 44px);animation:fxLane .6s linear infinite}
+.fxRoad span{position:absolute;left:50%;top:8px;margin-left:-26px;font-size:38px;line-height:1;transform:scaleX(-1);animation:fxBump .5s ease-in-out infinite alternate;font-family:"Apple Color Emoji","Noto Color Emoji",sans-serif}
+@keyframes fxLane{from{background-position:0 0}to{background-position:-44px 0}}
+@keyframes fxBump{from{transform:scaleX(-1) translateY(0)}to{transform:scaleX(-1) translateY(-2px)}}
+/* 9 серия */
+.streak{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:20px;background:linear-gradient(135deg,#FFF4E0,#FFE3C2);box-shadow:0 10px 24px -16px rgba(15,35,65,.35)}
+.streak .fl{font-size:34px;line-height:1;animation:fxFlick 1.2s ease-in-out infinite alternate;font-family:"Apple Color Emoji","Noto Color Emoji",sans-serif}
+@keyframes fxFlick{from{transform:scale(1) rotate(-3deg)}to{transform:scale(1.1) rotate(3deg)}}
+.streak b{display:block;font-size:17px;color:#0F1B2D}.streak span{font-size:13px;color:#8A5A12}
+.streak .days{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}.streak .days i{width:14px;height:6px;border-radius:3px;background:#F08A18}
 </style>
 </head>
 <body>
 
-<div id="boot" class="login"><div class="login-card"><div class="panel"><b id="bootMsg">Зареждане…</b><span class="small muted" id="bootSub">Първото отваряне след обновяване може да отнеме до 30 секунди – създават се листовете в таблицата.</span><div class="err" id="bootErr" hidden></div></div></div></div>
+<div id="boot" class="login"><div class="login-card"><div class="panel"><div class="fxRoad" aria-hidden="true"><span>🚐</span><i></i></div><b id="bootMsg">Зареждане…</b><span class="small muted" id="bootSub">Първото отваряне след обновяване може да отнеме до 30 секунди – създават се листовете в таблицата.</span><div class="err" id="bootErr" hidden></div></div></div></div>
 
 <div id="loginView" class="login lx" hidden>
   <div class="lx-hero" aria-hidden="true"><img src="car-bg.jpg" alt=""><div class="lx-shade"></div></div>
@@ -1050,13 +1109,17 @@ const onSheetSubmit=async ev=>{
   const form=ev.currentTarget,f={};
   for(const el of form.elements){if(!el.name)continue;if(el.type==='checkbox')f[el.name]=el.checked;else if(el.type==='radio'){if(el.checked)f[el.name]=el.value;else if(!(el.name in f))f[el.name]=''}else if(el.type==='file')f[el.name]=el.files;else f[el.name]=el.value}
   const btn=$('#sheetOk'),err=$('#formErr');err.hidden=true;btn.disabled=true;
-  try{const r=await sheetSubmit(f,form);if(r!==false)closeSheet()}
+  try{const r=await sheetSubmit(f,form);if(r!==false){closeSheet();fxSaved()}}
   catch(e){err.textContent=e?.code?dbMsg(e):(e?.message||dbMsg(e));err.hidden=false;err.scrollIntoView({block:'nearest'})}
   finally{if(btn)btn.disabled=false}
 };
 $('#sheetForm').addEventListener('submit',onSheetSubmit);
 $('#sheet').addEventListener('click',e=>{if(e.target.id==='sheet')closeSheet()});
 const fail=m=>{throw new Error(m)};
+/* 1 „Записано ✓“ */
+function fxSaved(){let o=$('#fxOk');if(o)o.remove();o=document.createElement('div');o.id='fxOk';
+  o.innerHTML='<div class="box"><svg viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="38"/><path d="M24 41l11 11 22-24"/></svg><b>Записано</b></div>';
+  document.body.appendChild(o);setTimeout(()=>o.remove(),1600)}
 
 /* край на App1 */
 </script>
@@ -1167,6 +1230,14 @@ function renderHead(){
     <button class="bell" data-act="tab" data-k="tasks" aria-label="Известия">${icon('bell')}${n?`<i>${n}</i>`:''}</button>`);
 }
 /* сменя съдържанието само ако е различно – без прескачане при опресняване */
+/* 5 числата броят нагоре */
+function fxCount(root){
+  for(const b of root.querySelectorAll('.kpi b,.kv b')){const t=b.textContent.trim();if(!/^\d[\d\s\u00a0]*(,\d+)?$/.test(t))continue;
+    const dec=(t.split(',')[1]||'').length,to=+t.replace(/[\s\u00a0]/g,'').replace(',','.');if(!to)continue;
+    const f=v=>dec?fnum(v,dec):fint(Math.round(v));let t0=0;
+    const st=ts=>{if(!b.isConnected)return;if(!t0)t0=ts;const k=Math.min(1,(ts-t0)/1000),e=1-Math.pow(1-k,3);b.textContent=k<1?f(to*e):t;if(k<1)requestAnimationFrame(st)};
+    b.textContent=f(0);requestAnimationFrame(st)}
+}
 function setHTML(el,h){if(el._h!==h){el.innerHTML=h;el._h=h}}
 function render(){
   if(!db)return;
@@ -1179,7 +1250,9 @@ function render(){
   const html=(V[R.tab]||vHome)();
   renderTabs();renderHead();
   $('#main').classList.toggle('drvhome',!isStaff()&&(R.tab==='home'||!R.tab));
-  setHTML($('#main'),html);
+  {const k=[R.tab,R.carId,R.carSec,R.rep].join('|'),mn=$('#main');
+   if(k!==render._k){render._k=k;mn.classList.remove('anim');void mn.offsetWidth;mn.classList.add('anim');clearTimeout(render._t);render._t=setTimeout(()=>mn.classList.remove('anim'),1700);setHTML(mn,html);fxCount(mn)}
+   else setHTML(mn,html)}
   for(const rail of document.querySelectorAll('.vhero-rail')){const on=rail.querySelector('.vhero-slot.on');if(on)rail.scrollLeft=on.offsetLeft-(rail.clientWidth-on.clientWidth)/2}
 }
 function showLogin(){$('#boot').hidden=true;$('#shell').hidden=true;$('#loginView').hidden=false;const h=new Date().getHours(),g=$('#lxHi');if(g)g.textContent=h<5?'Добър вечер':h<11?'Добро утро':h<18?'Добър ден':'Добър вечер'}
@@ -1234,6 +1307,14 @@ function kpis(cars){
     <button class="kpi green" data-act="tab" data-k="cars"><b>${cars.length-crit-warn}</b><span>Изправни</span></button>
     <button class="kpi plain" data-act="tab" data-k="cars"><b>${cars.length}</b><span>Общо</span></button></div>`;
 }
+/* 9 поредни работни дни с въведен начален километраж */
+function streakOf(c){const have=new Set(entries().filter(e=>e.carId===c.id&&e.t==='trip'&&e.morning&&!e.virtual).map(e=>e.date));
+  let d=today(),n=0,g=0;if(!have.has(d))d=addDays(d,-1);
+  while(g<400){const wd=new Date(d+'T12:00:00').getDay();if(wd!==0&&wd!==6){if(!have.has(d))break;n++}d=addDays(d,-1);g++}
+  return n}
+function streakCard(c){const n=streakOf(c);if(n<3)return '';
+  const w=n===1?'работен ден':'работни дни';
+  return `<div class="streak"><span class="fl">🔥</span><div><b>${n} ${w} поред</b><span>без пропуснат начален километраж</span><div class="days">${'<i></i>'.repeat(Math.min(n,15))}</div></div></div>`}
 function vHome(){
   const u=me(),cars=scopeCars();
   let h=sessionCards();
@@ -1242,7 +1323,7 @@ function vHome(){
     if(!my.length)return h+`<div class="empty">${icon('car')}<b>Нямаш назначен автомобил.</b>Обърни се към администратора или мениджъра на отдела.</div>`;
     for(const c of my){
       const al=carAlerts(c);
-      h=drvStats(c)+h+carHero(c,true);
+      h=drvStats(c)+h+carHero(c,true)+streakCard(c);
       if(al.length)h+=`<div class="card"><div class="card-h"><h3>Моите задачи</h3><button class="linkbtn" data-act="tab" data-k="tasks">Всички</button></div>${alertList(al.slice(0,4))}
         ${al.some(a=>a.kind==='pressure')?`<button class="btn go wide" data-act="check" data-car="${c.id}">${icon('plus')} Направи проверката</button>`:''}</div>`;
       h+=`<div class="sec"><h3>Бързи действия</h3>${actionTiles(c)}</div>`;
@@ -1363,7 +1444,7 @@ const KIND_IC={doc:['doc','grey'],svc:['wrench','orange'],tyres:['snow','orange'
 function alertList(al,withOk){
   if(!al.length)return withOk?`<div class="irow ok" style="cursor:default"><span class="isq green">${icon('check')}</span><div class="tx"><b>Всичко е в срок</b><span class="s">Няма просрочени документи, сервизи или задачи</span></div></div>`:'';
   return `<div class="alerts">${al.map(a=>{const[ic,col]=KIND_IC[a.kind]||['alert','grey'];const sq=a.lvl==='crit'?'red':a.lvl==='good'?'green':col;
-    return `<button class="irow ${a.lvl==='good'?'ok':a.lvl}" ${alertAct(a)}><span class="isq ${sq}${' emo'}">${a.kind==='fluid'?FL_IC[a.fluid].replace('<svg ','<svg class="ic" '):(KIND_EMO[a.kind]||icon(ic))}</span><div class="tx"><b>${esc(a.text)}</b><span class="s">${esc(a.sub||'')}</span>${R.tab!=='car'?`<span class="d">${esc(carName(a.car))} · ${esc(regText(a.car.reg))}</span>`:''}</div>${isRead(a)?'':'<span class="udot" title="Непрочетено"></span>'}${icon('chev','chev')}</button>`}).join('')}</div>`;
+    return `<button class="irow ${a.lvl==='good'?'ok':a.lvl}" ${alertAct(a)}><span class="isq ${sq}${' emo'}">${a.kind==='fluid'?FL_IC[a.fluid].replace('<svg ','<svg class="ic" '):(KIND_EMO[a.kind]||icon(ic))}${a.lvl==='crit'?'<i class="pdot"></i>':a.lvl==='warn'?'<i class="pdot warn"></i>':''}</span><div class="tx"><b>${esc(a.text)}</b><span class="s">${esc(a.sub||'')}</span>${R.tab!=='car'?`<span class="d">${esc(carName(a.car))} · ${esc(regText(a.car.reg))}</span>`:''}</div>${isRead(a)?'':'<span class="udot" title="Непрочетено"></span>'}${icon('chev','chev')}</button>`}).join('')}</div>`;
 }
 function alertAct(a){
   const c=a.car.id,m=canManage(a.car);
@@ -1447,11 +1528,14 @@ function kvBlock(a,withMoney=true){
     <div><span>Други разходи</span><b>${eur(a.other)}</b></div>`:''}
   </div>`;
 }
+function tankCard(c){const tk=tank(c);if(tk==null)return '';const cap=+c.tankCap||1,p=Math.max(0,Math.min(1,tk/cap));
+  return `<div class="card"><div class="card-h"><h3>Резервоар</h3></div><div class="tgc"><div class="tg"><svg viewBox="0 0 150 84" aria-hidden="true"><defs><linearGradient id="tgGrad" x1="0" x2="1"><stop offset="0" stop-color="#E0342F"/><stop offset=".35" stop-color="#F08A18"/><stop offset=".7" stop-color="#34C173"/><stop offset="1" stop-color="#1FA35A"/></linearGradient></defs><path class="trk" d="M15 75a60 60 0 0 1 120 0"/><path class="val" d="M15 75a60 60 0 0 1 120 0" style="stroke-dashoffset:${(188.5*(1-p)).toFixed(1)}"/><g class="ndl" style="transform:rotate(${(-90+180*p).toFixed(1)}deg)"><line x1="75" y1="75" x2="75" y2="28"/><circle cx="75" cy="75" r="6"/></g></svg></div>
+    <div class="tgt"><b>${fnum(tk,1)} л</b><span>${p<.15?'<span class="lo">Малко гориво</span> · ':''}от ${fint(c.tankCap)} л${isBi(c)?' · '+gasName(c).toLowerCase():''}</span><span style="display:block;font-size:12px">изчислено по норма</span></div></div></div>`}
 function secOverview(c,m){
   const ym=today().slice(0,7),a=agg(entries().filter(e=>e.carId===c.id&&e.date?.startsWith(ym)));
   const n=c.norms||{},sf=seasonFactor(c,today());
-  return `<div class="info"><div><span>Марка / Модел</span><b>${esc(carName(c))}</b></div><div><span>Рег. номер</span><b>${esc(regText(c.reg))}</b></div><div><span>Година</span><b>${esc(c.year||'—')}</b></div><div><span>Гориво</span><b>${esc(c.fuel||'—')}</b></div><div><span>VIN номер</span><b style="font-family:ui-monospace,Menlo,monospace;font-size:14px;word-break:break-all">${esc(c.vin||'—')}</b></div><div><span>Размер на гумите</span><b>${esc(c.tyreSize||'—')}</b></div><div><span>Пробег</span><b>${fint(c.odo)} км</b></div><div><span>Отдел</span><b>${esc(dname(c.dept))}</b></div><div><span>${drvIds(c).length>1?'Шофьори':'Постоянен шофьор'}</span><b>${drvIds(c).length?drvIds(c).map(x=>esc(uname(x))).join('<br>'):'—'}</b></div>${tank(c)!=null?`<div><span>В резервоара (изчислено)</span><b>≈ ${fnum(tank(c),0)} / ${fint(c.tankCap)} л</b></div>`:''}</div>
-  <div class="sec"><h3>Задачи и известия</h3>${alertList(carAlerts(c),true)}</div>
+  return `<div class="info"><div><span>Марка / Модел</span><b>${esc(carName(c))}</b></div><div><span>Рег. номер</span><b>${esc(regText(c.reg))}</b></div><div><span>Година</span><b>${esc(c.year||'—')}</b></div><div><span>Гориво</span><b>${esc(c.fuel||'—')}</b></div><div><span>VIN номер</span><b style="font-family:ui-monospace,Menlo,monospace;font-size:14px;word-break:break-all">${esc(c.vin||'—')}</b></div><div><span>Размер на гумите</span><b>${esc(c.tyreSize||'—')}</b></div><div><span>Пробег</span><b>${fint(c.odo)} км</b></div><div><span>Отдел</span><b>${esc(dname(c.dept))}</b></div><div><span>${drvIds(c).length>1?'Шофьори':'Постоянен шофьор'}</span><b>${drvIds(c).length?drvIds(c).map(x=>esc(uname(x))).join('<br>'):'—'}</b></div></div>
+  ${tankCard(c)}<div class="sec"><h3>Задачи и известия</h3>${alertList(carAlerts(c),true)}</div>
   <div class="sec"><h3>${monthLabel(ym)}</h3>${kvBlock(a)}<p class="small muted">Фактическият разход се смята по зареденото гориво за периода.</p></div>
   <div class="sec"><div class="sec-head"><h3>Норми за разход</h3>${m?`<button class="linkbtn" data-act="editCar" data-car="${c.id}">Промени</button>`:''}</div>
   <div class="kv"><div><span>Градско</span><b>${fnum(+n.city||null,1)}</b></div><div><span>Извънградско</span><b>${fnum(+n.highway||null,1)}</b></div><div><span>Смесено</span><b>${fnum(+n.mixed||null,1)}</b></div><div><span>Сезонен коефициент днес</span><b>×${sf.toFixed(2)}</b></div></div></div>`;
@@ -1468,7 +1552,7 @@ function fuelLi(e){const c=S.cars[e.carId];return `<div class="li"><div class="l
 function secFuel(c){
   const list=entries().filter(e=>e.carId===c.id&&e.t==='fuel').slice().reverse();
   const tk=tank(c);
-  return `${isAdmin()?`<div class="sec-head"><h3>Зареждания</h3><button class="btn sm primary" data-act="bulkFuel" data-car="${c.id}">+ Много зареждания наведнъж</button></div>`:''}${tk!=null?`<div class="calc">Приблизителен остатък: <span class="num">${fnum(tk,1)} л</span> от ${fint(c.tankCap)} л <span class="small">(изчислен по норма, не е измерване)</span></div>`:''}
+  return `${isAdmin()?`<div class="sec-head"><h3>Зареждания</h3><button class="btn sm primary" data-act="bulkFuel" data-car="${c.id}">+ Много зареждания наведнъж</button></div>`:''}${tankCard(c)}
   ${list.length?`<div class="list">${list.slice(0,100).map(fuelLi).join('')}</div>`:'<div class="empty">Още няма зареждания.</div>'}${oldBtn(c)}`;
 }
 
@@ -1516,6 +1600,13 @@ function svcRow(c,k){const sv=svcOf(c,k),st=svcStatus(sv,c.odo);
   let pc=null;if(st){const a=[];if(st.nextKm!=null&&sv.intKm)a.push(1-st.remKm/sv.intKm);if(st.days!=null&&sv.intMonths)a.push(1-st.days/(sv.intMonths*30.4));if(a.length)pc=Math.max(0,Math.min(1,Math.max(...a)))}
   return {st,lvl:st?st.lvl:'none',next,pc}}
 const LV_RANK={crit:3,warn:2,ok:1,none:0};
+/* колко от интервала е изминато (0..1+), по-голямото от км и време */
+function svcPct(c,keys){let best=null;
+  for(const k of keys){const sv=svcOf(c,k);let p=null;
+    if(sv.intKm&&sv.lastKm!=null&&c.odo!=null)p=Math.max(0,((+c.odo||0)-(+sv.lastKm))/(+sv.intKm));
+    if(sv.intMonths&&sv.lastDate){const d=daysBetween(sv.lastDate,today())/(+sv.intMonths*30.44);p=Math.max(p??0,d)}
+    if(p!=null)best=Math.max(best??0,p)}
+  return best}
 function svcCards(c,m){
   return `<div class="dcards">${SVC_CARDS.map(([g,l,keys])=>{const R2=keys.map(k=>[k,svcRow(c,k)]);
     const lvl=R2.reduce((w,[,r])=>LV_RANK[r.lvl]>LV_RANK[w]?r.lvl:w,'none');
@@ -1527,7 +1618,8 @@ function svcCards(c,m){
     const lv=svcOf(c,keys[0]);
     const body=(g==='battery'?`<div class="dc-r"><span>Сменен</span><b>${lv.lastDate||lv.lastKm!=null?[lv.lastDate?fd(lv.lastDate):'',lv.lastKm!=null?fint(lv.lastKm)+' км':''].filter(Boolean).join(' · '):'—'}</b></div>`:'')+
       (keys.length===1?row(keys[0],'Следваща смяна'):keys.map(k=>row(k,SVC_SHORT[k])).join(''));
-    return `<div class="dcard ${lvl}${m?' tap':''}"${m?` data-act="service" data-car="${c.id}" data-k="${g}"`:''}><div class="dc-h"><span class="dc-ic ${g==='oil'||g==='pads'?'svg ':''}${g}">${ic}</span><b>${l}</b>${hint?`<em class="dc-tag">${hint}</em>`:''}${m?`<span class="dc-pen">${icon('edit')}</span>`:''}</div>
+    const pc=svcPct(c,keys);
+    return `<div class="dcard ${lvl}${m?' tap':''}"${m?` data-act="service" data-car="${c.id}" data-k="${g}"`:''}><div class="dc-h"><span class="dc-ic ${g==='oil'||g==='pads'?'svg ':''}${g}">${ic}</span><span class="dc-tt"><b>${l}</b>${hint?`<em class="dc-tag">${hint}</em>`:''}</span>${pc!=null?`<span class="sring ${lvl}"><svg viewBox="0 0 90 90" aria-hidden="true"><circle class="bg" cx="45" cy="45" r="38"/><circle class="fg" cx="45" cy="45" r="38" style="stroke-dashoffset:${(239*(1-Math.min(1,pc))).toFixed(1)}"/></svg><em>${Math.round(pc*100)}%</em></span>`:''}${m?`<span class="dc-pen">${icon('edit')}</span>`:''}</div>
       ${body}
 </div>`}).join('')}</div>`;
 }
@@ -2533,7 +2625,7 @@ const oldBtn=c=>LOGFROM&&!OLDK.has('car:'+c.id)?`<button class="btn wide" data-a
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyData(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='46';let _verAt=0;
+const APP_VER='47';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
