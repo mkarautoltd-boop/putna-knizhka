@@ -272,15 +272,94 @@ function base_(cache) {
   cachePut_(b);
   return (cache._base = b);
 }
+/* ---------- кой какво получава ----------
+ * Телефонът получава само колите, които потребителят вижда, и записите от последните LOG_MONTHS месеца.
+ * По-старите месеци се теглят при нужда с getLogs (отчети, „Покажи по-стари“). */
+const LOG_MONTHS = 3;
+function logFrom_() {
+  const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - (LOG_MONTHS - 1));
+  return Utilities.formatDate(d, 'Europe/Sofia', 'yyyy-MM');
+}
+function carScope_(b, meId) {
+  const u = (b.users || {})[meId] || {}, ids = {};
+  Object.keys(b.cars || {}).forEach(id => {
+    const c = b.cars[id], drv = (c.driverIds || (c.driverId ? [c.driverId] : [])).indexOf(meId) >= 0, ses = c.session && c.session.userId === meId;
+    if (u.role === 'admin' || drv || ses || (u.role === 'manager' && c.dept === u.dept)) ids[id] = true;
+  });
+  return ids;
+}
+const isBi_ = c => /Бензин/.test(c.fuel || '') && /Газ|Метан/.test(c.fuel || '');
+/* За резервоара: изминатото преди прозореца, сбито по месец и вид път, и зареденото гориво (без бензина при газови коли). */
+function tankPre_(car, ents, cut) {
+  const since = car.tankStartDate || '0000-00-00', km = {};
+  let fuel = 0;
+  const trips = ents.filter(e => e.t === 'trip' && !e.del);
+  const mo = trips.filter(e => e.morning).sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || String(a.time || '').localeCompare(String(b.time || '')) || (+a.endKm || 0) - (+b.endKm || 0));
+  const routes = trips.filter(e => !e.morning);
+  const add = (e, k) => { if (!k || e.date < since || e.date >= cut) return; const key = String(e.date).slice(0, 7) + '|' + (e.road || 'mixed'); km[key] = (km[key] || 0) + k; };
+  mo.forEach((e, i) => {
+    const nx = mo[i + 1]; if (!nx) return;
+    const rd = +e.endKm || 0, nr = +nx.endKm || 0;
+    const inRoute = routes.filter(r => (r.startKm == null ? -1 : r.startKm) >= rd && (r.endKm == null ? Infinity : r.endKm) <= nr).reduce((t, r) => t + (r.km || 0), 0);
+    add(e, Math.max(0, nr - rd - inRoute));
+  });
+  routes.forEach(e => add(e, e.km || 0));
+  ents.forEach(e => { if (e.t === 'fuel' && !e.del && e.date >= since && e.date < cut && !(isBi_(car) && e.ft === 'petrol')) fuel += e.liters || 0; });
+  return { fuel: fuel, km: km };
+}
+function logsFor_(b, scope, test) {
+  const out = {};
+  Object.keys(b.logs || {}).forEach(k => { const d = b.logs[k]; if (scope[d.carId] && test(d.month)) out[k] = d; });
+  return out;
+}
 function collect_(cache, meId) {
-  const b = base_(cache), out = {};
-  Object.keys(b).forEach(k => { if (k !== 'notifAll') out[k] = b[k]; });
+  const b = base_(cache), out = {}, scope = carScope_(b, meId), from = logFrom_(), cut = from + '-01';
+  Object.keys(b).forEach(k => { if (k !== 'notifAll' && k !== 'logs') out[k] = b[k]; });
+  out.cars = {}; Object.keys(scope).forEach(id => { out.cars[id] = b.cars[id]; });
+  out.problems = {}; Object.keys(b.problems || {}).forEach(id => { if (scope[b.problems[id].carId]) out.problems[id] = b.problems[id]; });
+  out.logs = logsFor_(b, scope, m => m >= from);
+  /* от по-старите месеци: последният начален километраж, зареждане и проверка за всяка кола, плюс сбора за резервоара */
+  const byCar = {};
+  Object.keys(b.logs || {}).forEach(k => {
+    const d = b.logs[k]; if (!scope[d.carId] || d.month >= from) return;
+    Object.keys(d.e || {}).forEach(id => { (byCar[d.carId] = byCar[d.carId] || []).push(Object.assign({}, d.e[id], { _id: id, _doc: k })); });
+  });
+  out.tankPre = {};
+  Object.keys(byCar).forEach(carId => {
+    const ents = byCar[carId], last = {};
+    ents.forEach(e => {
+      if (e.del) return;
+      const t = e.t === 'trip' ? (e.morning ? 'morning' : '') : (e.t === 'fuel' || e.t === 'check' ? e.t : '');
+      if (!t) return;
+      const p = last[t];
+      if (!p || String(e.date) > String(p.date) || (e.date === p.date && String(e.ts || '') > String(p.ts || ''))) last[t] = e;
+    });
+    Object.keys(last).forEach(t => {
+      const e = last[t], k = e._doc, v = Object.assign({}, e, { old: true }); delete v._doc; delete v._id;
+      if (!out.logs[k]) out.logs[k] = { carId: carId, month: b.logs[k].month, e: {} };
+      out.logs[k].e[e._id] = v;
+    });
+    const car = b.cars[carId];
+    if (car && car.tankCap) {
+      const cur = [];
+      Object.keys(out.logs).forEach(k => { const d = out.logs[k]; if (d.carId === carId && d.month >= from) Object.keys(d.e || {}).forEach(id => cur.push(d.e[id])); });
+      out.tankPre[carId] = tankPre_(car, ents.concat(cur), cut);
+    }
+  });
+  out.logFrom = from;
   out.me = meId; out.notif = (b.notifAll || {})[meId] || {};
   return out;
 }
 function getAll(token) {
   const cache = {}, me = auth_(token, cache);
   return collect_(cache, me.id);
+}
+/* По-стари месеци при нужда. months: ['2026-05', …] или null = всички преди прозореца; carId: само за една кола. */
+function getLogs(token, months, carId) {
+  const cache = {}, me = auth_(token, cache), b = base_(cache), scope = carScope_(b, me.id), from = logFrom_();
+  if (carId) { if (!scope[carId]) throw new Error('Нямаш достъп до тази кола.'); Object.keys(scope).forEach(id => { if (id !== carId) delete scope[id]; }); }
+  const want = months ? months.reduce((o, m) => { o[m] = true; return o; }, {}) : null;
+  return logsFor_(b, scope, m => m < from && (!want || want[m]));
 }
 
 /* ---------- write ---------- */
@@ -492,7 +571,7 @@ function include(name) {
 
 /* ---------- API за външната страница (GitHub Pages) ----------
  * Страницата праща POST с {fn, args}; връщаме JSON {ok} или {err}. */
-const API_FNS = { login: login, logout: logout, getAll: getAll, write: write, changePassword: changePassword, exportCsv: exportCsv, makePdf: makePdf, checkDocs: checkDocs };
+const API_FNS = { login: login, logout: logout, getAll: getAll, write: write, changePassword: changePassword, exportCsv: exportCsv, makePdf: makePdf, checkDocs: checkDocs, getLogs: getLogs };
 function doPost(e) {
   let out;
   try {

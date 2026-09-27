@@ -884,8 +884,11 @@ function agg(list){
 }
 function tank(car){
   if(!car.tankCap||car.tankStart===''||car.tankStart==null)return null;
-  const since=car.tankStartDate||'0000-00-00';let v=+car.tankStart;
-  for(const e of entries()){if(e.carId!==car.id||e.date<since)continue;
+  const since=car.tankStartDate||'0000-00-00',cut=LOGFROM?LOGFROM+'-01':'';let v=+car.tankStart;
+  /* по-старите месеци не са на телефона: сървърът праща сбора им (TANKPRE) */
+  const pre=cut&&TANKPRE[car.id];
+  if(pre){v+=pre.fuel||0;for(const[k,km]of Object.entries(pre.km||{})){const[mo,road]=k.split('|');v-=km*normRate(car,road,mo+'-15')/100}}
+  for(const e of entries()){if(e.carId!==car.id||e.date<since||(cut&&e.date<cut))continue;
     if(e.t==='fuel'){if(ftOf(car,e)!=='petrol')v+=e.liters||0}else if(e.t==='trip')v-=tripNorm(car,e);}
   return Math.max(0,Math.min(+car.tankCap,v));
 }
@@ -1428,14 +1431,14 @@ function secBook(c,m){
   if(!list.length)return bulk+`<div class="empty">Още няма записи в пътната книжка.</div>`;
   let h=bulk+'<div class="list">',cur='';
   for(const e of list){if(e.date!==cur){cur=e.date;h+=`<div class="date-h">${fd(cur)}</div>`}h+=tripLi(e)}
-  return h+'</div>';
+  return h+'</div>'+oldBtn(c);
 }
 function fuelLi(e){const c=S.cars[e.carId];return `<div class="li"><div class="l"><b>${esc(e.station||'Бензиностанция')} · ${fnum(e.liters)} л${ftLabel(c,e)?` <span class="ftpill ${ftOf(c,e)}">${ftLabel(c,e)}</span>`:''}</b><span>${fd(e.date)} ${esc(e.time||'')} · ${esc(uname(e.driver))}${R.tab!=='car'?' · '+esc(c?.reg||''):''}${e.by!==e.driver?' · въвел: '+esc(uname(e.by)):''}</span><span class="num">${fint(e.km)} км${e.note?' · '+esc(e.note):''}</span></div><div class="r"><b class="num">${eur(e.sum)}</b><span class="small muted num">${eur(e.ppl)}/л</span>${isStaff()&&canManage(c)?`<button class="linkbtn small" data-act="delEntry" data-car="${e.carId}" data-id="${e.id}">Изтрий</button>`:''}</div></div>`}
 function secFuel(c){
   const list=entries().filter(e=>e.carId===c.id&&e.t==='fuel').slice().reverse();
   const tk=tank(c);
   return `${isAdmin()?`<div class="sec-head"><h3>Зареждания</h3><button class="btn sm primary" data-act="bulkFuel" data-car="${c.id}">+ Много зареждания наведнъж</button></div>`:''}${tk!=null?`<div class="calc">Приблизителен остатък: <span class="num">${fnum(tk,1)} л</span> от ${fint(c.tankCap)} л <span class="small">(изчислен по норма, не е измерване)</span></div>`:''}
-  ${list.length?`<div class="list">${list.slice(0,100).map(fuelLi).join('')}</div>`:'<div class="empty">Още няма зареждания.</div>'}`;
+  ${list.length?`<div class="list">${list.slice(0,100).map(fuelLi).join('')}</div>`:'<div class="empty">Още няма зареждания.</div>'}${oldBtn(c)}`;
 }
 
 /* ---- сервизи (локации) ---- */
@@ -1470,7 +1473,7 @@ function secService(c,m){
   ${svcCards(c,m)}
   <p class="small muted">Следващият сервиз е което настъпи първо: километрите или датата.</p></div>
   <div class="sec"><div class="sec-head"><h3>Сервизи и разходи</h3>${m?`<button class="btn sm" data-act="expense" data-car="${c.id}">+ Друг разход</button>`:''}</div>
-  ${recs.length?`<div class="list">${recs.map(e=>`<div class="li"><div class="l"><b>${e.t==='service'?esc(e.what||'Сервиз'):esc(e.cat||'Разход')}</b><span>${fd(e.date)}${e.km?' · '+fint(e.km)+' км':''}${e.place?' · '+esc(e.place):''}${e.items?.length?' · '+e.items.map(k=>SVC.find(x=>x[0]===k)?.[1]).join(', '):''}</span>${e.note?`<span>${esc(e.note)}</span>`:''}</div><div class="r"><b class="num">${eur(e.t==='service'?e.cost:e.sum)}</b><span class="pill">${e.t==='service'?'Сервиз':'Разход'}</span>${m?`<button class="linkbtn small" data-act="delEntry" data-car="${e.carId}" data-id="${e.id}">Изтрий</button>`:''}</div></div>`).join('')}</div>`:'<div class="empty">Няма въведени сервизи и разходи.</div>'}</div>`)+shopsBlock();
+  ${recs.length?`<div class="list">${recs.map(e=>`<div class="li"><div class="l"><b>${e.t==='service'?esc(e.what||'Сервиз'):esc(e.cat||'Разход')}</b><span>${fd(e.date)}${e.km?' · '+fint(e.km)+' км':''}${e.place?' · '+esc(e.place):''}${e.items?.length?' · '+e.items.map(k=>SVC.find(x=>x[0]===k)?.[1]).join(', '):''}</span>${e.note?`<span>${esc(e.note)}</span>`:''}</div><div class="r"><b class="num">${eur(e.t==='service'?e.cost:e.sum)}</b><span class="pill">${e.t==='service'?'Сервиз':'Разход'}</span>${m?`<button class="linkbtn small" data-act="delEntry" data-car="${e.carId}" data-id="${e.id}">Изтрий</button>`:''}</div></div>`).join('')}</div>`:'<div class="empty">Няма въведени сервизи и разходи.</div>'}${oldBtn(c)}</div>`)+shopsBlock();
 }
 const SVC_OIL='<svg viewBox="0 0 48 48" fill="none"><defs><linearGradient id="oc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD35C"/><stop offset="1" stop-color="#F29A12"/></linearGradient></defs><path d="M9.5 22 4.3 19.4a1.6 1.6 0 0 0-2.3 1.4v3.7l7.5 3.8" fill="none" stroke="#B86A00" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/><rect x="15" y="13.5" width="8.5" height="3.6" rx="1.3" fill="#8C5200"/><rect x="17.7" y="16.5" width="3" height="5" fill="#B86A00"/><path d="M8.5 21.5H29.5l6.4-4.4 9.5-2.9 1 2.1-9.4 5.6-6 10H11.2a2.7 2.7 0 0 1-2.7-2.7Z" fill="url(#oc)" stroke="#B86A00" stroke-width="1.3" stroke-linejoin="round"/><path d="M11 23.5h17.4l-1.5 2.3H11Z" fill="#fff" fill-opacity=".55"/><path d="M45 22.5s-2.6 3.4-2.6 5.2a2.6 2.6 0 0 0 5.2 0c0-1.8-2.6-5.2-2.6-5.2Z" fill="#F2B21B" stroke="#B86A00" stroke-width="1"/></svg>';
 const SVC_EMO={pads:'<svg viewBox="0 0 48 48" fill="none"><circle cx="22" cy="26" r="17" fill="#C9D1DC" stroke="#7F8DA0" stroke-width="1.6"/><circle cx="22" cy="26" r="12.5" fill="#E6EBF1" stroke="#A3AFBF" stroke-width="1"/><g fill="#98A5B6"><circle cx="22" cy="16.5" r="1.5"/><circle cx="31.5" cy="26" r="1.5"/><circle cx="22" cy="35.5" r="1.5"/><circle cx="12.5" cy="26" r="1.5"/><circle cx="28.7" cy="19.3" r="1.2"/><circle cx="28.7" cy="32.7" r="1.2"/><circle cx="15.3" cy="32.7" r="1.2"/><circle cx="15.3" cy="19.3" r="1.2"/></g><circle cx="22" cy="26" r="6" fill="#fff" stroke="#7F8DA0" stroke-width="1.4"/><g fill="#5D6B80"><circle cx="22" cy="23" r="1"/><circle cx="24.9" cy="25.1" r="1"/><circle cx="23.8" cy="28.4" r="1"/><circle cx="20.2" cy="28.4" r="1"/><circle cx="19.1" cy="25.1" r="1"/></g><path d="M30 6.5c7 1.6 12.4 7.2 13.6 14.4.3 1.6-.9 3-2.5 3H37c-1.3 0-2.3-.9-2.6-2.1-.8-3.6-3.6-6.5-7.2-7.4-1.2-.3-2.1-1.4-2.1-2.6V9c0-1.6 1.4-2.8 2.9-2.5Z" fill="#E5484D" stroke="#A8232A" stroke-width="1.2"/><path d="M31 9.6c3.8 1.4 6.8 4.4 8.1 8.2" stroke="#fff" stroke-opacity=".6" stroke-width="1.6" stroke-linecap="round"/></svg>',timing:'⚙️',battery:'🔋',other:'🛠️'};
@@ -1545,7 +1548,7 @@ function histList(items){
   if(!items.length)return '<div class="empty">Няма история.</div>';
   return `<div class="list">${items.slice(0,200).map(i=>`<div class="li"><div class="l"><b style="font-weight:500${i.del?';text-decoration:line-through':''}">${esc(i.text)}</b><span>${fts(i.ts)} · ${esc(uname(i.by))}${R.tab!=='car'?' · '+esc(S.cars[i.carId]?.reg||''):''}${i.del?`</span><span class="small" style="color:#E5484D;font-weight:600">Изтрит${i.delBy?' от '+esc(uname(i.delBy))+(S.users[i.delBy]?' ('+(ROLES[S.users[i.delBy].role]||'').toLowerCase()+')':''):''}${i.delTs?' на '+fts(i.delTs):''}`:''}</span></div></div>`).join('')}</div>`;
 }
-function secHistory(c){return `<p class="small muted">Какво е направено, кога и от кого. Изтритите записи остават видими като зачеркнати.</p>`+histList(histItems(e=>e.carId===c.id))}
+function secHistory(c){return `<p class="small muted">Какво е направено, кога и от кого. Изтритите записи остават видими като зачеркнати.</p>`+histList(histItems(e=>e.carId===c.id))+oldBtn(c)}
 
 /* ---- tasks ---- */
 function vTasks(){
@@ -1590,6 +1593,7 @@ function vReports(){
   let h=`<div class="grid2"><button class="btn primary" data-act="printPdf">${icon('doc')} Печат (PDF)</button><button class="btn" data-act="csv">Експорт (CSV)</button></div>
   <div class="chips">${reps.map(([k,l])=>`<button class="chip" data-act="rep" data-k="${k}" aria-pressed="${R.rep===k}">${l}</button>`).join('')}</div>`;
   lastCsv=null;
+  {const f=R.rep==='day'?R.repDate:R.repFrom;if(LOGFROM&&f&&f.slice(0,7)<LOGFROM)setTimeout(()=>loadOld(f),0)}
   return h+({day:repDay,month:repMonth,car:repCar,driver:repDriver,dept:repDeptR}[R.rep]||repDay)();
 }
 function repDay(){
@@ -2414,7 +2418,7 @@ const ACT={
   closeSheet:closeSheet,
   morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
   takeover:d=>openTakeover(d.car),endSession:d=>openEndSession(d.car),viewProblem:d=>viewProblem(d.id),
-  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),docCheck:(d,b)=>checkDoc(d.car,d.k,b),
+  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),docCheck:(d,b)=>checkDoc(d.car,d.k,b),loadOld:d=>loadOld(null,d.car),
   newTask:openNewTask,doneTask:d=>doneTask(d.id),delEntry:d=>delEntry(d.car,d.id),
   editUser:d=>openEditUser(d.id),editDept:d=>openEditDept(d.id),editSettings:openSettings,myPass:openMyPass,demo:loadDemo,csv:downloadCsv,
   logout:()=>{const t=TOKEN;logoutLocal();if(t)gs('logout',t).catch(()=>{})},
@@ -2446,11 +2450,13 @@ function mapErr(e){const m=String(e&&e.message||e||'').replace(/^(Exception|Erro
   return new Error(m||'Връзката със сървъра прекъсна. Опитай отново.')}
 const LISTEN={};let CACHE=null;
 let saveT=0;
+/* По-стари месеци, заредени при нужда (не се пазят в pk_cache). */
+let LOGFROM=null,TANKPRE={},OLD={};const OLDK=new Set();
 function applyData(d){
-  CACHE=d;if(d.me)meId=d.me;
+  CACHE=d;if(d.me)meId=d.me;LOGFROM=d.logFrom||null;TANKPRE=d.tankPre||{};
   clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem('pk_cache',JSON.stringify({t:TOKEN,d:CACHE}))}catch(e){}},800);
   S.notif=d.notif||{};S.messages=Object.fromEntries(Object.entries(d.messages||{}).map(([k,v])=>[k,{...v,id:k}]));
-  for(const c of ['users','depts','cars','logs','problems','tasks']){const m=d[c]||{};
+  for(const c of ['users','depts','cars','logs','problems','tasks']){const m=c==='logs'?{...(d.logs||{}),...OLD}:(d[c]||{});
     const docs=Object.entries(m).map(([id,v])=>({id,exists:true,data:()=>v,metadata:{fromCache:false}}));
     const snap={docs,size:docs.length,empty:!docs.length,metadata:{fromCache:false}};(LISTEN[c]||[]).forEach(f=>f(snap))}
   (LISTEN['meta/settings']||[]).forEach(f=>f({id:'settings',exists:!!d.settings,data:()=>d.settings,metadata:{fromCache:false}}));
@@ -2459,7 +2465,8 @@ function mergeDeep(a,b){const o=Object.assign({},a||{});for(const k of Object.ke
 function localApply(ops){
   const d=CACHE||{};
   for(const op of ops){const[c,id]=op.path.split('/');const set=op.op==='set';
-    if(c==='logs'){const i=id.lastIndexOf('_');d.logs=d.logs||{};const ex=d.logs[id]||{carId:id.slice(0,i),month:id.slice(i+1),e:{}};const nd=set?op.data:mergeDeep(ex,op.data);nd.carId=nd.carId||ex.carId;nd.month=nd.month||ex.month;d.logs[id]=nd}
+    if(c==='logs'){const i=id.lastIndexOf('_');d.logs=d.logs||{};const ex=d.logs[id]||{carId:id.slice(0,i),month:id.slice(i+1),e:{}};const nd=set?op.data:mergeDeep(ex,op.data);nd.carId=nd.carId||ex.carId;nd.month=nd.month||ex.month;d.logs[id]=nd;
+      if(OLD[id])OLD[id]=set?nd:mergeDeep(OLD[id],op.data)}
     else if(c==='meta')d.settings=set?op.data:mergeDeep(d.settings,op.data);
     else if(c==='notif'){if(id===meId)d.notif=set?op.data:mergeDeep(d.notif,op.data)}
     else{d[c]=d[c]||{};const v=set?Object.assign({},op.data):mergeDeep(d[c][id],op.data);if(c==='users'){delete v.salt;delete v.hash}d[c][id]=v}}
@@ -2478,12 +2485,24 @@ const gasDb={
     onSnapshot(fn){(LISTEN[path]=LISTEN[path]||[]).push(fn);return()=>{}}}},
   collection(c){return{doc:id=>gasDb.doc(c+'/'+id),onSnapshot(fn){(LISTEN[c]=LISTEN[c]||[]).push(fn);return()=>{}}}}
 };
-function logoutLocal(){TOKEN=null;meId=null;try{localStorage.removeItem('pk_token');localStorage.removeItem('pk_cache')}catch(e){}
+function logoutLocal(){TOKEN=null;meId=null;OLD={};OLDK.clear();try{localStorage.removeItem('pk_token');localStorage.removeItem('pk_cache')}catch(e){}
   for(const c of ['users','depts','cars','logs','problems','tasks'])S[c]={};S.loaded.clear();invalidate();R.tab='home';closeSheet();showLogin()}
+const prevMonth=ym=>{const[y,m]=ym.split('-').map(Number);return m===1?`${y-1}-12`:`${y}-${String(m-1).padStart(2,'0')}`};
+/* Зарежда по-старите месеци (преди LOGFROM) от from нататък; carId – само за една кола и всички по-стари месеци. */
+async function loadOld(from,carId){
+  if(!LOGFROM||!TOKEN)return;
+  let months=null,key='car:'+carId;
+  if(!carId){if(!from||from.slice(0,7)>=LOGFROM)return;months=[];for(let m=prevMonth(LOGFROM);m>=from.slice(0,7);m=prevMonth(m))if(!OLDK.has(m))months.push(m);if(!months.length)return;key=null}
+  else if(OLDK.has(key))return;
+  if(loadOld.busy)return;loadOld.busy=true;toast('Зареждам по-старите записи…');
+  try{const r=await gs('getLogs',TOKEN,months,carId||null);Object.assign(OLD,r||{});if(key)OLDK.add(key);else months.forEach(m=>OLDK.add(m));applyData(CACHE)}
+  catch(e){toast(mapErr(e).message)}finally{loadOld.busy=false}
+}
+const oldBtn=c=>LOGFROM&&!OLDK.has('car:'+c.id)?`<button class="btn wide" data-act="loadOld" data-car="${c.id}" style="margin-top:10px">Покажи по-старите записи (преди ${monthLabel(LOGFROM).toLowerCase()})</button>`:'';
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyData(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='42';let _verAt=0;
+const APP_VER='43';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
