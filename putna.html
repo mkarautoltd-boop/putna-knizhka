@@ -718,6 +718,9 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 @keyframes lxZoom{from{transform:scale(1)}to{transform:scale(1.12)}}
 @keyframes lxUp{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
 @keyframes lxFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.btn.shine{position:relative;overflow:hidden}
+.btn.shine::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.4),transparent);animation:lxShine 3.6s ease-in-out infinite;pointer-events:none}
+@media (prefers-reduced-motion:reduce){.btn.shine::after{animation:none;display:none}}
 @keyframes lxShine{0%,60%{left:-60%}100%{left:130%}}
 @keyframes lxRoad{from{transform:translateX(0)}to{transform:translateX(-52px)}}
 @media (prefers-reduced-motion:reduce){.lx *{animation:none!important}}
@@ -1762,7 +1765,7 @@ const openTrip=guard((carId,morning)=>{
   const cf=carField(carId),car=S.cars[cf.id];
   const kmBox=`<div class="calc" id="kmCalc"></div><div class="note" id="kmWarn" hidden></div>`;
   const html=cf.html+
-    (morning?`${fld('Начален километраж днес',`<div class="mk-row">${ninp('endKm',car.odo?String(car.odo):'','required placeholder="напр. 123 456"')}<button type="submit" class="btn go">✓ Потвърди</button></div>`,'Километражът сутрин, преди да тръгнеш. Изминатите км за предния ден се смятат сами.')}<input type="hidden" name="startKm" id="f_startKm" value="${car.odo||0}">`+kmBox:'')+
+    (morning?`${fld('Начален километраж днес',`<div class="mk-row">${ninp('endKm',car.odo?String(car.odo):'','required placeholder="напр. 123 456"')}<button type="submit" class="btn go shine">✓ Потвърди</button></div>`,'Километражът сутрин, преди да тръгнеш. Изминатите км за предния ден се смятат сами.')}<input type="hidden" name="startKm" id="f_startKm" value="${car.odo||0}">`+kmBox:'')+
     `<div id="dz">${driverField(car)}</div>`+
     `${fld('Дата',inp('date',today(),'date'))}<input type="hidden" name="time" value="${nowTime()}">${fld('Вид път',sel('road',Object.entries(ROADS),'mixed'))}`+
     (morning?'':`<div class="grid2">${fld('Начален км',ninp('startKm',car.odo||''))}${fld('Краен км',ninp('endKm',''))}</div>`+kmBox)+
@@ -2529,7 +2532,7 @@ const oldBtn=c=>LOGFROM&&!OLDK.has('car:'+c.id)?`<button class="btn wide" data-a
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyData(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='44';let _verAt=0;
+const APP_VER='45';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
