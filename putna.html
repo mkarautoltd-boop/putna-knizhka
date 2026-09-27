@@ -1314,7 +1314,7 @@ function docCards(c,m){
       <div class="dc-r"><span>${left!=null&&left<0?'Статус':g?'Валиден за още':'Валидна за още'}</span><b class="dc-left">${v2}</b></div>
       ${k==='vignette'&&chk?.ts?`<div class="dc-r small"><span>Последна проверка</span><b>${chkTime(chk.ts)}</b></div>`:''}
       ${g&&bad&&m?`<div class="dc-two"><button type="button" data-act="editDoc" data-car="${c.id}" data-k="gtp">Въведи нова дата ✏️</button></div>`:''}
-      ${k==='vignette'?`<div class="dc-two"><button type="button" data-act="docCheck" data-car="${c.id}" data-k="vignette">Проверка 🔄</button></div>`:''}
+      ${k==='vignette'&&bad?`<div class="dc-two"><button type="button" data-act="docCheck" data-car="${c.id}" data-k="vignette">Проверка 🔄</button></div>`:''}
 </div>`}).join('')}</div>`;
 }
 function carCard(c){
