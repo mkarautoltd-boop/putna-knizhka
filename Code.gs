@@ -353,6 +353,125 @@ function makePdf(token, name, html) {
   return folder_().createFile(pdf).getUrl();
 }
 
+/* ---------- автоматична проверка на винетка (БГ Тол) и ГТП (ИААА) ----------
+ * Първия път: избери „setupDocsCheck“ горе и натисни „Изпълни“ (Run). Разреши достъпа.
+ * Това пуска проверка всяка нощ около 3:00 и веднага проверява всички коли. */
+const DOC_SRC = {
+  vignette: { name: 'Винетка', fem: true, url: 'https://check.bgtoll.bg/check/vignette/plate/BG/{plate}' },
+  gtp: { name: 'ГТП', fem: false, url: 'https://rta.government.bg/services/check-inspection/api/inspection?regNo={plate}' }
+};
+/* Регистрационният номер с латински букви, без интервали: СА 1234 АВ → CA1234AB */
+function plate_(reg) {
+  const map = { 'А': 'A', 'В': 'B', 'Е': 'E', 'К': 'K', 'М': 'M', 'Н': 'H', 'О': 'O', 'Р': 'P', 'С': 'C', 'Т': 'T', 'У': 'Y', 'Х': 'X' };
+  return String(reg || '').toUpperCase().replace(/[\s\-.]/g, '').replace(/[АВЕКМНОРСТУХ]/g, ch => map[ch]);
+}
+/* Дата от „2027-06-19T23:59:59+03:00“ или „19.06.2027“ → „2027-06-19“ */
+function day_(v) {
+  const s = String(v || '');
+  let m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return m[1] + '-' + m[2] + '-' + m[3];
+  m = s.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if (m) return m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2);
+  return null;
+}
+/* Търси най-късната дата „валиден до“ в отговора (JSON или HTML). */
+function untilFrom_(txt) {
+  let best = null;
+  const keep = d => { if (d && (!best || d > best)) best = d; };
+  let json = null; try { json = JSON.parse(txt); } catch (e) {}
+  if (json) {
+    const walk = o => {
+      if (!o || typeof o !== 'object') return;
+      Object.keys(o).forEach(k => {
+        const v = o[k];
+        if (v && typeof v === 'object') walk(v);
+        else if (/(validity)?date_?to$|valid_?(to|until|till)$|validuntil|expir|nextinspection|next_?date|enddate/i.test(k)) keep(day_(v));
+      });
+    };
+    walk(json);
+  } else {
+    const re = /валид[а-я]*\s+до[^0-9]{0,40}(\d{1,2}\.\d{1,2}\.\d{4}|\d{4}-\d{2}-\d{2})/gi; let m;
+    while ((m = re.exec(txt))) keep(day_(m[1]));
+  }
+  return best;
+}
+function fetchUntil_(k, plate) {
+  const r = UrlFetchApp.fetch(DOC_SRC[k].url.replace('{plate}', encodeURIComponent(plate)),
+    { muteHttpExceptions: true, followRedirects: true, headers: { Accept: 'application/json, text/html' } });
+  const code = r.getResponseCode();
+  if (code === 404) return null;
+  if (code !== 200) throw new Error('Сайтът отговори с грешка ' + code);
+  const txt = r.getContentText(), until = untilFrom_(txt);
+  let isJson = true; try { JSON.parse(txt); } catch (e) { isJson = false; }
+  if (!until && !isJson) throw new Error('Сайтът не върна данни.');
+  return until;
+}
+/* Проверява една кола. Пише новата дата само ако е намерена, иначе ръчната остава. */
+function checkCar_(id, which, byId, cache) {
+  const cur = readAll_('cars', cache)[id];
+  if (!cur) throw new Error('Колата не е намерена.');
+  const car = cur.data, plate = plate_(car.reg), now = new Date().toISOString(), today = now.slice(0, 10);
+  const docs = Object.assign({}, car.docs || {}), auto = Object.assign({}, car.docsAuto || {}), res = {};
+  (which ? [which] : Object.keys(DOC_SRC)).forEach(k => {
+    const o = { ts: now };
+    try {
+      if (!plate) throw new Error('Няма регистрационен номер.');
+      o.until = fetchUntil_(k, plate);
+      if (o.until && o.until !== docs[k]) {
+        docs[k] = o.until;
+        const src = DOC_SRC[k], eid = 'a' + Utilities.getUuid().replace(/-/g, '').slice(0, 15);
+        writeEntry_(eid, { t: 'edit', carId: id, date: today, ts: now, by: byId || 'auto',
+          text: src.name + ': ' + (src.fem ? 'валидна' : 'валиден') + ' до ' + o.until.split('-').reverse().join('.') + ' (автоматично)' }, cache, true);
+      }
+    } catch (e) { o.err = String(e && e.message || e); }
+    auto[k] = o; res[k] = o;
+  });
+  writeDoc_('cars', id, merge_(car, { docs: docs, docsAuto: auto }), cache);
+  return res;
+}
+/* От приложението: бутон „Проверка“ */
+function checkDocs(token, carId, which) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    const cache = {}, me = auth_(token, cache), car = lookup_('cars', carId, cache);
+    if (!car) throw new Error('Колата не е намерена.');
+    const drv = (car.driverIds || [car.driverId]).indexOf(me.id) >= 0;
+    if (!(me.role === 'admin' || (me.role === 'manager' && car.dept === me.dept) || drv)) throw new Error('Нямаш достъп до тази кола.');
+    if (which && !DOC_SRC[which]) throw new Error('Невалидна заявка.');
+    const res = checkCar_(carId, which, me.id, cache);
+    SpreadsheetApp.flush();
+    cachePatch_(cache);
+    return res;
+  } finally { lock.releaseLock(); }
+}
+/* Всяка нощ: всички активни коли */
+function nightlyDocs() {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(60000);
+  try {
+    const cache = {}, cars = readAll_('cars', cache);
+    Object.keys(cars).forEach(id => {
+      if (cars[id].data.active === false) return;
+      try { checkCar_(id, null, 'auto', cache); } catch (e) { Logger.log(id + ': ' + e); }
+      Utilities.sleep(500);
+    });
+    SpreadsheetApp.flush();
+    cacheClear_();
+  } finally { lock.releaseLock(); }
+}
+function setupDocsCheck() {
+  ScriptApp.getProjectTriggers().forEach(t => { if (t.getHandlerFunction() === 'nightlyDocs') ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('nightlyDocs').timeBased().atHour(3).everyDays(1).inTimezone('Europe/Sofia').create();
+  nightlyDocs();
+  const cars = readAll_('cars', {});
+  Object.keys(cars).forEach(id => {
+    const c = cars[id].data, a = c.docsAuto || {};
+    Logger.log(c.reg + ' → винетка: ' + (a.vignette ? (a.vignette.until || a.vignette.err || 'няма') : '—') + ' · ГТП: ' + (a.gtp ? (a.gtp.until || a.gtp.err || 'няма') : '—'));
+  });
+  Logger.log('Готово. Проверката ще се пуска всяка нощ около 3:00.');
+}
+
 /* ---------- първоначална настройка ----------
  * Избери „setup“ от менюто с функции горе и натисни „Изпълни“ (Run).
  * Създава всички листове и администратора admin / 1234. Може да се пуска многократно. */
@@ -372,7 +491,7 @@ function include(name) {
 
 /* ---------- API за външната страница (GitHub Pages) ----------
  * Страницата праща POST с {fn, args}; връщаме JSON {ok} или {err}. */
-const API_FNS = { login: login, logout: logout, getAll: getAll, write: write, changePassword: changePassword, exportCsv: exportCsv, makePdf: makePdf };
+const API_FNS = { login: login, logout: logout, getAll: getAll, write: write, changePassword: changePassword, exportCsv: exportCsv, makePdf: makePdf, checkDocs: checkDocs };
 function doPost(e) {
   let out;
   try {
