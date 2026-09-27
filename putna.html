@@ -1290,25 +1290,15 @@ function leftText(td,dt){const a=new Date(td+'T12:00:00'),b=new Date(dt+'T12:00:
   if(mo>=12){const y=Math.floor(mo/12),r=mo%12;return [P(y,'година','години'),r?P(r,'месец','месеца'):''].filter(Boolean).join(' и ')}
   return [mo>0?P(mo,'месец','месеца'):'',d>0||mo===0?P(d,'ден','дни'):''].filter(Boolean).join(' и ')}
 const chkTime=ts=>{const d=new Date(ts);return `${pad(d.getDate())}.${pad(d.getMonth()+1)} | ${pad(d.getHours())}:${pad(d.getMinutes())}`};
-const DOC_SITE={
-  vignette:['БГ Тол','https://www.bgtoll.bg/'],buy:['БГ Тол','https://web.bgtoll.bg/'],
-  gtp:['Автомобилна администрация','https://rta.government.bg/services/check-inspection/index.html'],
-  go:['Гаранционния фонд','https://www.guaranteefund.org/bg/%D0%B8%D0%BD%D1%84%D0%BE%D1%80%D0%BC%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%B5%D0%BD-%D1%86%D0%B5%D0%BD%D1%82%D1%8A%D1%80-%D0%B8-%D1%81%D0%BF%D1%80%D0%B0%D0%B2%D0%BA%D0%B8/%D1%83%D1%81%D0%BB%D1%83%D0%B3%D0%B8/%D0%BF%D1%80%D0%BE%D0%B2%D0%B5%D1%80%D0%BA%D0%B0-%D0%B7%D0%B0-%D0%B2%D0%B0%D0%BB%D0%B8%D0%B4%D0%BD%D0%B0-%D0%B7%D0%B0%D1%81%D1%82%D1%80%D0%B0%D1%85%D0%BE%D0%B2%D0%BA%D0%B0-%D0%B3%D1%80a%D0%B6%D0%B4a%D0%BD%D1%81%D0%BAa-%D0%BE%D1%82%D0%B3%D0%BE%D0%B2%D0%BE%D1%80%D0%BD%D0%BE%D1%81%D1%82-%D0%BD%D0%B0-%D0%B0%D0%B2%D1%82%D0%BE%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D0%B8%D1%81%D1%82%D0%B8%D1%82%D0%B5']};
 const plateLat=r=>String(r||'').toUpperCase().replace(/[\s.-]/g,'').replace(/[АВЕКМНОРСТУХ]/g,ch=>'ABEKMHOPCTYX'['АВЕКМНОРСТУХ'.indexOf(ch)]);
-function copyTxt(t){try{navigator.clipboard.writeText(t).catch(()=>{})}catch(e){}}
-function openDocSite(id,k){const c=S.cars[id],[,url]=DOC_SITE[k];copyTxt(plateLat(c?.reg));toast('Номерът '+plateLat(c?.reg)+' е копиран');window.open(url,'_blank')}
 async function checkDoc(id,k,btn){
-  const c=S.cars[id],name=k==='gtp'?'ГТП':'винетката';
   if(btn){btn.disabled=true;btn.textContent='Проверявам…'}
   let r=null,err='';
   try{r=(await gs('checkDocs',TOKEN,id,k))?.[k];if(r?.err)err=r.err}catch(e){err=mapErr(e).message}
   await refresh();render();
-  const d=S.cars[id]?.docs?.[k],left=d?daysBetween(today(),d):null;
-  if(!err&&r?.until&&left>=0){toast(`${k==='gtp'?'ГТП е валиден':'Винетката е валидна'} до ${fd(r.until)}`);return}
-  const [site,url]=DOC_SITE[k];
-  openSheet(k==='gtp'?'ГТП':'Винетка',`${sheetCar(c)}<p>${err?`Автоматичната проверка не успя: ${esc(err.replace(/\.$/,''))}.`:r?.until?`${k==='gtp'?'Прегледът е изтекъл':'Винетката е изтекла'} на ${fd(r.until)}.`:`Не е намерена валидна ${k==='gtp'?'информация за ГТП':'винетка'}.`}</p>
-    <p class="small muted">Може да проверите на сайта на ${site}. Номерът <b>${esc(plateLat(c?.reg))}</b> ще бъде копиран.</p>
-    <a class="btn primary wide" style="text-decoration:none" href="${url}" target="_blank" rel="noopener" onclick="copyTxt('${plateLat(c?.reg)}')">Отвори ${esc(site)}</a>${k==='vignette'?`<a class="btn wide" style="margin-top:10px;text-decoration:none" href="${DOC_SITE.buy[1]}" target="_blank" rel="noopener">Купи нова винетка</a>`:''}`,null);
+  if(btn&&btn.isConnected){btn.disabled=false;btn.textContent='Проверка 🔄'}
+  const reg=plateLat(S.cars[id]?.reg),left=r?.until?daysBetween(today(),r.until):null;
+  toast(err?'Проверката не успя. Опитай пак след малко.':!r?.until?`БГ Тол не намира винетка за ${reg}`:left<0?`Винетката е изтекла на ${fd(r.until)}`:`Винетката е валидна до ${fd(r.until)}`);
 }
 function docCards(c,m){
   const d=c.docs||{},td=today();
@@ -1322,9 +1312,8 @@ function docCards(c,m){
       ${auto&&lvl==='ok'?`<div class="dc-ok">${g?'Валиден':'Валидна'} ✓</div>`:''}
       <div class="dc-r"><span>${g?'Валиден до':'Валидна до'}</span><b>${dt?fd(dt):'—'}</b></div>
       <div class="dc-r"><span>${left!=null&&left<0?'Статус':g?'Валиден за още':'Валидна за още'}</span><b class="dc-left">${v2}</b></div>
-      ${auto&&chk?.ts?`<div class="dc-r small"><span>Последна проверка</span><b>${chkTime(chk.ts)}</b></div>`:''}
-      ${auto&&bad?`<div class="dc-two"><button type="button" data-act="docCheck" data-car="${c.id}" data-k="${k}">Проверка 🔄</button>${k==='vignette'?`<button type="button" class="dk" data-act="docSite" data-car="${c.id}" data-k="buy">Купи нова 💳</button>`:''}</div>`:''}
-      ${k==='go'&&(left==null||left<=S.settings.warnDays)?`<div class="dc-two"><button type="button" data-act="docSite" data-car="${c.id}" data-k="go">Проверка в Гаранционния фонд 🔍</button></div>`:''}
+      ${k==='vignette'&&chk?.ts?`<div class="dc-r small"><span>Последна проверка</span><b>${chkTime(chk.ts)}</b></div>`:''}
+      ${auto&&bad?`<div class="dc-two">${g?`<button type="button" data-act="editDoc" data-car="${c.id}" data-k="gtp">Въведи нова дата ✏️</button>`:`<button type="button" data-act="docCheck" data-car="${c.id}" data-k="${k}">Проверка 🔄</button>`}</div>`:''}
 </div>`}).join('')}</div>`;
 }
 function carCard(c){
@@ -2424,7 +2413,7 @@ const ACT={
   closeSheet:closeSheet,
   morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
   takeover:d=>openTakeover(d.car),endSession:d=>openEndSession(d.car),viewProblem:d=>viewProblem(d.id),
-  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),docCheck:(d,b)=>checkDoc(d.car,d.k,b),docSite:d=>openDocSite(d.car,d.k),
+  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),docCheck:(d,b)=>checkDoc(d.car,d.k,b),
   newTask:openNewTask,doneTask:d=>doneTask(d.id),delEntry:d=>delEntry(d.car,d.id),
   editUser:d=>openEditUser(d.id),editDept:d=>openEditDept(d.id),editSettings:openSettings,myPass:openMyPass,demo:loadDemo,csv:downloadCsv,
   logout:()=>{const t=TOKEN;logoutLocal();if(t)gs('logout',t).catch(()=>{})},
@@ -2493,7 +2482,7 @@ function logoutLocal(){TOKEN=null;meId=null;try{localStorage.removeItem('pk_toke
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyData(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='40';let _verAt=0;
+const APP_VER='41';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
