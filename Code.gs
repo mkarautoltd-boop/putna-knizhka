@@ -355,7 +355,8 @@ function makePdf(token, name, html) {
 
 /* ---------- автоматична проверка на винетка (БГ Тол) и ГТП (ИААА) ----------
  * Първия път: избери „setupDocsCheck“ горе и натисни „Изпълни“ (Run). Разреши достъпа.
- * Това пуска проверка всяка нощ около 3:00 и веднага проверява всички коли. */
+ * Това пуска проверка на винетките всяка нощ около 3:00 и веднага проверява всички коли.
+ * ГТП се проверява само когато натиснеш „Проверка“ в приложението. */
 const DOC_SRC = {
   vignette: { name: 'Винетка', fem: true, url: 'https://check.bgtoll.bg/check/vignette/plate/BG/{plate}' },
   gtp: { name: 'ГТП', fem: false, url: 'https://rta.government.bg/services/check-inspection/api/inspection?regNo={plate}' }
@@ -445,7 +446,7 @@ function checkDocs(token, carId, which) {
     return res;
   } finally { lock.releaseLock(); }
 }
-/* Всяка нощ: всички активни коли */
+/* Всяка нощ: винетката на всички активни коли (ГТП се проверява само с бутона) */
 function nightlyDocs() {
   const lock = LockService.getScriptLock();
   lock.waitLock(60000);
@@ -453,7 +454,7 @@ function nightlyDocs() {
     const cache = {}, cars = readAll_('cars', cache);
     Object.keys(cars).forEach(id => {
       if (cars[id].data.active === false) return;
-      try { checkCar_(id, null, 'auto', cache); } catch (e) { Logger.log(id + ': ' + e); }
+      try { checkCar_(id, 'vignette', 'auto', cache); } catch (e) { Logger.log(id + ': ' + e); }
       Utilities.sleep(500);
     });
     SpreadsheetApp.flush();
@@ -467,7 +468,7 @@ function setupDocsCheck() {
   const cars = readAll_('cars', {});
   Object.keys(cars).forEach(id => {
     const c = cars[id].data, a = c.docsAuto || {};
-    Logger.log(c.reg + ' → винетка: ' + (a.vignette ? (a.vignette.until || a.vignette.err || 'няма') : '—') + ' · ГТП: ' + (a.gtp ? (a.gtp.until || a.gtp.err || 'няма') : '—'));
+    Logger.log(c.reg + ' → винетка: ' + (a.vignette ? (a.vignette.until || a.vignette.err || 'няма') : '—') + '');
   });
   Logger.log('Готово. Проверката ще се пуска всяка нощ около 3:00.');
 }
