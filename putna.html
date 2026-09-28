@@ -2573,7 +2573,7 @@ function carPrintHtml(c,from,to){
 async function printPdf(){
   let sc;try{sc=reportScope()}catch(e){toast('Избери автомобил или шофьор.');return}
   toast('Създаване на PDF… (5–10 сек.)');
-  try{const url=await gs('makePdf',TOKEN,`${sc.title} ${sc.sub||''}`.replace(/[\\/:*?"<>|]/g,'-').trim(),(R.rep==='car'&&S.cars[R.repCar]?carPrintHtml(S.cars[R.repCar],R.repFrom,R.repTo):printHtml(sc)));
+  try{const url=await gs('makePdf',TOKEN,`${sc.title} ${sc.sub||''}`.replace(/[\\/:*?"<>|]/g,'-').trim(),(R.rep==='car'&&S.cars[R.repCar]?carPrintHtml(S.cars[R.repCar],R.repFrom,R.repTo):R.rep==='month'&&R.repCar&&S.cars[R.repCar]&&!R.repDriver?carPrintHtml(S.cars[R.repCar],R.repMonth+'-01',monthEnd(R.repMonth)):printHtml(sc)));
     openSheet('PDF е готов',`<p>Файлът е записан в Google Drive, папка „Пътна книжка – отчети“. Отвори го и използвай „Сподели → Печат“.</p><a class="btn primary wide" href="${esc(url)}" target="_blank" rel="noopener">Отвори PDF</a>`,null)}
   catch(e){toast(mapErr(e).message)}
 }
@@ -2673,7 +2673,7 @@ const oldBtn=c=>LOGFROM&&!OLDK.has('car:'+c.id)?`<button class="btn wide" data-a
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyData(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='48';let _verAt=0;
+const APP_VER='49';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
