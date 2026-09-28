@@ -2522,10 +2522,58 @@ function printHtml(sc){
   <table><thead><tr>${head.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${body||'<tr><td colspan="20">Няма записи за периода.</td></tr>'}</tbody><tfoot>${foot}</tfoot></table>
   <div class="sign"><span>Шофьор: ....................................</span><span>Проверил: ....................................</span></div>\x3c/body>\x3c/html>`;
 }
+/* PDF „По автомобил“: оформлението от примера (само таблици – конверторът на Google не разбира flex/grid) */
+function carPrintHtml(c,from,to){
+  const E=periodEntries(new Set([c.id]),from,to),a=agg(E),dw=['нд','пн','вт','ср','чт','пт','сб'];
+  const T=(v,cls)=>`<td${cls?` class="${cls}"`:''}>${v==null?'':v}</td>`;
+  /* дни: начален км от сутрешния запис, изминати = всички пътни записи за деня */
+  const byD={};for(const e of E){if(e.t!=='trip')continue;const d=(byD[e.date]=byD[e.date]||{km:0,mo:null,routes:0});d.km+=e.km||0;if(e.morning)d.mo=e;else d.routes++}
+  const days=Object.keys(byD).sort().map(d=>{const x=byD[d],m=x.mo,wd=dw[new Date(d+'T12:00:00').getDay()];
+    const idle=m&&m.idle,pend=m&&m.pending;
+    return `<tr${idle?' class="off"':''}>${T(d.slice(8,10)+'.'+d.slice(5,7))}${T(wd)}${T(m?fint(m.reading??m.startKm):'','n')}${T(pend?'—':'<b>'+fint(x.km)+'</b>','n')}${T(idle?'':esc(uname(m?.driver)))}${T(idle?'не е карана':pend?'чака следващия ден':x.routes?x.routes+' маршрут'+(x.routes>1?'а':''):'')}</tr>`});
+  const half=Math.ceil(days.length/2),dh='<tr><th>Дата</th><th></th><th class="n">Начален км</th><th class="n">Изминати</th><th>Шофьор</th><th>Бележка</th></tr>';
+  const dtab=r=>`<table>${dh}${r.join('')}</table>`;
+  const mos=E.filter(e=>e.t==='trip'&&e.morning&&!e.virtual),k0=mos.length?(mos[0].reading??mos[0].startKm):null,k1=mos.length?(mos[mos.length-1].reading??mos[mos.length-1].startKm):null;
+  const fu=E.filter(e=>e.t==='fuel'),fr=fu.map(e=>`<tr>${T(fd(e.date).slice(0,5))}${T(esc(e.station||''))}${T(fint(e.km),'n')}${T(fnum(e.liters,1)+(ftLabel(c,e)?' '+ftLabel(c,e).toLowerCase():''),'n')}${T(fnum(e.sum||0,0),'n')}</tr>`).join('');
+  const sv=E.filter(e=>e.t==='service'||e.t==='expense'),svr=sv.map(e=>`<tr>${T(fd(e.date).slice(0,5))}${T(esc(e.t==='service'?[e.what||'Сервиз',e.place].filter(Boolean).join(' – '):[e.cat||'Разход',e.note].filter(Boolean).join(' – ')),'w')}${T(fnum((e.t==='service'?e.cost:e.sum)||0,0),'n')}</tr>`).join('');
+  const rt=E.filter(e=>e.t==='trip'&&!e.morning),rtr=rt.map(e=>`<tr>${T(fd(e.date).slice(0,5))}${T(esc(e.route||[e.from,e.to].filter(Boolean).join(' – ')),'w')}${T(esc(e.purpose||''),'w')}${T(esc(uname(e.driver)))}${T(fint(e.km),'n')}</tr>`).join('');
+  const d=c.docs||{},st=dt=>{if(!dt)return '<span class="m">не е въведен</span>';const l=daysBetween(to,dt);return `<span class="${l<0?'r':l<=S.settings.warnDays?'o':'g'}">${l<0?'изтекъл ':'до '}${fd(dt)}</span>`};
+  const oil=svcRow(c,'oil').st;
+  const docs=[['ГТП',st(d.gtp)],['Гражданска',st(d.go)],['Каско',st(d.kasko)],['Винетка',st(d.vignette)]].concat(oil&&oil.nextKm!=null?[['Следващо масло',`<span class="${oil.lvl==='crit'?'r':oil.lvl==='warn'?'o':'g'}">при ${fint(oil.nextKm)} км</span>`]]:[]);
+  const ec=a.econ,drs=[...new Set(mos.map(e=>e.driver))].map(uname).join(', ')||drvIds(c).map(uname).join(', ')||'—';
+  const kpi=[[fint(a.km)+' км',`изминати · ${Object.values(byD).filter(x=>x.km>0).length} дни`],[fnum(a.fuelL,1)+' л','заредено гориво'],[a.actual==null?'—':fnum(a.actual,1),'л/100 км факт'],
+    [ec==null?'—':(ec>=0?'−':'+')+fnum(Math.abs(ec),1)+' л',a.normRate==null?'спрямо нормата':(ec>=0?'под':'над')+' нормата '+fnum(a.normRate,1),ec==null?'':ec>=0?'g':'r'],[fnum(a.fuelCost+a.service+a.other,0)+' €','гориво + сервиз']];
+  return `\x3chtml>\x3chead>\x3cmeta charset="utf-8">\x3cstyle>
+  body{font-family:Arial,sans-serif;font-size:9.5px;color:#111;margin:18px 22px}
+  h1{font-size:18px;color:#0E2748;margin:0} .sub{font-size:11px;color:#444;margin:3px 0 5px}
+  .plate{display:inline-block;border:2px solid #0E2748;font-weight:bold;font-size:13px;padding:2px 8px}.plate i{font-style:normal;background:#1646B3;color:#fff;font-size:8px;padding:2px 3px;margin-right:6px}
+  table{border-collapse:collapse;width:100%} th,td{padding:3px 4px;border-bottom:1px solid #E3E8EF;text-align:left;vertical-align:top;font-size:9.5px;white-space:nowrap} td.w{white-space:normal}
+  th{background:#EEF2F8;font-size:8px;text-transform:uppercase;color:#334} .n{text-align:right}
+  .hd td{border:0;padding:0} .line{border-bottom:3px solid #0E2748;height:6px;margin-bottom:10px}
+  .k td{border:1px solid #D5DCE6;padding:7px 8px;width:20%;white-space:normal} .k b{display:block;font-size:14px;color:#0E2748} .k .g b{color:#1A8A4B} .k .r b{color:#C62828} .k span{color:#555}
+  h2{font-size:11.5px;color:#0E2748;margin:12px 0 4px}
+  .cols>tbody>tr>td{border:0;padding:0 6px 0 0;width:50%} .cols>tbody>tr>td+td{padding:0 0 0 6px}
+  tr.off td{color:#9AA3AF} tr.tot td{font-weight:bold;border-top:2px solid #0E2748}
+  .g{color:#1A8A4B}.r{color:#C62828}.o{color:#C96F0A}.m{color:#888}
+  .sign td{border:0;padding-top:30px;color:#555;font-size:10.5px} .ft{margin-top:12px;color:#888;font-size:8.5px;text-align:center}
+  \x3c/style>\x3c/head>\x3cbody>
+  <table class="hd"><tr><td><h1>Пътна книжка – отчет за автомобил</h1><div class="sub">${esc(carName(c))} · ${esc(c.fuel||'')} · ${drvIds(c).length>1?'шофьори':'шофьор'}: ${esc(drs)} · отдел: ${esc(dname(c.dept))}</div><span class="plate"><i>BG</i>${esc(regText(c.reg))}</span></td>
+    <td class="n" style="vertical-align:bottom;color:#555">${fd(from)} – ${fd(to)}<br>Изготвен: ${fts(new Date().toISOString())}</td></tr></table><div class="line"></div>
+  <table class="k"><tr>${kpi.map(([b,t,cl])=>`<td class="${cl||''}"><b>${b}</b><span>${t}</span></td>`).join('')}</tr></table>
+  <h2>Дневник на километрите</h2>
+  ${days.length?`<table class="cols"><tr><td>${dtab(days.slice(0,half))}</td><td>${half<days.length?dtab(days.slice(half)):''}</td></tr></table>
+  <table><tr class="tot"><td>Общо за периода</td><td class="n">${k0!=null?fint(k0)+' → '+fint(k1):''}</td><td class="n">${fint(a.km)} км</td></tr></table>`:'<p class="m">Няма записи за периода.</p>'}
+  ${rtr?`<h2>Пътувания с маршрут</h2><table><tr><th>Дата</th><th>Маршрут</th><th>Цел</th><th>Шофьор</th><th class="n">Км</th></tr>${rtr}</table>`:''}
+  <table class="cols"><tr><td><h2>Зареждания</h2>${fr?`<table><tr><th>Дата</th><th>Станция</th><th class="n">Км</th><th class="n">Литри</th><th class="n">€</th></tr>${fr}<tr class="tot"><td colspan="3">Общо</td><td class="n">${fnum(fu.reduce((t,e)=>t+(e.liters||0),0),1)}</td><td class="n">${fnum(a.fuelCost,0)}</td></tr></table>`:'<p class="m">Няма зареждания.</p>'}</td>
+    <td><h2>Сервиз и разходи</h2>${svr?`<table><tr><th>Дата</th><th>Дейност</th><th class="n">€</th></tr>${svr}<tr class="tot"><td colspan="2">Общо</td><td class="n">${fnum(a.service+a.other,0)}</td></tr></table>`:'<p class="m">Няма сервиз и разходи.</p>'}
+    <h2>Документи и сервиз към ${fd(to)}</h2><table>${docs.map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</table></td></tr></table>
+  <table class="sign"><tr><td>Шофьор: ${esc(drs)} ……………………</td><td class="n">Управител: ……………………</td></tr></table>
+  <div class="ft">Електронна пътна книжка · изготвил ${esc(me().name)}</div>\x3c/body>\x3c/html>`;
+}
 async function printPdf(){
   let sc;try{sc=reportScope()}catch(e){toast('Избери автомобил или шофьор.');return}
   toast('Създаване на PDF… (5–10 сек.)');
-  try{const url=await gs('makePdf',TOKEN,`${sc.title} ${sc.sub||''}`.replace(/[\\/:*?"<>|]/g,'-').trim(),printHtml(sc));
+  try{const url=await gs('makePdf',TOKEN,`${sc.title} ${sc.sub||''}`.replace(/[\\/:*?"<>|]/g,'-').trim(),(R.rep==='car'&&S.cars[R.repCar]?carPrintHtml(S.cars[R.repCar],R.repFrom,R.repTo):printHtml(sc)));
     openSheet('PDF е готов',`<p>Файлът е записан в Google Drive, папка „Пътна книжка – отчети“. Отвори го и използвай „Сподели → Печат“.</p><a class="btn primary wide" href="${esc(url)}" target="_blank" rel="noopener">Отвори PDF</a>`,null)}
   catch(e){toast(mapErr(e).message)}
 }
@@ -2625,7 +2673,7 @@ const oldBtn=c=>LOGFROM&&!OLDK.has('car:'+c.id)?`<button class="btn wide" data-a
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyData(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='47';let _verAt=0;
+const APP_VER='48';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
