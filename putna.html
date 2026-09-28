@@ -1913,7 +1913,11 @@ const openFuel=guard(carId=>{
     if(!s||isNaN(s)||s<=0)fail('Въведи общата сума.');
     if(km==null||isNaN(km))fail('Въведи километража.');
     if(c.tankCap&&l>+c.tankCap*1.05)fail(`Литрите (${fnum(l)}) са повече от резервоара (${fint(c.tankCap)} л).`);
-    const lf=lastOf(c.id,'fuel');if(lf&&km<lf.km)fail(`Километражът е по-малък от предишното зареждане (${fint(lf.km)} км).`);
+    /* сравнява с зареждането преди и след избраната дата и час (важно при задна дата) */
+    {const at=f.date+' '+(f.time||''),fl=entries().filter(x=>x.carId===c.id&&x.t==='fuel'&&x.km!=null),key=x=>x.date+' '+(x.time||'');
+     const pv=fl.filter(x=>key(x)<=at).pop(),nx=fl.find(x=>key(x)>at);
+     if(pv&&km<pv.km)fail(`Километражът е по-малък от предишното зареждане на ${fd(pv.date)} (${fint(pv.km)} км).`);
+     if(nx&&km>nx.km)fail(`Километражът е по-голям от следващото зареждане на ${fd(nx.date)} (${fint(nx.km)} км).`)}
     await addEntry(c.id,{t:'fuel',...(isBi(c)?{ft:f.ft==='petrol'?'petrol':'gas'}:{}),date:f.date,time:f.time,driver:f.driver,km,liters:l,sum:s,ppl:+(s/l).toFixed(3),station:f.station.trim(),note:f.note.trim()});
     toast(`Зареждането е записано: ${fnum(l)} л${isBi(c)?' '+(f.ft==='petrol'?'бензин':gasName(c).toLowerCase()):''}`);
   },'Запиши зареждане');
@@ -2706,7 +2710,7 @@ const oldBtn=c=>LOGFROM&&!OLDK.has('car:'+c.id)?`<button class="btn wide" data-a
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyData(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='50';let _verAt=0;
+const APP_VER='51';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
