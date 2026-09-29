@@ -1360,7 +1360,7 @@ function vHome(){
   if(!cars.length){
     return h+`<div class="empty">${icon('car')}<b>Още няма автомобили${isMgr()?' в твоя отдел':''}.</b>${isAdmin()?`Започни с отдел, потребители и първия автомобил или зареди примерните данни от спецификацията.<div class="row" style="justify-content:center"><button class="btn primary" data-act="editCar">Добави автомобил</button><button class="btn" data-act="demo">Зареди примерни данни</button></div>`:''}</div>`;
   }
-  h=kpis(cars)+h;
+  h=kpis(cars)+h+upcomingBooks(cars);
   const T=k=>`tab" data-k="${k}`;
   const qa=isAdmin()?[[T('cars'),'blue','car','Автомобили'],[T('depts'),'purple','building','Отдели'],[T('staff'),'green','user','Шофьори'],[T('users'),'grey','users','Потребители'],
       [T('tasks'),'purple','tasks','Задачи'],[T('problemsAll'),'red','alert','Проблеми'],[T('serviceAll'),'orange','wrench','Сервиз'],[T('docsAll'),'grey','doc','Документи'],
@@ -1370,7 +1370,6 @@ function vHome(){
       [T('staff'),'grey','users','Шофьори'],[T('messages'),'orange','bell','Съобщения'],[T('docsAll'),'grey','doc','Документи'],
       ['fuel','blue','fuel','Зареждане'],[T('serviceAll'),'orange','wrench','Сервиз'],['takeover','navy','wheel','Ще управлявам']];
   h+=`<div class="sec"><h3>Бързи действия</h3><div class="qa three">${qa.map(([a,c,i,l])=>`<button class="qt ${c}" data-act="${a}">${qtIn(i,l)}</button>`).join('')}</div>${isMgr()?sosBtn():''}</div>`;
-  h+=upcomingBooks(cars);
   const al=allAlerts();
   const worst=cars.slice().sort((a,b)=>({crit:0,warn:1,ok:2}[carLevel(a)])-({crit:0,warn:1,ok:2}[carLevel(b)]));
   h+=`<div class="sec"><div class="sec-head"><h3>Автомобили</h3><button class="linkbtn" data-act="tab" data-k="cars">Виж всички (${cars.length})</button></div><div class="carlist">${worst.slice(0,5).map(carCard).join('')}</div></div>`;
