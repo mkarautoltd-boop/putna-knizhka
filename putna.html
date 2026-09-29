@@ -1291,6 +1291,7 @@ function vMyCar(){
   if(!my.length)return `<div class="empty">${icon('car')}<b>Нямаш избран автомобил.</b>Избери се за „Постоянен шофьор“ в Редактирай автомобил.</div>`;
   let h='';
   for(const c of my){const al=carAlerts(c).filter(a=>a.lvl!=='good');
+    h+=svcBooks(c).map(bookCard).join('');
     h+=`<div class="sec">${carCard(c)}${al.length?`<div style="margin-top:10px">${alertList(al.slice(0,4))}</div>`:''}
       ${al.some(a=>a.kind==='pressure')?`<button class="btn go wide" style="margin-top:10px" data-act="check" data-car="${c.id}">${icon('plus')} Направи проверката</button>`:''}
       <h3 style="margin-top:14px">Бързи действия</h3>${myCarTiles(c)}</div>`;
