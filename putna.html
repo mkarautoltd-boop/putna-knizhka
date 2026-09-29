@@ -797,6 +797,14 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .bk-ok{display:grid;place-items:center;font-weight:700;color:#1FA35A;background:#E6F7EC;border-radius:14px;min-height:46px;font-size:14px;text-align:center;padding:0 8px}.bk-ok.no{color:#B45F00;background:#FFF1E0}
 .bk-b2{display:flex;justify-content:space-between}
 .book-btn{margin-bottom:10px}
+
+.upb{display:flex;flex-direction:column;gap:6px}
+.ub-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#F6F9FC;border:0;border-radius:16px;padding:10px 12px;font:inherit;color:inherit;cursor:pointer}
+.ub-d{flex:none;width:50px;height:54px;border-radius:12px;background:#2E55D6;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.ub-d b{font-size:21px}.ub-d small{font-size:11.5px;margin-top:3px;opacity:.9}
+.ub-d.soon{background:#F08A18}.ub-d.late{background:#E0342F}
+.ub-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.ub-t b{font-size:14.5px}.ub-t small{font-size:12.5px;color:#5B6778}
+.ub-s{flex:none;font-size:11.5px;font-weight:700;color:#B45F00;background:#FFF1E0;border-radius:99px;padding:4px 8px}.ub-s.ok{color:#1A8A4B;background:#E6F7EC}
 </style>
 </head>
 <body>
@@ -1361,6 +1369,7 @@ function vHome(){
       [T('staff'),'grey','users','Шофьори'],[T('messages'),'orange','bell','Съобщения'],[T('docsAll'),'grey','doc','Документи'],
       ['fuel','blue','fuel','Зареждане'],[T('serviceAll'),'orange','wrench','Сервиз'],['takeover','navy','wheel','Ще управлявам']];
   h+=`<div class="sec"><h3>Бързи действия</h3><div class="qa three">${qa.map(([a,c,i,l])=>`<button class="qt ${c}" data-act="${a}">${qtIn(i,l)}</button>`).join('')}</div>${isMgr()?sosBtn():''}</div>`;
+  h+=upcomingBooks(cars);
   const al=allAlerts();
   const worst=cars.slice().sort((a,b)=>({crit:0,warn:1,ok:2}[carLevel(a)])-({crit:0,warn:1,ok:2}[carLevel(b)]));
   h+=`<div class="sec"><div class="sec-head"><h3>Автомобили</h3><button class="linkbtn" data-act="tab" data-k="cars">Виж всички (${cars.length})</button></div><div class="carlist">${worst.slice(0,5).map(carCard).join('')}</div></div>`;
@@ -2355,6 +2364,13 @@ function openBook(carId,id){
   },b?'Запази':'Запази час');
   const form=$('#sheetForm');form.shop.addEventListener('change',()=>{$('#shopOther').hidden=!!form.shop.value});
 }
+/* началният екран на админ/мениджър: всички запазени часове */
+function upcomingBooks(cars){const ids=new Set(cars.map(c=>c.id)),L=Object.values(S.tasks).filter(t=>t.type==='svcbook'&&t.status!=='done'&&ids.has(t.carId)).sort((a,b)=>(a.due+(a.time||'')).localeCompare(b.due+(b.time||'')));
+  if(!L.length)return '';
+  return `<div class="card upb"><div class="card-h"><h3>📅 Предстоящи сервизи · ${L.length}</h3></div>${L.map(b=>{const c=S.cars[b.carId],n=daysBetween(today(),b.due),d=new Date(b.due+'T12:00:00');
+    return `<button class="ub-row" data-act="viewBook" data-id="${b.id}"><span class="ub-d${n<=1?' soon':''}${n<0?' late':''}"><b>${d.getDate()}</b><small>${MONTHS[d.getMonth()].slice(0,3).toLowerCase()}</small></span>
+    <span class="ub-t"><b>${esc(regText(c?.reg))} · ${esc(carName(c))}</b><small>${esc(n<0?'пропуснат – '+fdw(b.due):fdw(b.due).split(',')[0])}${b.time?' в '+esc(b.time):''} · ${esc(shopOf(b)?.name||b.shopName||'')}</small><small>${esc(b.what||'')}</small></span>
+    <span class="ub-s ${b.seen?'ok':''}">${b.seen?'✓ видял':'не е видял'}</span></button>`}).join('')}</div>`}
 function viewBook(id){const b=S.tasks[id];if(!b)return;openSheet('Час за сервиз',bookCard(b),null)}
 async function seenBook(id){try{await withRetry(()=>db.doc('tasks/'+id).update({seen:true,seenTs:new Date().toISOString(),seenBy:meId}));toast('Потвърдено ✓');closeSheet()}catch(e){toast(dbMsg(e))}}
 async function doneBook(id){const b=S.tasks[id];if(!b)return;
@@ -2770,7 +2786,7 @@ const oldBtn=c=>LOGFROM&&!OLDK.has('car:'+c.id)?`<button class="btn wide" data-a
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&!WQ.length&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyServer(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='53';let _verAt=0;
+const APP_VER='54';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
