@@ -1341,8 +1341,9 @@ function streakOf(c){const have=new Set(entries().filter(e=>e.carId===c.id&&e.t=
 function streakCard(c){const n=streakOf(c);if(n<3)return '';
   const w=n===1?'работен ден':'работни дни';
   return `<div class="streak"><span class="fl">🔥</span><div><b>${n} ${w} поред</b><span>без пропуснат начален километраж</span><div class="days">${'<i></i>'.repeat(Math.min(n,15))}</div></div></div>`}
-const qaOpen=()=>{try{return localStorage.getItem('pk_qa')==='1'}catch(e){return false}};
-function qaToggle(b){const o=!qaOpen();try{localStorage.setItem('pk_qa',o?'1':'0')}catch(e){}
+/* при всяко отваряне на приложението бутоните са затворени; помни се само докато е отворено */
+let QA_OPEN=false;const qaOpen=()=>QA_OPEN;
+function qaToggle(b){const o=!qaOpen();QA_OPEN=o;
   document.querySelectorAll('.qt.qx').forEach(x=>{x.hidden=!o;if(o){x.style.animation='none';void x.offsetWidth;x.style.animation='fxRise .35s cubic-bezier(.2,.8,.2,1) both'}});
   b.setAttribute('aria-expanded',o);b.innerHTML=`<span>${o?'Скрий':`Още ${document.querySelectorAll('.qt.qx').length} бутона`}</span><i>${o?'▴':'▾'}</i>`;}
 function vHome(){
