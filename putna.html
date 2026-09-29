@@ -2629,7 +2629,7 @@ const ACT={
   editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),docCheck:(d,b)=>checkDoc(d.car,d.k,b),loadOld:d=>loadOld(null,d.car),
   newTask:openNewTask,doneTask:d=>doneTask(d.id),delEntry:d=>delEntry(d.car,d.id),
   editUser:d=>openEditUser(d.id),editDept:d=>openEditDept(d.id),editSettings:openSettings,myPass:openMyPass,demo:loadDemo,csv:downloadCsv,
-  logout:()=>{const t=TOKEN;logoutLocal();if(t)gs('logout',t).catch(()=>{})},
+  logout:()=>{if(WQ.length){toast('Изчакай – има записи, които още се изпращат.');flushQ();return}const t=TOKEN;logoutLocal();if(t)gs('logout',t).catch(()=>{})},
   userLink:d=>openUserLink(d.id),
   carDocs:d=>{R.carBack='home';R.tab='car';R.carId=d.car;R.carSec='docs';toTop();render()},
   markRead:markAllRead,newMsg:openNewMsg,delMsg:d=>delMsg(d.id),printPdf:printPdf,
@@ -2682,9 +2682,23 @@ function localApply(ops){
 }
 async function apiWrite(ops){
   for(const op of ops){if(op.path.startsWith('logs/')&&op.data&&op.data.e){const ex=(CACHE&&CACHE.logs&&CACHE.logs[op.path.slice(5)])||{e:{}};if(Object.keys(op.data.e).every(k=>!(ex.e||{})[k]))op.isNew=true}}
-  try{await gs('write',TOKEN,ops)}catch(e){throw mapErr(e)}
-  localApply(ops);
+  /* записът се вижда веднага; изпращането към сървъра става отзад, на опашка (пази се и без интернет) */
+  localApply(ops);WQ.push(...ops);saveQ();clearTimeout(qT);qT=setTimeout(flushQ,60);
 }
+let WQ=[],qBusy=false,qT=0,qOff=0;try{WQ=JSON.parse(localStorage.getItem('pk_q')||'[]')||[]}catch(e){WQ=[]}
+const saveQ=()=>{try{if(WQ.length)localStorage.setItem('pk_q',JSON.stringify(WQ));else localStorage.removeItem('pk_q')}catch(e){}};
+async function flushQ(){
+  if(qBusy||!WQ.length||!TOKEN)return;qBusy=true;const batch=WQ.slice();let again=0;
+  try{await gs('write',TOKEN,batch);WQ.splice(0,batch.length);saveQ();if(qOff){qOff=0;toast('Записите са изпратени ✓')}}
+  catch(e){const m=String(e&&e.message||e);
+    if(/Няма връзка|не отговори/.test(m)){if(!qOff)toast('Няма интернет – записът ще се изпрати сам, когато има връзка.');qOff=1;again=8000}
+    else if(/AUTH/.test(m)){mapErr(e)}
+    else{WQ.splice(0,batch.length);saveQ();toast('Записът не беше приет: '+mapErr(e).message);refresh()}}
+  finally{qBusy=false;if(WQ.length&&TOKEN){clearTimeout(qT);qT=setTimeout(flushQ,again||60)}}
+}
+/* данни от сървъра + неизпратените записи отгоре */
+function applyServer(d){applyData(d);if(WQ.length)localApply(WQ)}
+window.addEventListener('online',()=>{clearTimeout(qT);flushQ()});
 const gasDb={
   doc(path){return{
     get:async()=>{const[c,id]=path.split('/');const v=c==='meta'?CACHE?.settings:CACHE?.[c]?.[id];return{id,exists:!!v,data:()=>v}},
@@ -2707,10 +2721,10 @@ async function loadOld(from,carId){
   catch(e){toast(mapErr(e).message)}finally{loadOld.busy=false}
 }
 const oldBtn=c=>LOGFROM&&!OLDK.has('car:'+c.id)?`<button class="btn wide" data-act="loadOld" data-car="${c.id}" style="margin-top:10px">Покажи по-старите записи (преди ${monthLabel(LOGFROM).toLowerCase()})</button>`:'';
-async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyData(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
+async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&!WQ.length&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyServer(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='51';let _verAt=0;
+const APP_VER='52';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
@@ -2743,7 +2757,7 @@ $('#loginForm').addEventListener('submit',async e=>{
   e.preventDefault();const err=$('#loginErr'),btn=e.currentTarget.querySelector('button[type=submit]');err.hidden=true;btn.disabled=true;btn.textContent='Влизане…';
   try{const r=await gs('login',$('#lu').value.trim(),$('#lp').value);
     TOKEN=r.token;try{localStorage.setItem('pk_token',TOKEN)}catch(x){}
-    $('#lp').value='';R.tab='home';applyData(r.data);render();
+    $('#lp').value='';R.tab='home';applyServer(r.data);render();flushQ();
   }catch(x){err.textContent=mapErr(x).message;err.hidden=false}
   finally{btn.disabled=false;btn.textContent='Вход'}
 });
@@ -2758,12 +2772,12 @@ $('#loginForm').addEventListener('submit',async e=>{
   if(PREFILL)$('#lu').value=PREFILL;
   let local=null;try{local=JSON.parse(localStorage.getItem('pk_cache')||'null')}catch(e){}
   if(TOKEN&&local&&local.t===TOKEN&&local.d&&local.d.me){
-    applyData(local.d);render();
-    gs('getAll',TOKEN).then(d=>{applyData(d)}).catch(e=>{const m=String(e&&e.message||e);if(/AUTH/.test(m)){logoutLocal();toast('Сесията изтече. Влез отново.')}});
+    applyData(local.d);if(WQ.length)localApply(WQ);render();flushQ();
+    gs('getAll',TOKEN).then(d=>{applyServer(d)}).catch(e=>{const m=String(e&&e.message||e);if(/AUTH/.test(m)){logoutLocal();toast('Сесията изтече. Влез отново.')}});
   }
   else if(TOKEN){
     const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('TIMEOUT')),45000));
-    try{applyData(await Promise.race([gs('getAll',TOKEN),timeout]));render()}
+    try{applyServer(await Promise.race([gs('getAll',TOKEN),timeout]));render();flushQ()}
     catch(e){const m=String(e&&e.message||e);logoutLocal();if(!/AUTH/.test(m)){const er=$('#loginErr');er.textContent=m==='TIMEOUT'?'Сървърът не отговори навреме. Влез отново.':'Грешка от сървъра: '+m.replace(/^(Exception|Error):\s*/,'');er.hidden=false}}
   }
   else showLogin();
