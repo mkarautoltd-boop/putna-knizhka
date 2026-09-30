@@ -10,6 +10,18 @@
 <meta name="theme-color" content="#0E2748">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-180.png">
+<link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/s-1320x2868.png">
+<link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/s-1290x2796.png">
+<link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/s-1284x2778.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/s-1242x2688.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="splash/s-828x1792.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/s-1242x2208.png">
+<link rel="apple-touch-startup-image" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/s-1206x2622.png">
+<link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/s-1179x2556.png">
+<link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/s-1170x2532.png">
+<link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="splash/s-1125x2436.png">
+<link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="splash/s-750x1334.png">
+<link rel="apple-touch-startup-image" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="splash/s-640x1136.png">
 <title>Пътна книжка</title>
 <meta name="description" content="Електронна пътна книжка: километри, гориво, проверки и задачи – в телефона ти.">
 <meta property="og:type" content="website">
@@ -773,6 +785,16 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .dc-h .sring+.dc-pen{margin-left:8px}
 .dc-tt{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}.dc-tt .dc-tag{margin:0!important}
 /* 8 кола при зареждане */
+.splash{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:radial-gradient(circle at 50% 38%,#24508F 0%,#0E2748 58%,#081733 100%);color:#fff;text-align:center}
+.splash[hidden]{display:none}
+.splash img{width:120px;height:120px;border-radius:28px;box-shadow:0 0 0 1px rgba(255,255,255,.12),0 18px 50px -10px rgba(46,120,255,.7);animation:spPop .6s cubic-bezier(.2,.8,.2,1) both}
+.splash b{font-size:30px;font-weight:800;letter-spacing:.3px;margin-top:10px}
+.splash small{font-size:15px;color:#A9BEDF}
+.splash .rd{position:absolute;bottom:calc(90px + env(safe-area-inset-bottom));left:50%;width:140px;margin-left:-70px;height:36px;overflow:hidden}
+.splash .rd i{position:absolute;left:0;right:0;bottom:4px;height:3px;background:repeating-linear-gradient(90deg,#FFD400 0 16px,transparent 16px 32px);animation:spLane .5s linear infinite;opacity:.9}
+.splash .rd span{position:absolute;left:50%;bottom:8px;margin-left:-14px;font-size:24px;line-height:1;transform:scaleX(-1);animation:spBump .45s ease-in-out infinite alternate;font-family:"Apple Color Emoji","Noto Color Emoji",sans-serif}
+.splash .err{max-width:320px;margin-top:10px;background:#fff;color:#C92A2A;border-radius:12px;padding:10px 12px;font-size:13.5px}
+@keyframes spLane{to{background-position:-32px 0}}@keyframes spBump{to{transform:scaleX(-1) translateY(-2px)}}@keyframes spPop{from{transform:scale(.85);opacity:0}}
 .fxRoad{position:relative;height:66px;border-radius:16px;background:#1D2B40;overflow:hidden;margin-top:6px}
 .fxRoad i{position:absolute;left:0;right:0;top:46px;height:4px;background:repeating-linear-gradient(90deg,#FFD400 0 22px,transparent 22px 44px);animation:fxLane .6s linear infinite}
 .fxRoad span{position:absolute;left:50%;top:8px;margin-left:-26px;font-size:38px;line-height:1;transform:scaleX(-1);animation:fxBump .5s ease-in-out infinite alternate;font-family:"Apple Color Emoji","Noto Color Emoji",sans-serif}
@@ -820,7 +842,7 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 </head>
 <body>
 
-<div id="boot" class="login"><div class="login-card"><div class="panel"><div class="fxRoad" aria-hidden="true"><span>🚐</span><i></i></div><b id="bootMsg">Зареждане…</b><span class="small muted" id="bootSub">Първото отваряне след обновяване може да отнеме до 30 секунди – създават се листовете в таблицата.</span><div class="err" id="bootErr" hidden></div></div></div></div>
+<div id="boot" class="splash"><img src="icon-180.png" alt=""><b>Пътна книжка</b><small>Автопаркът в телефона</small><div class="rd" aria-hidden="true"><span>🚐</span><i></i></div><div class="err" id="bootErr" hidden></div></div>
 
 <div id="loginView" class="login lx" hidden>
   <div class="lx-hero" aria-hidden="true"><img src="car-bg.jpg" alt=""><div class="lx-shade"></div></div>
@@ -2828,7 +2850,7 @@ const oldBtn=c=>LOGFROM&&!OLDK.has('car:'+c.id)?`<button class="btn wide" data-a
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&!WQ.length&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyServer(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='58';let _verAt=0;
+const APP_VER='59';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
