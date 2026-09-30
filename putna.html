@@ -25,7 +25,7 @@
 <meta name="twitter:image" content="https://mkarautoltd-boop.github.io/putna-knizhka/share.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" media="print" onload="this.media='all'">
 <style>
 :root{
   --navy:#0E2748; --navy2:#17375F; --navy-ink:#FFFFFF; --navy-sub:#B9C8DD;
@@ -932,7 +932,9 @@ const dname=id=>S.depts[id]?.name||'—';
 const carName=c=>c?`${c.make||''} ${c.model||''}`.trim():'—';
 const canManage=c=>c&&(isAdmin()||(isMgr()&&c.dept===me().dept));
 
-function scopeCars(inclInactive=false){
+let MEMO={};function clearMemo(){MEMO={}}
+function scopeCars(inclInactive=false){const k='sc'+(+!!inclInactive);if(!MEMO[k])MEMO[k]=scopeCarsRaw(inclInactive);return MEMO[k].slice()}
+function scopeCarsRaw(inclInactive){
   const u=me();if(!u)return[];
   return Object.values(S.cars).filter(c=>{
     if(!inclInactive&&c.active===false)return false;
@@ -941,11 +943,12 @@ function scopeCars(inclInactive=false){
     return isDrv(c,u.id)||c.session?.userId===u.id;
   }).sort((a,b)=>(a.active===false)-(b.active===false)||carName(a).localeCompare(carName(b),'bg'));
 }
-const scopeIds=()=>new Set(scopeCars(true).map(c=>c.id));
+const scopeIds=()=>MEMO.si||(MEMO.si=new Set(scopeCars(true).map(c=>c.id)));
 
 /* entries */
 let _EA=null,_E=null;
-function invalidate(){_EA=_E=null}
+function invalidate(){_EA=_E=_EC=null;clearMemo()}
+let _EC=null;function byCar(id){if(!_EC){_EC=new Map();for(const e of entries()){let a=_EC.get(e.carId);if(!a)_EC.set(e.carId,a=[]);a.push(e)}}return _EC.get(id)||[]}
 /* Сутрешният километраж е НАЧАЛНИЯТ за деня. Изминатото за деня = следващият начален − този (минус отделните пътни записи между тях). */
 function chainMorning(all){
   const by={};
@@ -1027,9 +1030,10 @@ function svcStatus(sv,odo){
   return{nextKm,nextDate,remKm,days,lvl};
 }
 const tyreTarget=d=>{const m=+d.slice(5,7);return(m>=10||m<=3)?'winter':'summer'};
-const lastOf=(carId,t)=>{const l=entries().filter(e=>e.carId===carId&&e.t===t);return l[l.length-1]||null};
+const lastOf=(carId,t)=>{const l=byCar(carId);for(let i=l.length-1;i>=0;i--)if(l[i].t===t)return l[i];return null};
 
-function carAlerts(car){
+function carAlerts(car){const m=MEMO.ca||(MEMO.ca=new Map());let r=m.get(car);if(!r){r=carAlertsRaw(car);m.set(car,r)}return r}
+function carAlertsRaw(car){
   const out=[],s=S.settings,td=today(),odo=car.odo||0;
   if(car.active===false)return out;
   const docs=car.docs||{};
@@ -1048,7 +1052,7 @@ function carAlerts(car){
   {const lc=lastOf(car.id,'check');const age=lc?daysBetween(lc.date,td):null;
     if(!lc||age>=s.pressureDays)out.push({lvl:'warn',kind:'pressure',car,at:lc?lc.date:'',text:'Периодична проверка: масло, антифриз, гуми, светлини',sub:lc?`Последна преди ${age} дни (${fd(lc.date)})`:'Още няма отбелязана проверка'});
     if(lc)for(const fk of['oil','af','ty']){const F=FLUIDS[fk],v=lc[F.k];if(!v)continue;
-      const tu=entries().filter(e=>e.carId===car.id&&e.t==='topup'&&e.fluid===fk&&(e.date>lc.date||(e.date===lc.date&&(e.ts||'')>(lc.ts||'')))).pop();
+      const tu=byCar(car.id).filter(e=>e.t==='topup'&&e.fluid===fk&&(e.date>lc.date||(e.date===lc.date&&(e.ts||'')>(lc.ts||'')))).pop();
       let vv=v,topped=!!lc[F.add]||!!tu;
       if(fk==='ty'&&tu&&tu.lvl){vv=tu.lvl;topped=!!tu.inflated}
       if(vv==='no')topped=false;
@@ -1068,7 +1072,7 @@ function carAlerts(car){
       for(let i=n0;i<out.length;i++)out[i].at=at;
     }
     if(lc&&lc.ltLvl){
-      const tu=entries().filter(e=>e.carId===car.id&&e.t==='topup'&&e.fluid==='lt'&&(e.date>lc.date||(e.date===lc.date&&(e.ts||'')>(lc.ts||'')))).pop();
+      const tu=byCar(car.id).filter(e=>e.t==='topup'&&e.fluid==='lt'&&(e.date>lc.date||(e.date===lc.date&&(e.ts||'')>(lc.ts||'')))).pop();
       let v=lc.ltLvl,bad=lc.ltBad||[],fixed=!!lc.ltFix,src=lc;
       if(tu){if(tu.lvl){v=tu.lvl;bad=tu.ltBad||[];fixed=!!tu.fixed;src=tu}else fixed=true}
       const n0=out.length,which=ltNames(bad),key='ltLvl:'+lc.id+(tu?':'+tu.id:''),who=`${fd(src.date)} от ${uname(src.driver||src.by)}`;
@@ -1277,7 +1281,7 @@ function fxCount(root){
 }
 function setHTML(el,h){if(el._h!==h){el.innerHTML=h;el._h=h}}
 function render(){
-  if(!db)return;
+  clearMemo();if(!db)return;
   if(!S.loaded.has('users')&&!Object.keys(S.users).length)return;
   const u=me();
   if(!u||u.active===false){showLogin();return}
@@ -2824,7 +2828,7 @@ const oldBtn=c=>LOGFROM&&!OLDK.has('car:'+c.id)?`<button class="btn wide" data-a
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&!WQ.length&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyServer(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='57';let _verAt=0;
+const APP_VER='58';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
@@ -2866,7 +2870,7 @@ $('#loginForm').addEventListener('submit',async e=>{
 (async()=>{
   db=gasDb;dl=true;
   for(const c of ['users','depts','cars','logs','problems','tasks']){
-    db.collection(c).onSnapshot(snap=>{const m={};for(const d of snap.docs)m[d.id]={...d.data(),id:d.id};S[c]=m;S.loaded.add(c);if(c==='logs')invalidate();schedule()});
+    db.collection(c).onSnapshot(snap=>{const m={};for(const d of snap.docs)m[d.id]={...d.data(),id:d.id};S[c]=m;S.loaded.add(c);if(c==='logs')invalidate();clearMemo();schedule()});
   }
   db.doc('meta/settings').onSnapshot(s=>{S.settings={...DEFAULTS,...(s.exists?s.data():{})};schedule()});
   if(PREFILL)$('#lu').value=PREFILL;
