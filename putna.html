@@ -799,6 +799,14 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .book-btn{margin-bottom:10px}
 
 .upb{display:flex;flex-direction:column;gap:6px}
+.nwp{display:flex;flex-direction:column;gap:8px;border:2px solid #FFC9C9;background:linear-gradient(180deg,#FFF5F5,#fff 60%)}
+.nwp .card-h h3{color:#C92A2A}
+.np-row{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:flex-start;background:#fff;border-radius:16px;padding:10px;box-shadow:0 4px 14px -10px rgba(201,42,42,.5)}
+.np-row .np-img{flex:none;width:64px;height:64px;border-radius:12px;object-fit:cover;background:#FFE3E3;display:flex;align-items:center;justify-content:center;font-size:28px}
+.np-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;text-align:left;background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer}
+.np-t b{font-size:15px}.np-t .np-d{font-size:14px;color:#1F2937}.np-t small{font-size:12.5px;color:#5B6778}
+.np-b{display:flex;gap:8px;width:100%}.np-b .btn{flex:1;min-height:42px;padding:0 10px;font-size:14.5px}
+.np-t .pill{align-self:flex-start;margin-top:2px}
 .ub-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#F6F9FC;border:0;border-radius:16px;padding:10px 12px;font:inherit;color:inherit;cursor:pointer}
 .ub-d{flex:none;width:50px;height:54px;border-radius:12px;background:#2E55D6;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
 .ub-d b{font-size:21px}.ub-d small{font-size:11.5px;margin-top:3px;opacity:.9}
@@ -1372,7 +1380,7 @@ function vHome(){
   if(!cars.length){
     return h+`<div class="empty">${icon('car')}<b>Още няма автомобили${isMgr()?' в твоя отдел':''}.</b>${isAdmin()?`Започни с отдел, потребители и първия автомобил или зареди примерните данни от спецификацията.<div class="row" style="justify-content:center"><button class="btn primary" data-act="editCar">Добави автомобил</button><button class="btn" data-act="demo">Зареди примерни данни</button></div>`:''}</div>`;
   }
-  h=kpis(cars)+h+upcomingBooks(cars);
+  h=newProblems(cars)+kpis(cars)+h+upcomingBooks(cars);
   const T=k=>`tab" data-k="${k}`;
   const qa=isAdmin()?[[T('cars'),'blue','car','Автомобили'],[T('depts'),'purple','building','Отдели'],[T('staff'),'green','user','Шофьори'],[T('users'),'grey','users','Потребители'],
       [T('tasks'),'purple','tasks','Задачи'],[T('problemsAll'),'red','alert','Проблеми'],[T('serviceAll'),'orange','wrench','Сервиз'],[T('docsAll'),'grey','doc','Документи'],
@@ -2392,6 +2400,16 @@ function upcomingBooks(cars){const ids=new Set(cars.map(c=>c.id)),L=Object.value
     return `<button class="ub-row" data-act="viewBook" data-id="${b.id}"><span class="ub-d${n<=1?' soon':''}${n<0?' late':''}"><b>${d.getDate()}</b><small>${MONTHS[d.getMonth()].slice(0,3).toLowerCase()}</small></span>
     <span class="ub-t"><b>${esc(regText(c?.reg))} · ${esc(carName(c))}</b><small>${esc(n<0?'пропуснат – '+fdw(b.due):fdw(b.due).split(',')[0])}${b.time?' в '+esc(b.time):''} · ${esc(shopOf(b)?.name||b.shopName||'')}</small><small>${esc(b.what||'')}</small></span>
     <span class="ub-s ${b.seen?'ok':''}">${b.seen?'✓ видял':'не е видял'}</span></button>`}).join('')}</div>`}
+const npKey=id=>'pseen:'+id;
+function newProblems(cars){const ids=new Set(cars.map(c=>c.id)),rd=(S.notif&&S.notif.read)||{};
+  const L=Object.values(S.problems).filter(p=>ids.has(p.carId)&&p.status!=='resolved'&&p.by!==meId&&!rd[npKey(p.id)]).sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
+  if(!L.length)return '';
+  return `<div class="card nwp"><div class="card-h"><h3>🚨 ${L.length>1?'Нови проблеми от шофьори · '+L.length:'Нов проблем от шофьор'}</h3></div>${L.map(p=>{const c=S.cars[p.carId];
+    return `<div class="np-row">${p.photo?`<img class="np-img" src="${p.photo}" alt="">`:'<span class="np-img">🛠️</span>'}<div style="flex:1;min-width:0"><button class="np-t" data-act="viewProblem" data-id="${p.id}"><b>${esc(regText(c?.reg))} · ${esc(carName(c))}</b><span class="np-d">${esc(p.cat)}${p.desc?' – '+esc(p.desc):''}</span><small>от ${esc(uname(p.by))} · ${p.ts?fts(p.ts):fd(p.date)}</small><span class="pill ${p.priority==='high'?'crit':'warn'}">${PRIO[p.priority]||''} приоритет</span></button></div>
+    <div class="np-b"><button class="btn sm" data-act="viewProblem" data-id="${p.id}">Отвори</button><button class="btn sm primary" data-act="seenProblem" data-id="${p.id}">Видях ✓</button></div></div>`}).join('')}</div>`}
+async function seenProblem(id){const p=S.problems[id];if(!p)return;const ts=new Date().toISOString(),read={...((S.notif&&S.notif.read)||{}),[npKey(id)]:ts};
+  const c=S.cars[p.carId];if(c)for(const a of carAlerts(c))if(a.kind==='problem'&&a.id===id)read[akey(a)]=ts;
+  try{await db.doc('notif/'+meId).set({read});render()}catch(e){toast(dbMsg(e))}}
 function viewBook(id){const b=S.tasks[id];if(!b)return;openSheet('Час за сервиз',bookCard(b),null)}
 async function seenBook(id){try{await withRetry(()=>db.doc('tasks/'+id).update({seen:true,seenTs:new Date().toISOString(),seenBy:meId}));toast('Потвърдено ✓');closeSheet()}catch(e){toast(dbMsg(e))}}
 async function doneBook(id){const b=S.tasks[id];if(!b)return;
@@ -2498,7 +2516,7 @@ async function downloadCsv(){
 <script>
 /* ============ extra screens (final spec) ============ */
 async function markAllRead(){
-  const read={};const ts=new Date().toISOString();for(const a of allAlerts())read[akey(a)]=ts;
+  const read={...((S.notif&&S.notif.read)||{})};const ts=new Date().toISOString();for(const a of allAlerts()){read[akey(a)]=ts;if(a.kind==='problem')read[npKey(a.id)]=ts}
   try{await db.doc('notif/'+meId).set({read});toast('Известията са маркирани като прочетени')}catch(e){toast(e.message||dbMsg(e))}
 }
 function visibleMsgs(){const u=me();return Object.values(S.messages||{}).filter(m=>!m.del&&(isAdmin()||!m.dept||m.dept===u.dept)).sort((a,b)=>(b.ts||'').localeCompare(a.ts||''))}
@@ -2709,7 +2727,7 @@ const ACT={
   closeSheet:closeSheet,
   morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
   takeover:d=>openTakeover(d.car),endSession:d=>openEndSession(d.car),viewProblem:d=>viewProblem(d.id),
-  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),docCheck:(d,b)=>checkDoc(d.car,d.k,b),qaToggle:(d,b)=>qaToggle(b),alToggle:(d,b)=>alToggle(d,b),newBook:d=>openBook(d.car),editBook:d=>openBook(null,d.id),viewBook:d=>viewBook(d.id),seenBook:d=>seenBook(d.id),doneBook:d=>doneBook(d.id),loadOld:d=>loadOld(null,d.car),
+  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),docCheck:(d,b)=>checkDoc(d.car,d.k,b),qaToggle:(d,b)=>qaToggle(b),seenProblem:d=>seenProblem(d.id),alToggle:(d,b)=>alToggle(d,b),newBook:d=>openBook(d.car),editBook:d=>openBook(null,d.id),viewBook:d=>viewBook(d.id),seenBook:d=>seenBook(d.id),doneBook:d=>doneBook(d.id),loadOld:d=>loadOld(null,d.car),
   newTask:openNewTask,doneTask:d=>doneTask(d.id),delEntry:d=>delEntry(d.car,d.id),
   editUser:d=>openEditUser(d.id),editDept:d=>openEditDept(d.id),editSettings:openSettings,myPass:openMyPass,demo:loadDemo,csv:downloadCsv,
   logout:()=>{if(WQ.length){toast('Изчакай – има записи, които още се изпращат.');flushQ();return}const t=TOKEN;logoutLocal();if(t)gs('logout',t).catch(()=>{})},
