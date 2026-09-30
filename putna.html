@@ -2445,8 +2445,8 @@ function bookCal(id){const b=S.tasks[id];if(!b)return;const c=S.cars[b.carId],sh
   const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Putna knizhka//BG','CALSCALE:GREGORIAN','BEGIN:VEVENT','UID:svc-'+b.id+'@putna-knizhka','DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z',
     'DTSTART:'+d+'T'+t,'DTEND:'+d+'T'+t2,'SUMMARY:'+icsEsc(title),loc?'LOCATION:'+icsEsc(loc):'',desc?'DESCRIPTION:'+icsEsc(desc):'',
     'BEGIN:VALARM','TRIGGER:-P1D','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(title),'END:VALARM','BEGIN:VALARM','TRIGGER:-PT1H','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(title),'END:VALARM','END:VEVENT','END:VCALENDAR'].filter(Boolean).join('\r\n');
-  const url='data:text/calendar;charset=utf-8,'+encodeURIComponent(ics);
-  if(/iPhone|iPad|iPod/.test(navigator.userAgent)){location.href=url;return}
+  if(/iPhone|iPad|iPod/.test(navigator.userAgent)){const q=new URLSearchParams({ics:1,d,s:t,e:t2,t:title,l:loc,n:desc,id:'svc-'+b.id});
+    const w=window.open(API_URL+'?'+q.toString(),'_blank');if(!w)location.href=API_URL+'?'+q.toString();return}
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download='servis-'+b.due+'.ics';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
 function viewBook(id){const b=S.tasks[id];if(!b)return;openSheet('Час за сервиз',bookCard(b),null)}
 async function seenBook(id){try{await withRetry(()=>db.doc('tasks/'+id).update({seen:true,seenTs:new Date().toISOString(),seenBy:meId}));toast('Потвърдено ✓');closeSheet()}catch(e){toast(dbMsg(e))}}
@@ -2863,7 +2863,7 @@ const oldBtn=c=>LOGFROM&&!OLDK.has('car:'+c.id)?`<button class="btn wide" data-a
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&!WQ.length&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyServer(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='60';let _verAt=0;
+const APP_VER='61';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
