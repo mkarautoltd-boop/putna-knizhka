@@ -1027,27 +1027,29 @@ function carAlerts(car){
   const docs=car.docs||{};
   const docList=[...DOCS.map(([k,l])=>({k,l,d:docs[k]})),...(docs.others||[]).filter(o=>o&&o.name&&o.until).map((o,i)=>({k:'other'+i,l:o.name,d:o.until}))];
   for(const{k,l,d}of docList){if(!d)continue;const left=daysBetween(td,d);
-    if(left<0)out.push({lvl:'crit',kind:'doc',key:k,car,text:`${l}: изтекъл на ${fd(d)}`,sub:`Просрочен с ${-left} дни`});
-    else if(left<=s.warnDays)out.push({lvl:'warn',kind:'doc',key:k,car,text:`${l}: изтича на ${fd(d)}`,sub:left===0?'Изтича днес':`След ${left} дни`});}
+    if(left<0)out.push({lvl:'crit',kind:'doc',key:k,car,at:d,text:`${l}: изтекъл на ${fd(d)}`,sub:`Просрочен с ${-left} дни`});
+    else if(left<=s.warnDays)out.push({lvl:'warn',kind:'doc',key:k,car,at:d,text:`${l}: изтича на ${fd(d)}`,sub:left===0?'Изтича днес':`След ${left} дни`});}
   for(const[k,l]of SVC){const st=svcStatus(svcOf(car,k),odo);if(!st||st.lvl==='ok')continue;
     const parts=[];if(st.remKm!=null)parts.push(st.remKm<0?`просрочен с ${fint(-st.remKm)} км`:`след ${fint(st.remKm)} км`);
     if(st.days!=null)parts.push(st.days<0?`просрочен от ${fd(st.nextDate)}`:`до ${fd(st.nextDate)}`);
-    out.push({lvl:st.lvl,kind:'svc',key:k,car,text:`${l}${st.lvl==='crit'?': просрочен':''}`,sub:parts.join(' · ')});}
+    out.push({lvl:st.lvl,kind:'svc',key:k,car,at:st.nextDate||'',text:`${l}${st.lvl==='crit'?': просрочен':''}`,sub:parts.join(' · ')});}
   const tgt=tyreTarget(td);
   const tm=+td.slice(5,7);
   if(car.tyreSeason!=='all'&&(car.tyreSeason?car.tyreSeason!==tgt:(tm===10||tm===4)))
-    out.push({lvl:'warn',kind:'tyres',car,text:tgt==='winter'?'Смяна на гуми: летни → зимни':'Смяна на гуми: зимни → летни',sub:'Сезонно напомняне'});
+    out.push({lvl:'warn',kind:'tyres',car,at:td,text:tgt==='winter'?'Смяна на гуми: летни → зимни':'Смяна на гуми: зимни → летни',sub:'Сезонно напомняне'});
   {const lc=lastOf(car.id,'check');const age=lc?daysBetween(lc.date,td):null;
-    if(!lc||age>=s.pressureDays)out.push({lvl:'warn',kind:'pressure',car,text:'Периодична проверка: масло, антифриз, гуми, светлини',sub:lc?`Последна преди ${age} дни (${fd(lc.date)})`:'Още няма отбелязана проверка'});
+    if(!lc||age>=s.pressureDays)out.push({lvl:'warn',kind:'pressure',car,at:lc?lc.date:'',text:'Периодична проверка: масло, антифриз, гуми, светлини',sub:lc?`Последна преди ${age} дни (${fd(lc.date)})`:'Още няма отбелязана проверка'});
     if(lc)for(const fk of['oil','af','ty']){const F=FLUIDS[fk],v=lc[F.k];if(!v)continue;
       const tu=entries().filter(e=>e.carId===car.id&&e.t==='topup'&&e.fluid===fk&&(e.date>lc.date||(e.date===lc.date&&(e.ts||'')>(lc.ts||'')))).pop();
       let vv=v,topped=!!lc[F.add]||!!tu;
       if(fk==='ty'&&tu&&tu.lvl){vv=tu.lvl;topped=!!tu.inflated}
       if(vv==='no')topped=false;
-      const good=F.good.includes(vv),L=LVLCAP[vv],what=fk==='ty'?'налягане':'ниво';
+      const good=F.good.includes(vv),L=LVLCAP[vv],what=fk==='ty'?'налягане':'ниво',n0=out.length,at=(tu||lc).date;
       if(vv==='no'){
+        const n1=out.length;
         if(isStaff())out.push({lvl:'warn',kind:'fluid',fluid:fk,key:F.k+':'+lc.id,car,text:'Гуми: не са проверени',sub:`Проверка на ${fd(lc.date)} от ${uname(lc.driver||lc.by)} – гумите са пропуснати`});
         else out.push({lvl:'warn',kind:'fluid',fluid:fk,tyNo:true,key:F.k+':'+lc.id,car,text:'Гуми: не са проверени – провери',sub:'Натисни тук, когато провериш гумите'});
+        for(let i=n1;i<out.length;i++)out[i].at=lc.date;
         continue;}
       if(isStaff()){
         const lvl=(good||topped)?'good':(vv==='min'||vv==='low')?'crit':'warn';
@@ -1055,12 +1057,13 @@ function carAlerts(car){
           sub:`${tu&&tu.lvl?'Гумите проверени на '+fd(tu.date)+' от '+uname(tu.driver||tu.by):'Проверка на '+fd(lc.date)+' от '+uname(lc.driver||lc.by)}${tu&&!tu.lvl?` · ${F.topDone} на ${fd(tu.date)} от ${uname(tu.driver||tu.by)}`:lc[F.add]?` · ${F.topDone} при проверката`:''}`});
       }else if(!good&&!topped)
         out.push({lvl:(vv==='min'||vv==='low')?'crit':'warn',kind:'fluid',fluid:fk,key:F.k+':'+lc.id,car,text:`${F.name}: ${what} ${L} – ${F.remind}`,sub:`Натисни тук, когато ${F.remind==='надуй'?'надуеш':'долееш'}`});
+      for(let i=n0;i<out.length;i++)out[i].at=at;
     }
     if(lc&&lc.ltLvl){
       const tu=entries().filter(e=>e.carId===car.id&&e.t==='topup'&&e.fluid==='lt'&&(e.date>lc.date||(e.date===lc.date&&(e.ts||'')>(lc.ts||'')))).pop();
       let v=lc.ltLvl,bad=lc.ltBad||[],fixed=!!lc.ltFix,src=lc;
       if(tu){if(tu.lvl){v=tu.lvl;bad=tu.ltBad||[];fixed=!!tu.fixed;src=tu}else fixed=true}
-      const which=ltNames(bad),key='ltLvl:'+lc.id+(tu?':'+tu.id:''),who=`${fd(src.date)} от ${uname(src.driver||src.by)}`;
+      const n0=out.length,which=ltNames(bad),key='ltLvl:'+lc.id+(tu?':'+tu.id:''),who=`${fd(src.date)} от ${uname(src.driver||src.by)}`;
       if(v==='no'){
         if(isStaff())out.push({lvl:'warn',kind:'fluid',fluid:'lt',key,car,text:'Светлини: не са проверени',sub:`Проверка на ${who} – светлините са пропуснати`});
         else out.push({lvl:'warn',kind:'fluid',fluid:'lt',ltNo:true,key,car,text:'Светлини: не са проверени – провери',sub:'Натисни тук, когато провериш светлините'});
@@ -1069,10 +1072,11 @@ function carAlerts(car){
           sub:`${which&&v!=='ok'?'Не светеше: '+which+' · ':''}Проверка на ${who}${tu&&!tu.lvl?` · сменена на ${fd(tu.date)} от ${uname(tu.driver||tu.by)}`:fixed?' · сменена при проверката':''}`});
       else if(v==='bad'&&!fixed)
         out.push({lvl:'crit',kind:'fluid',fluid:'lt',key,car,text:'Светлини: смени крушката',sub:`${which?'Не свети: '+which+' · ':''}Натисни тук, когато я смениш`});
+      for(let i=n0;i<out.length;i++)out[i].at=(tu||lc).date;
     }}
   for(const p of Object.values(S.problems)){if(p.carId!==car.id||p.status==='resolved')continue;
-    out.push({lvl:p.priority==='high'?'crit':'warn',kind:'problem',id:p.id,car,text:`Ремонт: ${p.cat}${p.desc?' – '+p.desc.slice(0,60):''}`,sub:`${PSTAT[p.status]||'Нов'} · сигнал от ${uname(p.by)} на ${fd(p.date)}`});}
-  for(const b of svcBooks(car))out.push({lvl:'warn',kind:'book',id:b.id,car,text:`Сервиз: ${fdw(b.due)}${b.time?' в '+b.time:''}`,sub:[shopOf(b)?.name||b.shopName,b.what].filter(Boolean).join(' · ')});
+    out.push({lvl:p.priority==='high'?'crit':'warn',kind:'problem',id:p.id,car,at:p.date||'',text:`Ремонт: ${p.cat}${p.desc?' – '+p.desc.slice(0,60):''}`,sub:`${PSTAT[p.status]||'Нов'} · сигнал от ${uname(p.by)} на ${fd(p.date)}`});}
+  for(const b of svcBooks(car))out.push({lvl:'warn',kind:'book',id:b.id,car,at:b.due||'',text:`Сервиз: ${fdw(b.due)}${b.time?' в '+b.time:''}`,sub:[shopOf(b)?.name||b.shopName,b.what].filter(Boolean).join(' · ')});
   const RK={crit:0,warn:1,good:2};return out.sort((a,b)=>(RK[a.lvl]??1)-(RK[b.lvl]??1));
 }
 function carLevel(car){const a=carAlerts(car).filter(x=>x.lvl!=='good');return a.some(x=>x.lvl==='crit')?'crit':a.length?'warn':'ok'}
@@ -1473,10 +1477,16 @@ function carCard(c){
 }
 const KIND_EMO={book:'📅',doc:'📄',svc:'🔧',tyres:'❄️',pressure:'🔍',problem:'⚠️'};
 const KIND_IC={book:['wrench','blue'],doc:['doc','grey'],svc:['wrench','orange'],tyres:['snow','orange'],pressure:['tyre','blue'],problem:['alert','red'],fluid:['alert','orange']};
-function alertList(al,withOk){
+const AL_N=5,AL_OPEN={};
+function alTxt(o,n){return `<span>${o?'Скрий':`Покажи всички · още ${n}`}</span><i>${o?'▴':'▾'}</i>`}
+function alToggle(d,b){const o=!AL_OPEN[d.k];AL_OPEN[d.k]=o;const box=b.previousElementSibling,xs=box.querySelectorAll('.irow.alx');
+  xs.forEach(x=>{x.hidden=!o;if(o){x.style.animation='none';void x.offsetWidth;x.style.animation='fxRise .35s cubic-bezier(.2,.8,.2,1) both'}});
+  b.setAttribute('aria-expanded',o);b.innerHTML=alTxt(o,xs.length);if(!o)b.closest('.sec').scrollIntoView({block:'start',behavior:'smooth'})}
+function alertList(al,withOk,sec){
   if(!al.length)return withOk?`<div class="irow ok" style="cursor:default"><span class="isq green">${icon('check')}</span><div class="tx"><b>Всичко е в срок</b><span class="s">Няма просрочени документи, сервизи или задачи</span></div></div>`:'';
-  return `<div class="alerts">${al.map(a=>{const[ic,col]=KIND_IC[a.kind]||['alert','grey'];const sq=a.lvl==='crit'?'red':a.lvl==='good'?'green':col;
-    return `<button class="irow ${a.lvl==='good'?'ok':a.lvl}" ${alertAct(a)}><span class="isq ${sq}${' emo'}">${a.kind==='fluid'?FL_IC[a.fluid].replace('<svg ','<svg class="ic" '):(KIND_EMO[a.kind]||icon(ic))}${a.lvl==='crit'?'<i class="pdot"></i>':a.lvl==='warn'?'<i class="pdot warn"></i>':''}</span><div class="tx"><b>${esc(a.text)}</b><span class="s">${esc(a.sub||'')}</span>${R.tab!=='car'?`<span class="d">${esc(carName(a.car))} · ${esc(regText(a.car.reg))}</span>`:''}</div>${isRead(a)?'':'<span class="udot" title="Непрочетено"></span>'}${icon('chev','chev')}</button>`}).join('')}</div>`;
+  const more=sec&&al.length>AL_N+1,open=more&&AL_OPEN[sec];
+  return `<div class="alerts">${al.map((a,k)=>{const x=more&&k>=AL_N;const[ic,col]=KIND_IC[a.kind]||['alert','grey'];const sq=a.lvl==='crit'?'red':a.lvl==='good'?'green':col;
+    return `<button class="irow ${a.lvl==='good'?'ok':a.lvl}${x?' alx':''}" ${alertAct(a)}${x&&!open?' hidden':''}><span class="isq ${sq}${' emo'}">${a.kind==='fluid'?FL_IC[a.fluid].replace('<svg ','<svg class="ic" '):(KIND_EMO[a.kind]||icon(ic))}${a.lvl==='crit'?'<i class="pdot"></i>':a.lvl==='warn'?'<i class="pdot warn"></i>':''}</span><div class="tx"><b>${esc(a.text)}</b><span class="s">${esc(a.sub||'')}</span>${R.tab!=='car'?`<span class="d">${esc(carName(a.car))} · ${esc(regText(a.car.reg))}</span>`:''}</div>${isRead(a)?'':'<span class="udot" title="Непрочетено"></span>'}${icon('chev','chev')}</button>`}).join('')}</div>${more?`<button class="qa-more" data-act="alToggle" data-k="${sec}" aria-expanded="${!!open}">${alTxt(open,al.length-AL_N)}</button>`:''}`;
 }
 function alertAct(a){
   const c=a.car.id,m=canManage(a.car);
@@ -1716,9 +1726,11 @@ function vTasks(){
   const un=alerts.filter(a=>!isRead(a)).length;
   if(un)h+=`<button class="btn wide" data-act="markRead">${icon('check')} Маркирай всички като прочетени (${un})</button>`;
   if(!alerts.length&&!man.length)return h+alertList([],true);
-  if(crit.length)h+=`<div class="sec"><h3>Критични · ${crit.length}</h3>${alertList(crit)}</div>`;
-  if(warn.length)h+=`<div class="sec"><h3>Предстоящи · ${warn.length}</h3>${alertList(warn)}</div>`;
-  const good=alerts.filter(a=>a.lvl==='good');if(good.length)h+=`<div class="sec"><h3>Проверки – ОК · ${good.length}</h3>${alertList(good)}</div>`;
+  const good=alerts.filter(a=>a.lvl==='good'),newest=(a,b)=>(b.at||'').localeCompare(a.at||''),soonest=(a,b)=>(a.at||'9').localeCompare(b.at||'9');
+  crit.sort(newest);warn.sort(soonest);good.sort(newest);
+  if(crit.length)h+=`<div class="sec"><h3>Критични · ${crit.length}</h3>${alertList(crit,false,'crit')}</div>`;
+  if(warn.length)h+=`<div class="sec"><h3>Предстоящи · ${warn.length}</h3>${alertList(warn,false,'warn')}</div>`;
+  if(good.length)h+=`<div class="sec"><h3>Проверки – ОК · ${good.length}</h3>${alertList(good,false,'good')}</div>`;
   if(man.length)h+=`<div class="sec"><h3>Възложени задачи · ${man.length}</h3><div class="list">${man.map(t=>{const late=t.due&&t.due<today();return `<div class="li"><div class="l"><b>${esc(t.title)}</b><span>${esc(S.cars[t.carId]?.reg||'')} · ${TTYPES[t.type]||''}${t.assignee?' · за '+esc(uname(t.assignee)):''}</span>${t.note?`<span>${esc(t.note)}</span>`:''}</div><div class="r">${t.due?`<span class="pill ${late?'crit':'warn'}">до ${fd(t.due)}</span>`:''}<button class="btn sm" data-act="doneTask" data-id="${t.id}">Изпълнена</button></div></div>`}).join('')}</div></div>`;
   const okCars=cars.filter(c=>carLevel(c)==='ok');
   if(isStaff()&&okCars.length)h+=`<div class="sec"><h3>ОК – в срок · ${okCars.length}</h3><div class="alerts">${okCars.map(c=>`<button class="irow ok" data-act="openCar" data-car="${c.id}"><span class="isq green">${icon('check')}</span><div class="tx"><b>${esc(carName(c))} · ${esc(regText(c.reg))}</b><span class="s">Всичко е в срок</span></div>${icon('chev','chev')}</button>`).join('')}</div></div>`;
@@ -2697,7 +2709,7 @@ const ACT={
   closeSheet:closeSheet,
   morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
   takeover:d=>openTakeover(d.car),endSession:d=>openEndSession(d.car),viewProblem:d=>viewProblem(d.id),
-  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),docCheck:(d,b)=>checkDoc(d.car,d.k,b),qaToggle:(d,b)=>qaToggle(b),newBook:d=>openBook(d.car),editBook:d=>openBook(null,d.id),viewBook:d=>viewBook(d.id),seenBook:d=>seenBook(d.id),doneBook:d=>doneBook(d.id),loadOld:d=>loadOld(null,d.car),
+  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),docCheck:(d,b)=>checkDoc(d.car,d.k,b),qaToggle:(d,b)=>qaToggle(b),alToggle:(d,b)=>alToggle(d,b),newBook:d=>openBook(d.car),editBook:d=>openBook(null,d.id),viewBook:d=>viewBook(d.id),seenBook:d=>seenBook(d.id),doneBook:d=>doneBook(d.id),loadOld:d=>loadOld(null,d.car),
   newTask:openNewTask,doneTask:d=>doneTask(d.id),delEntry:d=>delEntry(d.car,d.id),
   editUser:d=>openEditUser(d.id),editDept:d=>openEditDept(d.id),editSettings:openSettings,myPass:openMyPass,demo:loadDemo,csv:downloadCsv,
   logout:()=>{if(WQ.length){toast('Изчакай – има записи, които още се изпращат.');flushQ();return}const t=TOKEN;logoutLocal();if(t)gs('logout',t).catch(()=>{})},
