@@ -2494,7 +2494,8 @@ function vCal(){HEAD={title:'Календар',back:'home'};
   <div class="cl-g">${['пн','вт','ср','чт','пт','сб','нд'].map(w=>`<span class="cl-w">${w}</span>`).join('')}${cells.join('')}</div>
   <div class="cl-lg"><span><i class="late"></i>изтекло</span><span><i class="soon"></i>до 30 дни</span><span><i class="has"></i>по-късно</span><span><i class="bk"></i>час за сервиз</span></div></div>`;
   h+=`<div class="sec"><h3>${selLbl}${sel!==td?' · '+fdw(sel).split(',')[0]:''}</h3>${dayEv.length?`<div class="cl-list">${dayEv.map(calRow).join('')}</div>`:'<div class="empty" style="padding:14px">Няма събития за този ден.</div>'}</div>`;
-  if(sel===td&&late.length)h+=`<div class="sec"><h3>Изтекли · ${late.length}</h3><div class="cl-list">${late.slice().reverse().slice(0,10).map(calRow).join('')}</div></div>`;
+  if(R.calD)return h;
+  if(late.length)h+=`<div class="sec"><h3>Изтекли · ${late.length}</h3><div class="cl-list">${late.slice().reverse().slice(0,10).map(calRow).join('')}</div></div>`;
   if(next.length)h+=`<div class="sec"><h3>Следващи</h3><div class="cl-list">${next.map(calRow).join('')}</div></div>`;
   return h}
 function calNav(k){const[y,m]=(R.calM||today().slice(0,7)).split('-').map(Number),d=new Date(y,m-1+ +k,1);R.calM=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;render()}
@@ -2808,7 +2809,7 @@ async function printPdf(){
 
 /* ============ events ============ */
 const ACT={
-  tab:d=>{R.tab=d.k;if(d.k==='cars')R.carBack='cars';toTop();render()},
+  tab:d=>{R.tab=d.k;if(d.k==='cal')R.calD=R.calM=null;if(d.k==='cars')R.carBack='cars';toTop();render()},
   myBook:d=>{R.carBack=R.tab;R.tab='car';R.carId=d.car;R.carSec='book';toTop();render()},
   openCar:d=>{R.carBack=R.tab==='car'?R.carBack:R.tab;R.tab='car';R.carId=d.car;R.listCar=d.car;R.carSec='overview';toTop();render()},
   carSec:d=>{R.carSec=d.k;render()},
