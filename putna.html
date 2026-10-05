@@ -283,6 +283,9 @@ legend{float:left;width:100%;font-size:15px;font-weight:700;color:var(--ink);pad
 .sheet-car .carimg{width:84px}
 .sheet-car b{font-size:16px}
 .photo{max-width:100%;border-radius:12px}
+.irow.new{box-shadow:0 0 0 2px #2E6BFF,0 8px 22px -10px rgba(46,107,255,.6)}
+.nwb{display:inline-block;vertical-align:2px;margin-right:6px;padding:2px 7px;border-radius:99px;background:#2E6BFF;color:#fff;font-style:normal;font-size:10.5px;font-weight:800;letter-spacing:.5px;animation:nwbP 1.6s ease-in-out infinite}
+@keyframes nwbP{50%{box-shadow:0 0 0 4px rgba(46,107,255,.25)}}
 .udot{width:10px;height:10px;border-radius:50%;background:var(--t-blue);flex-shrink:0}
 .greet .rl{font-size:11px;letter-spacing:.14em;font-weight:700;color:var(--navy-sub)}
 .msg{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;display:flex;gap:12px;align-items:flex-start}
@@ -1521,7 +1524,8 @@ function alertList(al,withOk,sec){
   if(!al.length)return withOk?`<div class="irow ok" style="cursor:default"><span class="isq green">${icon('check')}</span><div class="tx"><b>Всичко е в срок</b><span class="s">Няма просрочени документи, сервизи или задачи</span></div></div>`:'';
   const more=sec&&al.length>AL_N+1,open=more&&AL_OPEN[sec];
   return `<div class="alerts">${al.map((a,k)=>{const x=more&&k>=AL_N;const[ic,col]=KIND_IC[a.kind]||['alert','grey'];const sq=a.lvl==='crit'?'red':a.lvl==='good'?'green':col;
-    return `<button class="irow ${a.lvl==='good'?'ok':a.lvl}${x?' alx':''}" ${alertAct(a)}${x&&!open?' hidden':''}><span class="isq ${sq}${' emo'}">${a.kind==='fluid'?FL_IC[a.fluid].replace('<svg ','<svg class="ic" '):(KIND_EMO[a.kind]||icon(ic))}${a.lvl==='crit'?'<i class="pdot"></i>':a.lvl==='warn'?'<i class="pdot warn"></i>':''}</span><div class="tx"><b>${esc(a.text)}</b><span class="s">${esc(a.sub||'')}</span>${R.tab!=='car'?`<span class="d">${esc(carName(a.car))} · ${esc(regText(a.car.reg))}</span>`:''}</div>${isRead(a)?'':'<span class="udot" title="Непрочетено"></span>'}${icon('chev','chev')}</button>`}).join('')}</div>${more?`<button class="qa-more" data-act="alToggle" data-k="${sec}" aria-expanded="${!!open}">${alTxt(open,al.length-AL_N)}</button>`:''}`;
+    const nw=!isRead(a);
+    return `<button class="irow ${a.lvl==='good'?'ok':a.lvl}${x?' alx':''}${nw?' new':''}" ${alertAct(a)}${nw?` data-ak="${esc(akey(a))}"`:''}${x&&!open?' hidden':''}><span class="isq ${sq}${' emo'}">${a.kind==='fluid'?FL_IC[a.fluid].replace('<svg ','<svg class="ic" '):(KIND_EMO[a.kind]||icon(ic))}${a.lvl==='crit'?'<i class="pdot"></i>':a.lvl==='warn'?'<i class="pdot warn"></i>':''}</span><div class="tx"><b>${nw?'<i class="nwb">НОВО</i>':''}${esc(a.text)}</b><span class="s">${esc(a.sub||'')}</span>${R.tab!=='car'?`<span class="d">${esc(carName(a.car))} · ${esc(regText(a.car.reg))}</span>`:''}</div>${icon('chev','chev')}</button>`}).join('')}</div>${more?`<button class="qa-more" data-act="alToggle" data-k="${sec}" aria-expanded="${!!open}">${alTxt(open,al.length-AL_N)}</button>`:''}`;
 }
 function alertAct(a){
   const c=a.car.id,m=canManage(a.car);
@@ -1762,7 +1766,8 @@ function vTasks(){
   if(un)h+=`<button class="btn wide" data-act="markRead">${icon('check')} Маркирай всички като прочетени (${un})</button>`;
   if(!alerts.length&&!man.length)return h+alertList([],true);
   const good=alerts.filter(a=>a.lvl==='good'),newest=(a,b)=>(b.at||'').localeCompare(a.at||''),soonest=(a,b)=>(a.at||'9').localeCompare(b.at||'9');
-  crit.sort(newest);warn.sort(soonest);good.sort(newest);
+  const unrFirst=f=>(a,b)=>(isRead(a)-isRead(b))||f(a,b);
+  crit.sort(unrFirst(newest));warn.sort(unrFirst(soonest));good.sort(newest);
   if(crit.length)h+=`<div class="sec"><h3>Критични · ${crit.length}</h3>${alertList(crit,false,'crit')}</div>`;
   if(warn.length)h+=`<div class="sec"><h3>Предстоящи · ${warn.length}</h3>${alertList(warn,false,'warn')}</div>`;
   if(good.length)h+=`<div class="sec"><h3>Проверки – ОК · ${good.length}</h3>${alertList(good,false,'good')}</div>`;
@@ -2553,6 +2558,8 @@ async function downloadCsv(){
 
 <script>
 /* ============ extra screens (final spec) ============ */
+function markOneRead(k){const rd=(S.notif&&S.notif.read)||{};if(rd[k])return;const read={...rd,[k]:new Date().toISOString()};
+  S.notif={...(S.notif||{}),read};db.doc('notif/'+meId).set({read}).catch(()=>{});schedule()}
 async function markAllRead(){
   const read={...((S.notif&&S.notif.read)||{})};const ts=new Date().toISOString();for(const a of allAlerts()){read[akey(a)]=ts;if(a.kind==='problem')read[npKey(a.id)]=ts}
   try{await db.doc('notif/'+meId).set({read});toast('Известията са маркирани като прочетени')}catch(e){toast(e.message||dbMsg(e))}
@@ -2779,7 +2786,7 @@ const ACT={
 document.addEventListener('scroll',e=>{const r=e.target;if(!r||(r.id!=='heroRail'&&r.id!=='listRail'))return;clearTimeout(r._t);
   r._t=setTimeout(()=>{const sl=[...r.children],mid=r.scrollLeft+r.clientWidth/2;let best=sl[0];for(const x of sl)if(Math.abs(x.offsetLeft+x.clientWidth/2-mid)<Math.abs(best.offsetLeft+best.clientWidth/2-mid))best=x;
     const k=r.id==='listRail'?'listCar':'carId';if(best&&best.dataset.id!==R[k]){R[k]=best.dataset.id;render()}},140)},true);
-document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;e.preventDefault();const f=ACT[b.dataset.act];if(f)f(b.dataset,b)});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;e.preventDefault();if(b.dataset.ak)markOneRead(b.dataset.ak);const f=ACT[b.dataset.act];if(f)f(b.dataset,b)});
 document.addEventListener('change',e=>{const t=e.target;if(t.closest('#sheet'))return;
   if(t.dataset.bind){R[t.dataset.bind]=t.value;if(t.dataset.bind==='repMonth'&&t.value){R.repFrom=t.value+'-01';R.repTo=monthEnd(t.value)}render()}
   if(t.dataset.bindCheck){R[t.dataset.bindCheck]=t.checked;render()}});
