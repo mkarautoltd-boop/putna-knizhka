@@ -2520,7 +2520,7 @@ function pbanCheck(){if(!meId||document.getElementById('pban'))return;let shown=
   const fresh=pbanItems().filter(x=>!shown.includes(x.k)&&!shown.includes(x.k.slice(2)));if(!fresh.length)return;
   try{localStorage.setItem('pk_pban',JSON.stringify([...shown,...fresh.map(x=>x.k)].slice(-300)))}catch(e){}
   const x=fresh[0],one=fresh.length===1,el=document.createElement('div');el.id='pban';
-  el.innerHTML=`${one&&x.img?`<img src="${x.img}" alt="">`:`<span class="pb-ic${x.red?'':' bl'}">${one?x.ic:'🔔'}</span>`}<div class="pb-t"><small>ПЪТНА КНИЖКА${x.w?' · '+esc(x.w):''}</small><b class="${x.red?'':'bl'}">${one?esc(x.t):isStaff()?fresh.length+' нови сигнала от шофьори':fresh.length+' нови неща за теб'}</b><span>${esc(x.s)}${one?'':' · и още '+(fresh.length-1)}</span></div><button class="pb-x" aria-label="Затвори">✕</button>`;
+  el.innerHTML=`${one&&x.img?`<img src="${x.img}" alt="">`:`<span class="pb-ic${x.red?'':' bl'}">${one||isStaff()?x.ic:'🔔'}</span>`}<div class="pb-t"><small>ПЪТНА КНИЖКА${x.w?' · '+esc(x.w):''}</small><b class="${x.red?'':'bl'}">${one?esc(x.t):isStaff()?fresh.length+' нови сигнала от шофьори':fresh.length+' нови неща за теб'}</b><span>${esc(x.s)}${one?'':' · и още '+(fresh.length-1)}</span></div><button class="pb-x" aria-label="Затвори">✕</button>`;
   document.body.appendChild(el);requestAnimationFrame(()=>el.classList.add('on'));
   const hide=()=>{el.classList.remove('on');setTimeout(()=>el.remove(),350)};let y0=null,tm=setTimeout(hide,9000);
   el.addEventListener('click',e=>{clearTimeout(tm);hide();if(e.target.closest('.pb-x'))return;if(one)x.go();else{R.tab='home';toTop();render()}});
