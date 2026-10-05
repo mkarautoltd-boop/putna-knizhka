@@ -115,6 +115,7 @@ p{margin:0}
 #pban.on{transform:none}
 #pban img,#pban .pb-ic{flex:none;width:44px;height:44px;border-radius:12px;object-fit:cover;background:#FFE3E3;display:grid;place-items:center;font-size:24px}
 .pb-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}.pb-t small{font-size:10.5px;font-weight:700;letter-spacing:.4px;color:#8A97AB}.pb-t b{font-size:15px;color:#C92A2A}.pb-t span{font-size:13px;color:#1F2937;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pban .pb-ic.bl{background:#E7EEFF}.pb-t b.bl{color:#1F3A6B}
 .pb-x{flex:none;width:30px;height:30px;border:0;border-radius:50%;background:#EEF1F6;color:#5B6778;font-size:13px;cursor:pointer}
 .tab .dot.cal{background:#1FA35A;animation:calDot 1.4s ease-in-out infinite}
 @keyframes calDot{50%{transform:scale(1.18);box-shadow:0 0 0 4px rgba(31,163,90,.25)}}
@@ -1344,7 +1345,7 @@ function render(){
    if(k!==render._k){render._k=k;mn.classList.remove('anim');void mn.offsetWidth;mn.classList.add('anim');clearTimeout(render._t);render._t=setTimeout(()=>mn.classList.remove('anim'),1700);setHTML(mn,html);fxCount(mn)}
    else setHTML(mn,html)}
   for(const rail of document.querySelectorAll('.vhero-rail')){const on=rail.querySelector('.vhero-slot.on');if(on)rail.scrollLeft=on.offsetLeft-(rail.clientWidth-on.clientWidth)/2}
-  if(isStaff()){clearTimeout(render._pb);render._pb=setTimeout(pbanCheck,700)}
+  clearTimeout(render._pb);render._pb=setTimeout(pbanCheck,700);
 }
 function showLogin(){$('#boot').hidden=true;$('#shell').hidden=true;$('#loginView').hidden=false;const h=new Date().getHours(),g=$('#lxHi');if(g)g.textContent=h<5?'Добър вечер':h<11?'Добро утро':h<18?'Добър ден':'Добър вечер'}
 
@@ -2506,16 +2507,23 @@ function vCal(){HEAD={title:'Календар',back:'home'};
   <div class="cl-lg"><span><i class="late"></i>изтекло</span><span><i class="soon"></i>до 30 дни</span><span><i class="has"></i>по-късно</span><span><i class="bk"></i>час за сервиз</span></div></div>`;
   h+=`<div class="sec"><h3>${selLbl}${sel!==td?' · '+fdw(sel).split(',')[0]:''}</h3>${dayEv.length?`<div class="cl-list">${dayEv.map(calRow).join('')}</div>`:'<div class="empty" style="padding:14px">Няма събития за този ден.</div>'}</div>`;
   return h}
-/* ---- падащо съобщение за нов сигнал от шофьор (веднъж на сигнал за това устройство) ---- */
+/* ---- падащо съобщение (веднъж на нещо за това устройство): за админ/мениджър – нов сигнал от шофьор; за шофьор – съобщение, час за сервиз, задача ---- */
 function pbanList(){const ids=scopeIds(),rd=(S.notif&&S.notif.read)||{};return Object.values(S.problems).filter(p=>ids.has(p.carId)&&p.status!=='resolved'&&p.by!==meId&&!rd[npKey(p.id)]).sort((a,b)=>(b.ts||'').localeCompare(a.ts||''))}
-function pbanCheck(){if(!isStaff()||document.getElementById('pban'))return;let shown=[];try{shown=JSON.parse(localStorage.getItem('pk_pban')||'[]')}catch(e){}
-  const L=pbanList(),fresh=L.filter(p=>!shown.includes(p.id));if(!fresh.length)return;
-  try{localStorage.setItem('pk_pban',JSON.stringify([...shown,...fresh.map(p=>p.id)].slice(-300)))}catch(e){}
-  const p=fresh[0],c=S.cars[p.carId],one=fresh.length===1,el=document.createElement('div');el.id='pban';
-  el.innerHTML=`${one&&p.photo?`<img src="${p.photo}" alt="">`:'<span class="pb-ic">🚨</span>'}<div class="pb-t"><small>ПЪТНА КНИЖКА · ${p.ts&&fts(p.ts).slice(0,10)===fd(today())?'днес '+fts(p.ts).slice(-5):fd(p.date)}</small><b>${one?'Нов сигнал от '+esc(uname(p.by)):fresh.length+' нови сигнала от шофьори'}</b><span>${esc(regText(c?.reg))} · ${esc(p.cat)}${p.desc?' – '+esc(p.desc):''}${one?'':' и още '+(fresh.length-1)}</span></div><button class="pb-x" aria-label="Затвори">✕</button>`;
+function pbanItems(){const when=ts=>ts&&fts(ts).slice(0,10)===fd(today())?'днес '+fts(ts).slice(-5):ts?fts(ts).slice(0,10):'';
+  if(isStaff())return pbanList().map(p=>{const c=S.cars[p.carId];return {k:'p:'+p.id,ts:p.ts,ic:'🚨',img:p.photo,red:1,t:'Нов сигнал от '+uname(p.by),s:`${regText(c?.reg)} · ${p.cat}${p.desc?' – '+p.desc:''}`,w:when(p.ts),go:()=>viewProblem(p.id)}});
+  const old=new Date(Date.now()-7*864e5).toISOString(),mc=new Set(myCars().map(c=>c.id)),out=[];
+  for(const m of visibleMsgs())if(m.by!==meId&&(m.ts||'')>=old)out.push({k:'m:'+m.id,ts:m.ts,ic:'💬',t:'Съобщение от '+uname(m.by),s:m.text,w:when(m.ts),go:()=>{R.tab='messages';toTop();render()}});
+  for(const b of Object.values(S.tasks))if(b.type==='svcbook'&&b.status!=='done'&&!b.seen&&mc.has(b.carId))out.push({k:'b:'+b.id+':'+b.due+(b.time||''),ts:b.ts||'',ic:'📅',t:'Час за сервиз: '+fdw(b.due)+(b.time?' в '+b.time:''),s:`${regText(S.cars[b.carId]?.reg)} · ${shopOf(b)?.name||b.shopName||''}${b.what?' · '+b.what:''}`,w:'',go:()=>viewBook(b.id)});
+  for(const t of Object.values(S.tasks))if(t.type!=='svcbook'&&t.status!=='done'&&t.by!==meId&&(t.assignee===meId||(!t.assignee&&mc.has(t.carId)))&&(t.ts||'9')>=old)out.push({k:'t:'+t.id,ts:t.ts,ic:'📋',t:'Нова задача: '+(t.title||TTYPES[t.type]||''),s:`${regText(S.cars[t.carId]?.reg)}${t.due?' · до '+fd(t.due):''}`,w:when(t.ts),go:()=>{R.tab='tasks';toTop();render()}});
+  return out.sort((a,b)=>String(b.ts).localeCompare(String(a.ts)))}
+function pbanCheck(){if(!meId||document.getElementById('pban'))return;let shown=[];try{shown=JSON.parse(localStorage.getItem('pk_pban')||'[]')}catch(e){}
+  const fresh=pbanItems().filter(x=>!shown.includes(x.k)&&!shown.includes(x.k.slice(2)));if(!fresh.length)return;
+  try{localStorage.setItem('pk_pban',JSON.stringify([...shown,...fresh.map(x=>x.k)].slice(-300)))}catch(e){}
+  const x=fresh[0],one=fresh.length===1,el=document.createElement('div');el.id='pban';
+  el.innerHTML=`${one&&x.img?`<img src="${x.img}" alt="">`:`<span class="pb-ic${x.red?'':' bl'}">${one?x.ic:'🔔'}</span>`}<div class="pb-t"><small>ПЪТНА КНИЖКА${x.w?' · '+esc(x.w):''}</small><b class="${x.red?'':'bl'}">${one?esc(x.t):isStaff()?fresh.length+' нови сигнала от шофьори':fresh.length+' нови неща за теб'}</b><span>${esc(x.s)}${one?'':' · и още '+(fresh.length-1)}</span></div><button class="pb-x" aria-label="Затвори">✕</button>`;
   document.body.appendChild(el);requestAnimationFrame(()=>el.classList.add('on'));
   const hide=()=>{el.classList.remove('on');setTimeout(()=>el.remove(),350)};let y0=null,tm=setTimeout(hide,9000);
-  el.addEventListener('click',e=>{clearTimeout(tm);hide();if(e.target.closest('.pb-x'))return;if(one)viewProblem(p.id);else{R.tab='home';toTop();render()}});
+  el.addEventListener('click',e=>{clearTimeout(tm);hide();if(e.target.closest('.pb-x'))return;if(one)x.go();else{R.tab='home';toTop();render()}});
   el.addEventListener('touchstart',e=>{y0=e.touches[0].clientY},{passive:true});
   el.addEventListener('touchmove',e=>{if(y0!=null&&e.touches[0].clientY-y0<-25){y0=null;clearTimeout(tm);hide()}},{passive:true})}
 function calSeen(){try{return localStorage.getItem('pk_cal_seen')===today()}catch(e){return false}}
