@@ -111,6 +111,11 @@ p{margin:0}
 .tab svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .tab[aria-current="true"]{color:var(--accent)}
 .tab[aria-current="true"] svg{fill:var(--accent-soft)}
+.tab .dot.cal{background:#1FA35A;animation:calDot 1.4s ease-in-out infinite}
+@keyframes calDot{50%{transform:scale(1.18);box-shadow:0 0 0 4px rgba(31,163,90,.25)}}
+.tcal{position:relative;display:inline-block;width:24px;height:25px;border-radius:6px;background:#fff;box-shadow:0 0 0 1.5px #C9D3E3,0 2px 4px rgba(0,0,0,.12);overflow:hidden;font-family:inherit}
+.tcal i{position:absolute;left:0;right:0;top:0;height:7px;background:#E5484D}
+.tcal b{position:absolute;left:0;right:0;top:7px;text-align:center;font-size:13px;line-height:17px;font-weight:800;color:#1F2937;font-style:normal}
 .tab .dot{position:absolute;top:4px;left:calc(50% + 7px);min-width:18px;height:18px;border-radius:9px;background:var(--t-red);color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center;padding:0 4px}
 
 /* buttons */
@@ -1288,13 +1293,13 @@ const akey=a=>`${a.kind}:${a.car.id}:${a.key||a.id||''}:${a.lvl}`;
 const isRead=a=>a.lvl==='good'||!!((S.notif&&S.notif.read)||{})[akey(a)];
 const unreadN=()=>allAlerts().filter(a=>!isRead(a)).length;
 function renderTabs(){
-  const nAlerts=unreadN();
+  const nAlerts=unreadN(),nCal=calTodayN();
   const mine=isStaff()&&myCars().length>0;
   const t=[['home','Начало'],...(mine?[['mycar','Моята кола']]:[]),['cars',mine?'Коли':isStaff()?'Автомобили':'Автомобил'],['tasks','Задачи']];
   t.push(['cal','Календар']);
   t.push(['more','Още']);
   $('#tabs').classList.toggle('six',t.length>5);
-  setHTML($('#tabs'),t.map(([k,l])=>`<button class="tab" data-act="tab" data-k="${k}" aria-current="${R.tab===k||(k==='cars'&&R.tab==='car')||(k==='more'&&['users','depts','settings'].includes(R.tab))}">${ICONS[k]}${l}${k==='tasks'&&nAlerts?`<span class="dot">${nAlerts}</span>`:''}</button>`).join(''));
+  setHTML($('#tabs'),t.map(([k,l])=>`<button class="tab" data-act="tab" data-k="${k}" aria-current="${R.tab===k||(k==='cars'&&R.tab==='car')||(k==='more'&&['users','depts','settings'].includes(R.tab))}">${k==='cal'?calIcon():ICONS[k]}${l}${k==='tasks'&&nAlerts?`<span class="dot">${nAlerts}</span>`:''}${k==='cal'&&nCal?`<span class="dot cal">${nCal}</span>`:''}</button>`).join(''));
 }
 function renderHead(){
   const u=me(),d=new Date(),n=unreadN();
@@ -2495,6 +2500,9 @@ function vCal(){HEAD={title:'Календар',back:'home'};
   <div class="cl-lg"><span><i class="late"></i>изтекло</span><span><i class="soon"></i>до 30 дни</span><span><i class="has"></i>по-късно</span><span><i class="bk"></i>час за сервиз</span></div></div>`;
   h+=`<div class="sec"><h3>${selLbl}${sel!==td?' · '+fdw(sel).split(',')[0]:''}</h3>${dayEv.length?`<div class="cl-list">${dayEv.map(calRow).join('')}</div>`:'<div class="empty" style="padding:14px">Няма събития за този ден.</div>'}</div>`;
   return h}
+function calSeen(){try{return localStorage.getItem('pk_cal_seen')===today()}catch(e){return false}}
+function calTodayN(){if(calSeen())return 0;const td=today();return calEvents().filter(e=>e.d===td).length}
+function calIcon(){return `<span class="temo tcal"><i></i><b>${+today().slice(8)}</b></span>`}
 function calNav(k){const[y,m]=(R.calM||today().slice(0,7)).split('-').map(Number),d=new Date(y,m-1+ +k,1);R.calM=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;render()}
 function viewBook(id){const b=S.tasks[id];if(!b)return;openSheet('Час за сервиз',bookCard(b),null)}
 async function seenBook(id){try{await withRetry(()=>db.doc('tasks/'+id).update({seen:true,seenTs:new Date().toISOString(),seenBy:meId}));toast('Потвърдено ✓');closeSheet()}catch(e){toast(dbMsg(e))}}
@@ -2806,7 +2814,7 @@ async function printPdf(){
 
 /* ============ events ============ */
 const ACT={
-  tab:d=>{R.tab=d.k;if(d.k==='cal')R.calD=R.calM=null;if(d.k==='cars')R.carBack='cars';toTop();render()},
+  tab:d=>{R.tab=d.k;if(d.k==='cal'){R.calD=R.calM=null;try{localStorage.setItem('pk_cal_seen',today())}catch(e){}}if(d.k==='cars')R.carBack='cars';toTop();render()},
   myBook:d=>{R.carBack=R.tab;R.tab='car';R.carId=d.car;R.carSec='book';toTop();render()},
   openCar:d=>{R.carBack=R.tab==='car'?R.carBack:R.tab;R.tab='car';R.carId=d.car;R.listCar=d.car;R.carSec='overview';toTop();render()},
   carSec:d=>{R.carSec=d.k;render()},
