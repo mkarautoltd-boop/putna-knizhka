@@ -2488,15 +2488,12 @@ function vCal(){HEAD={title:'Календар',back:'home'};
   for(let d=1;d<=dim;d++){const ds=`${ym}-${String(d).padStart(2,'0')}`,es=by[ds]||[];
     const lv=es.some(e=>e.kind!=='book'&&e.d<td)?'late':es.some(e=>e.kind==='book')?'bk':es.length?(daysBetween(td,ds)<=30?'soon':'has'):'';
     cells.push(`<button class="cl-d${es.length?' ev '+lv:''}${ds===td?' today':''}${ds===sel?' sel':''}" data-act="calDay" data-d="${ds}">${d}${es.length>1?`<i>${es.length}</i>`:''}</button>`)}
-  const dayEv=by[sel]||[],next=ev.filter(e=>e.d>sel).slice(0,8),late=ev.filter(e=>e.d<td&&e.kind!=='book');
+  const dayEv=by[sel]||[];
   const selLbl=sel===td?'Днес':daysBetween(td,sel)===1?'Утре':`${+sel.slice(8)} ${MONTHS[+sel.slice(5,7)-1].toLowerCase()}`;
   let h=`<div class="card cl"><div class="cl-h"><button class="cl-nav" data-act="calNav" data-k="-1" aria-label="Предишен месец">‹</button><b>${MONTHS[m-1]} ${y}</b><button class="cl-nav" data-act="calNav" data-k="1" aria-label="Следващ месец">›</button></div>
   <div class="cl-g">${['пн','вт','ср','чт','пт','сб','нд'].map(w=>`<span class="cl-w">${w}</span>`).join('')}${cells.join('')}</div>
   <div class="cl-lg"><span><i class="late"></i>изтекло</span><span><i class="soon"></i>до 30 дни</span><span><i class="has"></i>по-късно</span><span><i class="bk"></i>час за сервиз</span></div></div>`;
   h+=`<div class="sec"><h3>${selLbl}${sel!==td?' · '+fdw(sel).split(',')[0]:''}</h3>${dayEv.length?`<div class="cl-list">${dayEv.map(calRow).join('')}</div>`:'<div class="empty" style="padding:14px">Няма събития за този ден.</div>'}</div>`;
-  if(R.calD)return h;
-  if(late.length)h+=`<div class="sec"><h3>Изтекли · ${late.length}</h3><div class="cl-list">${late.slice().reverse().slice(0,10).map(calRow).join('')}</div></div>`;
-  if(next.length)h+=`<div class="sec"><h3>Следващи</h3><div class="cl-list">${next.map(calRow).join('')}</div></div>`;
   return h}
 function calNav(k){const[y,m]=(R.calM||today().slice(0,7)).split('-').map(Number),d=new Date(y,m-1+ +k,1);R.calM=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;render()}
 function viewBook(id){const b=S.tasks[id];if(!b)return;openSheet('Час за сервиз',bookCard(b),null)}
