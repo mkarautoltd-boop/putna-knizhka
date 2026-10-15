@@ -1330,6 +1330,12 @@ function fxCount(root){
     b.textContent=f(0);requestAnimationFrame(st)}
 }
 function setHTML(el,h){if(el._h!==h){el.innerHTML=h;el._h=h}}
+/* при писане в търсачката не подменяме самото поле – иначе iPhone връща клавиатурата на букви */
+function patchKeepQ(mn,html){const q=document.activeElement;if(!q||q.id!=='q'||q.parentNode!==mn||mn._h===html)return false;
+  const t=document.createElement('template');t.innerHTML=html;const nq=t.content.querySelector('#q');if(!nq||nq.parentNode!==t.content)return false;
+  while(mn.firstChild&&mn.firstChild!==q)mn.removeChild(mn.firstChild);while(q.nextSibling)mn.removeChild(q.nextSibling);
+  const before=[],after=[];let seen=false;for(const n of [...t.content.childNodes]){if(n===nq){seen=true;continue}(seen?after:before).push(n)}
+  for(const n of before)mn.insertBefore(n,q);for(const n of after)mn.appendChild(n);mn._h=html;return true}
 function render(){
   clearMemo();if(!db)return;
   if(!S.loaded.has('users')&&!Object.keys(S.users).length)return;
@@ -1343,7 +1349,7 @@ function render(){
   $('#main').classList.toggle('drvhome',!isStaff()&&(R.tab==='home'||!R.tab));
   {const k=[R.tab,R.carId,R.carSec,R.rep].join('|'),mn=$('#main');
    if(k!==render._k){render._k=k;mn.classList.remove('anim');void mn.offsetWidth;mn.classList.add('anim');clearTimeout(render._t);render._t=setTimeout(()=>mn.classList.remove('anim'),1700);setHTML(mn,html);fxCount(mn)}
-   else setHTML(mn,html)}
+   else if(!patchKeepQ(mn,html))setHTML(mn,html)}
   for(const rail of document.querySelectorAll('.vhero-rail')){const on=rail.querySelector('.vhero-slot.on');if(on)rail.scrollLeft=on.offsetLeft-(rail.clientWidth-on.clientWidth)/2}
   clearTimeout(render._pb);render._pb=setTimeout(pbanCheck,700);
 }
@@ -2867,7 +2873,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(
 document.addEventListener('change',e=>{const t=e.target;if(t.closest('#sheet'))return;
   if(t.dataset.bind){R[t.dataset.bind]=t.value;if(t.dataset.bind==='repMonth'&&t.value){R.repFrom=t.value+'-01';R.repTo=monthEnd(t.value)}render()}
   if(t.dataset.bindCheck){R[t.dataset.bindCheck]=t.checked;render()}});
-document.addEventListener('input',e=>{const t=e.target;if(t.id==='q'){R.q=t.value;clearTimeout(ACT._q);ACT._q=setTimeout(()=>{render();const q=$('#q');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}},250)}});
+document.addEventListener('input',e=>{const t=e.target;if(t.id==='q'){R.q=t.value;clearTimeout(ACT._q);ACT._q=setTimeout(()=>{const a=document.activeElement;render();const q=$('#q');if(q&&q!==a){q.focus();q.setSelectionRange(q.value.length,q.value.length)}},250)}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#sheet').hidden)closeSheet()});
 
 /* ============ Google Apps Script bridge ============ */
