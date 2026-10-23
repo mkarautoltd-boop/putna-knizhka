@@ -833,6 +833,8 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .bk-ok{display:grid;place-items:center;font-weight:700;color:#1FA35A;background:#E6F7EC;border-radius:14px;min-height:46px;font-size:14px;text-align:center;padding:0 8px}.bk-ok.no{color:#B45F00;background:#FFF1E0}
 .bk-b2{display:flex;justify-content:space-between}
 .nokm-l{display:flex;flex-direction:column;gap:8px}
+.nk-top{display:flex;align-items:center;gap:10px;width:100%;margin-bottom:12px;padding:12px 14px;border:2px solid #FFD8A8;border-radius:16px;background:linear-gradient(90deg,#FFF3E0,#fff 80%);font:inherit;color:inherit;text-align:left;cursor:pointer}
+.nk-top span{font-size:22px}.nk-top b{flex:1;color:#B45F00;font-size:15.5px}.nk-top i{font-style:normal;font-size:22px;color:#B45F00}
 .nk-row{display:grid;grid-template-columns:auto 1fr;gap:0 10px;align-items:center;width:100%;text-align:left;border:0;border-radius:12px;background:#fff;padding:8px 12px;font:inherit;color:inherit;cursor:pointer;box-shadow:0 3px 10px -8px rgba(15,35,65,.5)}
 .nk-row b{font-size:14.5px}.nk-row span{font-size:13px;color:#5B6778;text-align:right}.nk-row small{grid-column:1/-1;font-size:12.5px;color:#8A97AB}
 .cl{padding:14px 12px}.cl-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.cl-h b{font-size:18px}
@@ -2718,9 +2720,10 @@ function vFuelAll(){
 }
 function vTripsAll(){
   HEAD={title:'Километри',back:'home'};const ids=scopeIds();
-  const l=entries().filter(e=>e.t==='trip'&&ids.has(e.carId)).slice().reverse().slice(0,150);
-  if(!l.length)return '<div class="empty">Няма пътни записи.</div>';
-  let h='<div class="list">',cur='';for(const e of l){if(e.date!==cur){cur=e.date;h+=`<div class="date-h">${fd(cur)}</div>`}h+=tripLi(e)}return h+'</div>';
+  const l=entries().filter(e=>e.t==='trip'&&ids.has(e.carId)).slice().reverse().slice(0,150),nk=noKmList();
+  const top=nk.length?`<button class="nk-top" data-act="noKm"><span>⏰</span><b>Без километраж днес · ${nk.length}</b><i>›</i></button>`:'';
+  if(!l.length)return top+'<div class="empty">Няма пътни записи.</div>';
+  let h=top+'<div class="list">',cur='';for(const e of l){if(e.date!==cur){cur=e.date;h+=`<div class="date-h">${fd(cur)}</div>`}h+=tripLi(e)}return h+'</div>';
 }
 function repDeptR(){
   const ds=Object.values(S.depts).filter(d=>isAdmin()||d.id===me().dept).sort((a,b)=>a.name.localeCompare(b.name,'bg'));
@@ -2866,7 +2869,7 @@ const ACT={
   closeSheet:closeSheet,
   morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
   takeover:d=>openTakeover(d.car),endSession:d=>openEndSession(d.car),viewProblem:d=>viewProblem(d.id),
-  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),docCheck:(d,b)=>checkDoc(d.car,d.k,b),qaToggle:(d,b)=>qaToggle(b),seenProblem:d=>seenProblem(d.id),calNav:d=>calNav(d.k),calDay:d=>{R.calD=d.d;R.calM=d.d.slice(0,7);render()},bookCal:d=>bookCal(d.id),alToggle:(d,b)=>alToggle(d,b),newBook:d=>openBook(d.car),editBook:d=>openBook(null,d.id),viewBook:d=>viewBook(d.id),seenBook:d=>seenBook(d.id),doneBook:d=>doneBook(d.id),loadOld:d=>loadOld(null,d.car),
+  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),docCheck:(d,b)=>checkDoc(d.car,d.k,b),qaToggle:(d,b)=>qaToggle(b),noKm:()=>openNoKm(),seenProblem:d=>seenProblem(d.id),calNav:d=>calNav(d.k),calDay:d=>{R.calD=d.d;R.calM=d.d.slice(0,7);render()},bookCal:d=>bookCal(d.id),alToggle:(d,b)=>alToggle(d,b),newBook:d=>openBook(d.car),editBook:d=>openBook(null,d.id),viewBook:d=>viewBook(d.id),seenBook:d=>seenBook(d.id),doneBook:d=>doneBook(d.id),loadOld:d=>loadOld(null,d.car),
   newTask:openNewTask,doneTask:d=>doneTask(d.id),delEntry:d=>delEntry(d.car,d.id),
   editUser:d=>openEditUser(d.id),editDept:d=>openEditDept(d.id),editSettings:openSettings,myPass:openMyPass,demo:loadDemo,csv:downloadCsv,
   logout:()=>{if(WQ.length){toast('Изчакай – има записи, които още се изпращат.');flushQ();return}const t=TOKEN;logoutLocal();if(t)gs('logout',t).catch(()=>{})},
