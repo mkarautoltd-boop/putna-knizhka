@@ -119,9 +119,9 @@ p{margin:0}
 .pb-x{flex:none;width:30px;height:30px;border:0;border-radius:50%;background:#EEF1F6;color:#5B6778;font-size:13px;cursor:pointer}
 .tab .dot.cal{background:#1FA35A;animation:calDot 1.4s ease-in-out infinite}
 @keyframes calDot{50%{transform:scale(1.18);box-shadow:0 0 0 4px rgba(31,163,90,.25)}}
-.tcal{position:relative;display:inline-block;width:24px;height:25px;border-radius:6px;background:#fff;box-shadow:0 0 0 1.5px #C9D3E3,0 2px 4px rgba(0,0,0,.12);overflow:hidden;font-family:inherit}
+.tcal{position:relative;display:inline-block;width:26px;height:25px;border-radius:6px;background:#fff;box-shadow:0 0 0 1.5px #C9D3E3,0 2px 4px rgba(0,0,0,.12);overflow:hidden;font-family:inherit}
 .tcal i{position:absolute;left:0;right:0;top:0;height:7px;background:#E5484D}
-.tcal b{position:absolute;left:0;right:0;top:7px;text-align:center;font-size:13px;line-height:17px;font-weight:800;color:#1F2937;font-style:normal}
+.tcal b{position:absolute;left:0;right:0;top:7px;text-align:center;font-size:12px;letter-spacing:-.3px;white-space:nowrap;font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;line-height:17px;font-weight:800;color:#1F2937;font-style:normal}
 .tab .dot{position:absolute;top:4px;left:calc(50% + 7px);min-width:18px;height:18px;border-radius:9px;background:var(--t-red);color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center;padding:0 4px}
 
 /* buttons */
@@ -832,6 +832,10 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .bk-b{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}.bk-b a{text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px}.bk-b>*:only-child{grid-column:1/-1}
 .bk-ok{display:grid;place-items:center;font-weight:700;color:#1FA35A;background:#E6F7EC;border-radius:14px;min-height:46px;font-size:14px;text-align:center;padding:0 8px}.bk-ok.no{color:#B45F00;background:#FFF1E0}
 .bk-b2{display:flex;justify-content:space-between}
+.nokm{display:flex;flex-direction:column;gap:6px;border:2px solid #FFD8A8;background:linear-gradient(180deg,#FFF8EE,#fff 60%)}.nokm .card-h h3{color:#B45F00}
+.nk-row{display:grid;grid-template-columns:auto 1fr;gap:0 10px;align-items:center;width:100%;text-align:left;border:0;border-radius:12px;background:#fff;padding:8px 12px;font:inherit;color:inherit;cursor:pointer;box-shadow:0 3px 10px -8px rgba(15,35,65,.5)}
+.nk-row b{font-size:14.5px}.nk-row span{font-size:13px;color:#5B6778;text-align:right}.nk-row small{grid-column:1/-1;font-size:12.5px;color:#8A97AB}
+.kmrem{display:flex;flex-direction:row;align-items:center;gap:12px;border:2px solid #FFD8A8;background:linear-gradient(90deg,#FFF3E0,#fff 80%)}.kmrem>div{flex:1;display:flex;flex-direction:column;gap:2px}.kmrem b{color:#B45F00;font-size:15px}.kmrem small{font-size:12.5px;color:#5B6778}.kmrem .btn{flex:none}
 .cl{padding:14px 12px}.cl-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.cl-h b{font-size:18px}
 .cl-nav{width:40px;height:40px;border:0;border-radius:12px;background:#EEF3FB;color:#2E55D6;font-size:26px;line-height:1;cursor:pointer}
 .cl-g{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.cl-w{text-align:center;font-size:12px;color:#8A97AB;padding:2px 0 4px}
@@ -1398,6 +1402,18 @@ function sessionCard(c){
     ${(c.session.userId===meId||canManage(c))?`<button class="btn primary wide" data-act="endSession" data-car="${c.id}">Приключи управлението</button>`:''}
   </div>`;
 }
+/* ---- без начален километраж днес (делнични дни) ---- */
+const isWorkday=()=>{const g=new Date().getDay();return g>0&&g<6};
+const kmMissing=c=>{const td=today();return !byCar(c.id).some(e=>e.t==='trip'&&e.morning&&!e.virtual&&e.date===td)};
+function noKmCard(cars){if(!isWorkday()||new Date().getHours()<NOKM_HOUR)return '';
+  const L=cars.filter(c=>c.active!==false&&drvIds(c).length&&kmMissing(c));if(!L.length)return '';const N=5,more=L.length>N+1;
+  return `<div class="card nokm"><div class="card-h"><h3>⏰ Без километраж днес · ${L.length}</h3></div><p class="small muted" style="margin:-4px 0 4px">Шофьорите не са въвели началния километраж за ${fd(today())}.</p>
+  ${L.map((c,i)=>`<button class="nk-row${more&&i>=N?' nkx':''}" data-act="openCar" data-car="${c.id}"${more&&i>=N?' hidden':''}><b>${esc(regText(c.reg))}</b><span>${esc(carName(c))}</span><small>${esc(drvIds(c).map(uname).join(', '))}</small></button>`).join('')}
+  ${more?`<button class="qa-more" data-act="nkToggle" aria-expanded="false"><span>Още ${L.length-N}</span><i>▾</i></button>`:''}</div>`}
+const NOKM_HOUR=10;
+function nkToggle(b){const o=b.getAttribute('aria-expanded')!=='true',xs=b.parentNode.querySelectorAll('.nkx');xs.forEach(x=>x.hidden=!o);b.setAttribute('aria-expanded',o);b.innerHTML=`<span>${o?'Скрий':'Още '+xs.length}</span><i>${o?'▴':'▾'}</i>`}
+function drvKmRemind(c){if(!isWorkday()||!kmMissing(c))return '';
+  return `<div class="card kmrem"><div><b>⏰ Не си въвел километража за днес</b><small>${esc(regText(c.reg))} · ${esc(carName(c))}</small></div><button class="btn primary shine" data-act="morning" data-car="${c.id}">Въведи</button></div>`}
 function kpis(cars){
   const lv=cars.map(carLevel),crit=lv.filter(x=>x==='crit').length,warn=lv.filter(x=>x==='warn').length;
   return `<div class="kpis">
@@ -1427,7 +1443,7 @@ function vHome(){
     if(!my.length)return h+`<div class="empty">${icon('car')}<b>Нямаш назначен автомобил.</b>Обърни се към администратора или мениджъра на отдела.</div>`;
     for(const c of my){
       const al=carAlerts(c);
-      h=drvStats(c)+h+svcBooks(c).map(bookCard).join('')+carHero(c,true)+streakCard(c);
+      h=drvKmRemind(c)+drvStats(c)+h+svcBooks(c).map(bookCard).join('')+carHero(c,true)+streakCard(c);
       if(al.length)h+=`<div class="card"><div class="card-h"><h3>Моите задачи</h3><button class="linkbtn" data-act="tab" data-k="tasks">Всички</button></div>${alertList(al.slice(0,4))}
         ${al.some(a=>a.kind==='pressure')?`<button class="btn go wide" data-act="check" data-car="${c.id}">${icon('plus')} Направи проверката</button>`:''}</div>`;
       h+=`<div class="sec"><h3>Бързи действия</h3>${actionTiles(c)}</div>`;
@@ -1441,7 +1457,7 @@ function vHome(){
   if(!cars.length){
     return h+`<div class="empty">${icon('car')}<b>Още няма автомобили${isMgr()?' в твоя отдел':''}.</b>${isAdmin()?`Започни с отдел, потребители и първия автомобил или зареди примерните данни от спецификацията.<div class="row" style="justify-content:center"><button class="btn primary" data-act="editCar">Добави автомобил</button><button class="btn" data-act="demo">Зареди примерни данни</button></div>`:''}</div>`;
   }
-  h=newProblems(cars)+kpis(cars)+h+upcomingBooks(cars);
+  h=newProblems(cars)+kpis(cars)+h+upcomingBooks(cars)+noKmCard(cars);
   const T=k=>`tab" data-k="${k}`;
   const qa=isAdmin()?[[T('cars'),'blue','car','Автомобили'],[T('depts'),'purple','building','Отдели'],[T('staff'),'green','user','Шофьори'],[T('users'),'grey','users','Потребители'],
       [T('tasks'),'purple','tasks','Задачи'],[T('problemsAll'),'red','alert','Проблеми'],[T('serviceAll'),'orange','wrench','Сервиз'],[T('docsAll'),'grey','doc','Документи'],
@@ -2855,7 +2871,7 @@ const ACT={
   closeSheet:closeSheet,
   morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
   takeover:d=>openTakeover(d.car),endSession:d=>openEndSession(d.car),viewProblem:d=>viewProblem(d.id),
-  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),docCheck:(d,b)=>checkDoc(d.car,d.k,b),qaToggle:(d,b)=>qaToggle(b),seenProblem:d=>seenProblem(d.id),calNav:d=>calNav(d.k),calDay:d=>{R.calD=d.d;R.calM=d.d.slice(0,7);render()},bookCal:d=>bookCal(d.id),alToggle:(d,b)=>alToggle(d,b),newBook:d=>openBook(d.car),editBook:d=>openBook(null,d.id),viewBook:d=>viewBook(d.id),seenBook:d=>seenBook(d.id),doneBook:d=>doneBook(d.id),loadOld:d=>loadOld(null,d.car),
+  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),docCheck:(d,b)=>checkDoc(d.car,d.k,b),qaToggle:(d,b)=>qaToggle(b),nkToggle:(d,b)=>nkToggle(b),seenProblem:d=>seenProblem(d.id),calNav:d=>calNav(d.k),calDay:d=>{R.calD=d.d;R.calM=d.d.slice(0,7);render()},bookCal:d=>bookCal(d.id),alToggle:(d,b)=>alToggle(d,b),newBook:d=>openBook(d.car),editBook:d=>openBook(null,d.id),viewBook:d=>viewBook(d.id),seenBook:d=>seenBook(d.id),doneBook:d=>doneBook(d.id),loadOld:d=>loadOld(null,d.car),
   newTask:openNewTask,doneTask:d=>doneTask(d.id),delEntry:d=>delEntry(d.car,d.id),
   editUser:d=>openEditUser(d.id),editDept:d=>openEditDept(d.id),editSettings:openSettings,myPass:openMyPass,demo:loadDemo,csv:downloadCsv,
   logout:()=>{if(WQ.length){toast('Изчакай – има записи, които още се изпращат.');flushQ();return}const t=TOKEN;logoutLocal();if(t)gs('logout',t).catch(()=>{})},
