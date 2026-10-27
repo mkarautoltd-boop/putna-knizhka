@@ -704,6 +704,41 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 }
 @media (min-width:1300px){.dcards{grid-template-columns:repeat(3,minmax(0,1fr))}}
 
+/* ---- лаптоп/компютър (мишка): меню вляво, съдържанието – широко, на колони ---- */
+@media (min-width:1000px) and (hover:hover) and (pointer:fine){
+  #shell:not([hidden]){flex-direction:row!important;align-items:stretch}
+  #shell>.tabs{order:-1;position:sticky!important;top:0;bottom:auto!important;height:100vh;width:236px!important;flex:0 0 236px!important;max-width:none!important;padding:0!important;background:linear-gradient(180deg,#0B2244 0%,#123463 100%)!important;box-shadow:4px 0 24px -12px rgba(11,34,68,.6)!important;border:0!important;z-index:7}
+  #shell>.tabs .tabs-in{display:flex!important;flex-direction:column;gap:4px;max-width:none!important;margin:0!important;padding:22px 14px!important;background:none!important;box-shadow:none!important;border-radius:0!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  #shell>.tabs .tabs-in::before{content:"🚐  Пътна книжка";display:block;color:#fff;font-weight:800;font-size:18px;padding:4px 10px 18px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:10px;white-space:nowrap}
+  #shell>.tabs .tab{flex-direction:row!important;justify-content:flex-start;gap:12px!important;padding:11px 14px!important;border-radius:12px!important;font-size:15px!important;color:#C9D6EA!important;text-align:left;width:100%}
+  #shell>.tabs .tab:hover{background:rgba(255,255,255,.07)}
+  #shell>.tabs .tab[aria-current="true"]{background:rgba(255,255,255,.14)!important;color:#fff!important}
+  #shell>.tabs .tab[aria-current="true"]::after{display:none!important}
+  #shell>.tabs .tab .dot{position:static!important;margin-left:auto}
+  #shell>.tabs .temo{font-size:22px!important;line-height:24px;height:24px}
+  #scroller{flex:1 1 auto;min-width:0}
+  #main.wrap,.wrap{max-width:1180px!important;padding-inline:28px!important;padding-bottom:40px!important}
+  .top-in{max-width:1180px!important;padding-inline:28px!important}
+  .top{border-radius:0 0 22px 22px}
+  #pban{left:auto;right:24px;width:420px;margin:0}
+  #toast{bottom:28px!important;left:calc(50% + 118px)}
+  .sheet-card{max-width:620px!important}
+  /* начало: две колони */
+  #main[data-tab="home"]:not(.drvhome){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+  #main[data-tab="home"]:not(.drvhome)>*{grid-column:auto;min-width:0}
+  #main[data-tab="home"]:not(.drvhome)>.kpis,#main[data-tab="home"]:not(.drvhome)>.sec{grid-column:1/-1}
+  #main[data-tab="home"]:not(.drvhome)>.kpis{order:-1}
+  /* задачи и известия: по две в ред */
+  #main[data-tab="tasks"] .alerts{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  #main[data-tab="tasks"] .alerts>.qa-more{grid-column:1/-1}
+  /* календар: месецът вляво, денят вдясно */
+  #main[data-tab="cal"]{display:grid!important;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:22px;align-items:start}
+  #main[data-tab="cal"] .cl-d{aspect-ratio:auto;height:58px;font-size:16px}
+  #main[data-tab="cal"] .cl-g{gap:7px}
+  /* списъци с документи, гориво, км: по-широки таблици */
+  #main[data-tab="more"]{max-width:820px!important}
+}
+
 /* шофьор – началото да се събира на един екран */
 @media (max-width:899px){
  .drvhome .kpis.three .kpi{padding:9px 4px 8px!important}
@@ -1351,7 +1386,7 @@ function render(){
   const V={home:vHome,mycar:vMyCar,cars:vCars,car:vCar,tasks:vTasks,reports:vReports,cal:vCal,more:vMore,users:vUsers,depts:vDepts,settings:vSettings,staff:vStaff,messages:vMessages,docsAll:vDocsAll,problemsAll:vProblemsAll,serviceAll:vServiceAll,tyresAll:vTyresAll,fuelAll:vFuelAll,tripsAll:vTripsAll};
   const html=(V[R.tab]||vHome)();
   renderTabs();renderHead();
-  $('#main').classList.toggle('drvhome',!isStaff()&&(R.tab==='home'||!R.tab));
+  $('#main').classList.toggle('drvhome',!isStaff()&&(R.tab==='home'||!R.tab));$('#main').dataset.tab=R.tab||'home';
   {const k=[R.tab,R.carId,R.carSec,R.rep].join('|'),mn=$('#main');
    if(k!==render._k){render._k=k;mn.classList.remove('anim');void mn.offsetWidth;mn.classList.add('anim');clearTimeout(render._t);render._t=setTimeout(()=>mn.classList.remove('anim'),1700);setHTML(mn,html);fxCount(mn)}
    else if(!patchKeepQ(mn,html))setHTML(mn,html)}
