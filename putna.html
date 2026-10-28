@@ -272,7 +272,7 @@ input[readonly]{background:var(--surface2)}
 @media (min-width:700px){#sheet{align-items:center}.sheet-card{border-radius:20px;max-height:88%}}
 @media (max-width:899px){#sheet.full{background:var(--bg)}#sheet.full .sheet-card{max-width:none;height:100%;max-height:none!important;border-radius:0!important;box-shadow:none}
  #sheet.full .sheet-head{padding-top:calc(env(safe-area-inset-top,0px) + 14px)!important;border-radius:0 0 22px 22px}
- #sheet.full .sheet-head::before{display:none}#sheet.full .sheet-head::after{content:"";width:36px}#sheet.full .sheet-head .x{order:-1;font-size:0;width:36px;background:none!important}#sheet.full .sheet-head .x::before{content:"‹";font-size:30px;line-height:1}}
+ #sheet.full .sheet-actions{position:static;margin:8px 0 0;background:none;padding:6px 0 calc(16px + env(safe-area-inset-bottom,0px))} #sheet.full .sheet-head::before{display:none}#sheet.full .sheet-head::after{content:"";width:36px}#sheet.full .sheet-head .x{order:-1;font-size:0;width:36px;background:none!important}#sheet.full .sheet-head .x::before{content:"‹";font-size:30px;line-height:1}}
 .sheet-head{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--navy);color:var(--navy-ink)}
 .sheet-head h2{flex:1;text-align:center}
 .x{border:0;background:rgba(255,255,255,.12);color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;line-height:1}
