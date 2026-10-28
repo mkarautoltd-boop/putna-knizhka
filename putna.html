@@ -434,7 +434,9 @@ body{background:linear-gradient(180deg,#E4ECF6 0,#EEF3F9 320px,#F2F5FA 100%) fix
 #shell,#scroller{overflow:visible!important;overflow-x:clip!important}
 body:not(.noscroll){overflow:visible!important;overflow-x:clip!important}
 #scroller{flex:1 0 auto}
-#shell>.tabs{position:sticky;bottom:0;left:auto;right:auto;flex:0 0 auto}
+#shell>.tabs{position:sticky;bottom:0;left:auto;right:auto;flex:0 0 auto;-webkit-transform:translateZ(0);transform:translateZ(0);will-change:transform}
+/* iPhone: размазването зад лентата кара iOS да я рисува на грешно място при бързо превъртане – без него */
+@media (hover:none){.tabs-in{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(255,255,255,.985)!important}}
 #scroller .wrap{padding-block:16px 24px}
 .drvlist{display:flex;flex-direction:column;gap:6px;margin:4px 0}
 .li.idle{background:#F6F8FB}
@@ -3002,7 +3004,7 @@ const oldBtn=c=>LOGFROM&&!OLDK.has('car:'+c.id)?`<button class="btn wide" data-a
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&!WQ.length&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyServer(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='70';let _verAt=0;
+const APP_VER='71';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
