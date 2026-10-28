@@ -874,9 +874,10 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .dmg-l{display:flex;flex-direction:column;gap:10px}
 .dmap-w{display:flex;justify-content:center;padding:4px 0}.dmap-w.sm .dmap{max-width:150px}
 .dmap{width:100%;max-width:230px;height:auto;touch-action:manipulation}
-.dmap .dz-p{fill:#E9EEF6;stroke:#9AA8BC;stroke-width:1.6;cursor:pointer;transition:fill .15s}
-.dmap:not(.ro) .dz-p:hover{fill:#D7E2F2}.dmap .dz-p.on{fill:#FF6B6B;stroke:#C92A2A}
-.dmap.ro .dz-p{cursor:default}.dmap .dm-l{font-size:11px;font-weight:800;fill:#8A97AB;text-anchor:middle;letter-spacing:1px}
+.dmap .pin{cursor:pointer}.dmap .pin circle{fill:#fff;stroke:#2E55D6;stroke-width:2;filter:drop-shadow(0 1px 2px rgba(15,35,65,.35))}
+.dmap .pin text{fill:#2E55D6;font-size:15px;font-weight:800;text-anchor:middle;pointer-events:none}
+.dmap .pin.on circle{fill:#E5484D;stroke:#fff}.dmap .pin.on text{fill:#fff;font-size:13px}
+.dmap.ro .pin{cursor:default}.dmap .dm-l{font-size:11px;font-weight:800;fill:#8A97AB;text-anchor:middle;letter-spacing:1px}
 .dz-sel{text-align:center;font-size:13.5px;color:#1F2937;margin-top:4px}.dz-sel b{color:#C92A2A}
 .dmg-sum h3{margin:0}
 .dmg{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;border:0;border-left:5px solid #F08C00;border-radius:14px;background:#fff;padding:10px 12px;font:inherit;color:inherit;box-shadow:var(--shadow);cursor:pointer}
@@ -2137,23 +2138,32 @@ const isDmg=p=>p&&p.kind==='damage';
 const DZONES=[['fb','Предна броня'],['hl','Фарове'],['hood','Преден капак'],['wsf','Предно стъкло'],['roof','Покрив'],['wsr','Задно стъкло'],['trunk','Багажник'],['tl','Стопове'],['rb','Задна броня'],
   ['lf','Лява предна врата/калник'],['lr','Лява задна врата/калник'],['rf','Дясна предна врата/калник'],['rr','Дясна задна врата/калник'],['ml','Ляво огледало'],['mr','Дясно огледало'],
   ['wfl','Предна лява джанта'],['wfr','Предна дясна джанта'],['wrl','Задна лява джанта'],['wrr','Задна дясна джанта'],['other','Друго']];
-/* количка отгоре: натискаш частта и тя става червена */
-function carMap(sel,ro){const on=k=>sel.has(k)?' on':'',P=(k,el)=>el.replace('<','<').replace(/^<(\w+)/,`<$1 class="dz-p${on(k)}"${ro?'':` data-act="dzTog" data-z="${k}"`}`);
-  return `<svg class="dmap${ro?' ro':''}" viewBox="0 -18 200 396" role="img" aria-label="Количка">
-  ${P('wfl','<rect x="12" y="62" width="20" height="48" rx="6"/>')}${P('wfr','<rect x="168" y="62" width="20" height="48" rx="6"/>')}${P('wrl','<rect x="12" y="244" width="20" height="48" rx="6"/>')}${P('wrr','<rect x="168" y="244" width="20" height="48" rx="6"/>')}
-  ${P('ml','<path d="M34 136 L14 132 Q10 140 14 148 L34 146 Z"/>')}${P('mr','<path d="M166 136 L186 132 Q190 140 186 148 L166 146 Z"/>')}
-  ${P('lf','<path d="M34 60 Q36 46 50 40 L50 180 L34 180 Z"/>')}${P('lr','<path d="M34 180 L50 180 L50 322 Q36 316 34 300 Z"/>')}
-  ${P('rf','<path d="M166 60 Q164 46 150 40 L150 180 L166 180 Z"/>')}${P('rr','<path d="M166 180 L150 180 L150 322 Q164 316 166 300 Z"/>')}
-  ${P('fb','<path d="M50 40 Q100 4 150 40 L150 50 L50 50 Z"/>')}${P('hood','<path d="M50 50 L150 50 L150 112 L50 112 Z"/>')}${P('hl','<path d="M54 53 h26 v11 h-26 Z M120 53 h26 v11 h-26 Z"/>')}${P('wsf','<path d="M52 112 L148 112 L140 142 L60 142 Z"/>')}
-  ${P('roof','<rect x="58" y="142" width="84" height="84" rx="6"/>')}${P('wsr','<path d="M60 226 L140 226 L148 252 L52 252 Z"/>')}
-  ${P('trunk','<path d="M50 252 L150 252 L150 304 L50 304 Z"/>')}${P('tl','<path d="M54 304 h24 v10 h-24 Z M122 304 h24 v10 h-24 Z"/>')}
-  ${P('rb','<path d="M50 314 L150 314 L150 322 Q100 352 50 322 Z"/>')}
-  <text x="100" y="-4" class="dm-l">ПРЕД</text><text x="100" y="368" class="dm-l">ЗАД</text></svg>`}
 const DSTAT={new:'Нова',kasko:'Заведена в каско',repair:'В ремонт',resolved:'Оправена'};
+/* количка отгоре с отметки: натискаш кръгчето на частта – става червено с ✓ */
+const DPINS={fb:[[100,8]],hl:[[60,34],[140,34]],hood:[[100,76]],wsf:[[100,128]],roof:[[100,190]],wsr:[[100,250]],trunk:[[100,296]],tl:[[60,334],[140,334]],rb:[[100,356]],
+  lf:[[44,124]],lr:[[44,262]],rf:[[156,124]],rr:[[156,262]],ml:[[16,146]],mr:[[184,146]],wfl:[[22,86]],wfr:[[178,86]],wrl:[[22,282]],wrr:[[178,282]]};
+function carMap(sel,ro){
+  const pins=Object.entries(DPINS).filter(([k])=>!ro||sel.has(k)).map(([k,pts])=>pts.map(([x,y])=>`<g class="pin${sel.has(k)?' on':''}"${ro?'':` data-act="dzTog" data-z="${k}"`} transform="translate(${x} ${y})"><circle r="${ro?9:11}"/><text y="${ro?3.5:4.5}">${sel.has(k)?'✓':'+'}</text></g>`).join('')).join('');
+  return `<svg class="dmap${ro?' ro':''}" viewBox="0 -14 200 388" role="img" aria-label="Количка">
+  <defs><linearGradient id="cb" x1="0" x2="1"><stop offset="0" stop-color="#D9E0EA"/><stop offset=".5" stop-color="#FBFCFE"/><stop offset="1" stop-color="#D9E0EA"/></linearGradient>
+   <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3B4B66"/><stop offset="1" stop-color="#1E2838"/></linearGradient></defs>
+  <ellipse cx="100" cy="186" rx="76" ry="180" fill="rgba(15,35,65,.08)"/>
+  <rect x="24" y="58" width="16" height="56" rx="6" fill="#2B2F36"/><rect x="160" y="58" width="16" height="56" rx="6" fill="#2B2F36"/><rect x="24" y="254" width="16" height="56" rx="6" fill="#2B2F36"/><rect x="160" y="254" width="16" height="56" rx="6" fill="#2B2F36"/>
+  <path d="M62 4 Q100 -6 138 4 Q160 12 162 52 L164 310 Q162 348 138 358 Q100 366 62 358 Q38 348 36 310 L38 52 Q40 12 62 4 Z" fill="url(#cb)" stroke="#9AA8BC" stroke-width="1.6"/>
+  <path d="M50 20 Q100 10 150 20" fill="none" stroke="#B7C2D2" stroke-width="1.2"/>
+  <path d="M46 26 Q52 12 74 10 L78 22 Q60 26 52 36 Z" fill="#FFF7D6" stroke="#C9B26A"/><path d="M154 26 Q148 12 126 10 L122 22 Q140 26 148 36 Z" fill="#FFF7D6" stroke="#C9B26A"/>
+  <path d="M70 46 L74 100 M130 46 L126 100" stroke="#C3CCDA" stroke-width="1.2" fill="none"/>
+  <path d="M50 110 Q100 96 150 110 L141 152 Q100 144 59 152 Z" fill="url(#cg)"/>
+  <rect x="58" y="154" width="84" height="76" rx="12" fill="#EEF2F8" stroke="#C3CCDA"/>
+  <path d="M46 116 L56 154 L56 230 L46 262 Z M154 116 L144 154 L144 230 L154 262 Z" fill="url(#cg)" opacity=".85"/>
+  <path d="M59 232 Q100 240 141 232 L149 268 Q100 278 51 268 Z" fill="url(#cg)"/>
+  <path d="M40 132 L22 140 Q18 146 22 152 L40 150 Z M160 132 L178 140 Q182 146 178 152 L160 150 Z" fill="#3B4B66"/>
+  <path d="M48 340 Q54 352 74 354 L76 344 Q60 342 52 330 Z" fill="#F25C5C"/><path d="M152 340 Q146 352 126 354 L124 344 Q140 342 148 330 Z" fill="#F25C5C"/>
+  <text x="100" y="-2" class="dm-l">ПРЕД</text><text x="100" y="376" class="dm-l">ЗАД</text>${pins}</svg>`}
 const dzSelTxt=z=>{const l=DZONES.filter(([k])=>z.has(k)&&k!=='other').map(x=>x[1]);return l.length?'Отбелязано: <b>'+l.map(esc).join(', ')+'</b>':'<span class="muted">Още нищо не е отбелязано</span>'};
 const chkInline=(name,label,on)=>`<label class="check" style="margin-top:6px"><input type="checkbox" id="f_${name}" name="${name}" ${on?'checked':''}> ${label}</label>`;
 function dzTog(d,el){const f=$('#sheetForm');if(!f)return;const cb=f.querySelector(`input[name="z_${d.z}"]`);if(!cb)return;cb.checked=!cb.checked;
-  f.querySelectorAll(`.dz-p[data-z="${d.z}"]`).forEach(x=>x.classList.toggle('on',cb.checked));
+  f.querySelectorAll(`.pin[data-z="${d.z}"]`).forEach(x=>{x.classList.toggle('on',cb.checked);x.querySelector('text').textContent=cb.checked?'✓':'+'});
   const z=new Set(DZONES.map(x=>x[0]).filter(k=>f.querySelector(`input[name="z_${k}"]`)?.checked));$('#dzSel').innerHTML=dzSelTxt(z)}
 const dmgZones=p=>(p.zones||[]).map(z=>(DZONES.find(x=>x[0]===z)||[,z])[1]).join(', ')||'—';
 const openDamage=guard((carId,id)=>{
@@ -2193,7 +2203,7 @@ function secDamage(c){const L=Object.values(S.problems).filter(p=>isDmg(p)&&p.ca
   return `<div class="card dmg-sum"><h3>Състояние на купето</h3><div class="dmap-w">${carMap(cur,true)}</div><p class="small muted">${act.length?'Червено – неоправени щети':'Няма неоправени щети ✓'}</p></div>
   <button class="btn primary wide" data-act="damage" data-car="${c.id}">💥 Нова щета / ПТП</button>
   ${act.length?`<div class="sec"><h3>Сега · ${act.length}</h3><div class="dmg-l">${act.map(dmgCard).join('')}</div></div>`:'<div class="empty">Колата няма отбелязани щети.</div>'}
-  ${done.length?`<div class="sec"><h3>Оправени · ${done.length}</h3><div class="dmg-l">${done.map(dmgCard).join('')}</div></div>`:''}`}
+  ${done.length?`<div class="sec"><h3>История – оправени щети · ${done.length}</h3><div class="dmg-l">${done.map(dmgCard).join('')}</div></div>`:''}`}
 function vDamageAll(){HEAD={title:'Щети',back:'home'};const ids=scopeIds(),L=Object.values(S.problems).filter(p=>isDmg(p)&&ids.has(p.carId)&&p.status!=='resolved').sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   return L.length?`<div class="dmg-l">${L.map(dmgCard).join('')}</div>`:'<div class="empty">Няма неоправени щети.</div>'}
 function viewDamage(id){const p=S.problems[id];if(!p)return;const c=S.cars[p.carId],m=canManage(c),yes=v=>v===true?'Да':v===false?'Не':'—';
