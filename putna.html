@@ -270,6 +270,9 @@ input[readonly]{background:var(--surface2)}
 #sheet{position:fixed;inset:0;z-index:20;background:rgba(8,18,32,.5);display:flex;align-items:flex-end;justify-content:center}
 .sheet-card{background:var(--bg);width:100%;max-width:640px;max-height:95%;border-radius:20px 20px 0 0;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);padding-bottom:env(safe-area-inset-bottom,0px);overflow:hidden}
 @media (min-width:700px){#sheet{align-items:center}.sheet-card{border-radius:20px;max-height:88%}}
+@media (max-width:899px){#sheet.full{background:var(--bg)}#sheet.full .sheet-card{max-width:none;height:100%;max-height:none!important;border-radius:0!important;box-shadow:none}
+ #sheet.full .sheet-head{padding-top:calc(env(safe-area-inset-top,0px) + 14px)!important;border-radius:0 0 22px 22px}
+ #sheet.full .sheet-head::before{display:none}#sheet.full .sheet-head::after{content:"";width:36px}#sheet.full .sheet-head .x{order:-1;font-size:0;width:36px;background:none!important}#sheet.full .sheet-head .x::before{content:"‹";font-size:30px;line-height:1}}
 .sheet-head{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--navy);color:var(--navy-ink)}
 .sheet-head h2{flex:1;text-align:center}
 .x{border:0;background:rgba(255,255,255,.12);color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;line-height:1}
@@ -1248,12 +1251,15 @@ const lvlPill=l=>l==='crit'?'<span class="pill crit">Критично</span>':l=
 /* ============ sheet ============ */
 let sheetSubmit=null;
 const SHEET_EMO={'Застраховател':'📋','Ремонт':'🔧','Нова щета':'💥','Щета':'💥','Промени щета':'💥','Сутрешен километраж':'🛣️','Пътен запис':'📝','Проблем':'⚠️','Сигнал за проблем':'⚠️','Периодична проверка':'🔍','Проверка на гумите':'🛞','Проверка на светлините':'💡','Сервиз':'🔧','Смяна на гуми':'🛞','Ще управлявам автомобил':'🔑','Документи':'📄','Нова задача':'📋','Ново съобщение':'💬','Настройки':'⚙️','Смяна на парола':'🔒','Друг разход':'💶','Нов автомобил':'🚗','Редактирай автомобил':'🚗','Сервизни интервали':'🗓️','Нов потребител':'👤','Редактирай потребител':'👤'};
+/* тези прозорци на телефона се отварят на цял екран, като отделна страница */
+const FULL_SHEETS=new Set(['Нова щета','Промени щета','Щета','Застраховател','Ремонт']);
 function openSheet(title,html,onSubmit,label='Запази'){
   {const of=$('#sheetForm'),nf=of.cloneNode(false);of.parentNode.replaceChild(nf,of);nf.addEventListener('submit',onSheetSubmit)}
   const em=SHEET_EMO[title];$('#sheetTitle').innerHTML=(em?`<span class="shemo">${em}</span>`:'')+esc(title);
   $('#sheetForm').innerHTML=html+`<div class="err" id="formErr" hidden></div>`+
     (onSubmit?`<div class="sheet-actions"><button type="button" class="btn ghost" data-act="closeSheet">Отказ</button><button type="submit" class="btn go" id="sheetOk">${esc(label)}</button></div>`
              :`<div class="sheet-actions solo"><button type="button" class="btn" data-act="closeSheet">Затвори</button></div>`);
+  $('#sheet').classList.toggle('full',FULL_SHEETS.has(title));
   sheetSubmit=onSubmit;$('#sheet').hidden=false;document.body.classList.add('noscroll');$('#sheetForm').scrollTop=0;
 }
 function closeSheet(){$('#sheet').hidden=true;sheetSubmit=null;document.body.classList.remove('noscroll');$('#sheetForm').innerHTML=''}
