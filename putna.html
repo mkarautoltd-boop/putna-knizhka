@@ -1151,7 +1151,7 @@ function carAlertsRaw(car){
       const good=F.good.includes(vv),L=LVLCAP[vv],what=fk==='ty'?'налягане':'ниво',n0=out.length,at=(tu||lc).date;
       if(vv==='no'){
         const n1=out.length;
-        if(isStaff())out.push({lvl:'warn',kind:'fluid',fluid:fk,key:F.k+':'+lc.id,car,text:'Гуми: не са проверени',sub:`Проверка на ${fd(lc.date)} от ${uname(lc.driver||lc.by)} – гумите са пропуснати`});
+        if(isStaff())out.push({lvl:'warn',kind:'fluid',fluid:fk,noChk:1,key:F.k+':'+lc.id,car,text:'Гуми: не са проверени',sub:`Проверка на ${fd(lc.date)} от ${uname(lc.driver||lc.by)} – гумите са пропуснати`});
         else out.push({lvl:'warn',kind:'fluid',fluid:fk,tyNo:true,key:F.k+':'+lc.id,car,text:'Гуми: не са проверени – провери',sub:'Натисни тук, когато провериш гумите'});
         for(let i=n1;i<out.length;i++)out[i].at=lc.date;
         continue;}
@@ -1169,7 +1169,7 @@ function carAlertsRaw(car){
       if(tu){if(tu.lvl){v=tu.lvl;bad=tu.ltBad||[];fixed=!!tu.fixed;src=tu}else fixed=true}
       const n0=out.length,which=ltNames(bad),key='ltLvl:'+lc.id+(tu?':'+tu.id:''),who=`${fd(src.date)} от ${uname(src.driver||src.by)}`;
       if(v==='no'){
-        if(isStaff())out.push({lvl:'warn',kind:'fluid',fluid:'lt',key,car,text:'Светлини: не са проверени',sub:`Проверка на ${who} – светлините са пропуснати`});
+        if(isStaff())out.push({lvl:'warn',kind:'fluid',fluid:'lt',noChk:1,key,car,text:'Светлини: не са проверени',sub:`Проверка на ${who} – светлините са пропуснати`});
         else out.push({lvl:'warn',kind:'fluid',fluid:'lt',ltNo:true,key,car,text:'Светлини: не са проверени – провери',sub:'Натисни тук, когато провериш светлините'});
       }else if(isStaff())
         out.push({lvl:(v==='ok'||fixed)?'good':'crit',kind:'fluid',fluid:'lt',key,car,text:v==='ok'?'Светлини: всички светят':fixed?'Светлини: сменена крушка':'Светлини: изгоряла крушка',
@@ -1613,7 +1613,7 @@ function alertAct(a){
   if(a.kind==='svc')return m?`data-act="service" data-car="${c}"`:`data-act="openCar" data-car="${c}"`;
   if(a.kind==='tyres')return `data-act="tyres" data-car="${c}"`;
   if(a.kind==='pressure')return `data-act="check" data-car="${c}"`;
-  if(a.kind==='fluid')return isStaff()?`data-act="openCar" data-car="${c}"`:a.tyNo?`data-act="tyCheck" data-car="${c}"`:a.ltNo?`data-act="ltCheck" data-car="${c}"`:`data-act="topup" data-car="${c}" data-fluid="${a.fluid}"`;
+  if(a.kind==='fluid')return isStaff()?(a.lvl==='good'?`data-act="openCar" data-car="${c}"`:a.noChk?`data-act="${a.fluid==='lt'?'ltCheck':'tyCheck'}" data-car="${c}"`:`data-act="topup" data-car="${c}" data-fluid="${a.fluid}"`):a.tyNo?`data-act="tyCheck" data-car="${c}"`:a.ltNo?`data-act="ltCheck" data-car="${c}"`:`data-act="topup" data-car="${c}" data-fluid="${a.fluid}"`;
   if(a.kind==='problem')return `data-act="viewProblem" data-id="${a.id}"`;
   return `data-act="openCar" data-car="${c}"`;
 }
