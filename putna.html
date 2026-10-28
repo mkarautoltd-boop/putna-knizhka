@@ -885,7 +885,9 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .dmg img,.dmg .dmg-ic{flex:none;width:52px;height:52px;border-radius:12px;object-fit:cover;background:#FFF1E0;display:grid;place-items:center;font-size:26px}
 .dmg-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.dmg-t b{font-size:15px}.dmg-t small{font-size:12.5px;color:#5B6778}
 .dmg-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}.dmg-tags i{font-style:normal;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:99px;background:#EEF1F6;color:#5B6778}
-.dmg-tags i.st.new{background:#FFF1E0;color:#B45F00}.dmg-tags i.st.kasko,.dmg-tags i.ks{background:#E7EEFF;color:#2E55D6}.dmg-tags i.st.repair{background:#F3E8FF;color:#7C3AED}.dmg-tags i.st.resolved{background:#E6F7EC;color:#1A8A4B}
+.dmg-tags i.st.new{background:#FFF1E0;color:#B45F00}.dmg-tags i.st.claim,.dmg-tags i.ks{background:#E7EEFF;color:#2E55D6}.dmg-tags i.st.partial{background:#F3E8FF;color:#7C3AED}
+.dmap .pin.fx circle{fill:#1FA35A;stroke:#fff}.dmap .pin.fx text{fill:#fff;font-size:13px}
+.dsteps{display:flex;gap:6px;margin:4px 0 2px}.dsteps span{flex:1;text-align:center;font-size:11.5px;font-weight:700;padding:7px 4px;border-radius:10px;background:#EEF1F6;color:#8A97AB}.dsteps span.ok{background:#E6F7EC;color:#1A8A4B}.dsteps span.cur{background:#FFF1E0;color:#B45F00}.dmg-tags i.st.resolved{background:#E6F7EC;color:#1A8A4B}
 .nokm-l{display:flex;flex-direction:column;gap:8px}
 .nk-top{display:flex;align-items:center;gap:10px;width:100%;margin-bottom:12px;padding:12px 14px;border:2px solid #FFD8A8;border-radius:16px;background:linear-gradient(90deg,#FFF3E0,#fff 80%);font:inherit;color:inherit;text-align:left;cursor:pointer}
 .nk-top span{font-size:22px}.nk-top b{flex:1;color:#B45F00;font-size:15.5px}.nk-top i{font-style:normal;font-size:22px;color:#B45F00}
@@ -1245,7 +1247,7 @@ const lvlPill=l=>l==='crit'?'<span class="pill crit">Критично</span>':l=
 
 /* ============ sheet ============ */
 let sheetSubmit=null;
-const SHEET_EMO={'Нова щета':'💥','Щета':'💥','Промени щета':'💥','Сутрешен километраж':'🛣️','Пътен запис':'📝','Проблем':'⚠️','Сигнал за проблем':'⚠️','Периодична проверка':'🔍','Проверка на гумите':'🛞','Проверка на светлините':'💡','Сервиз':'🔧','Смяна на гуми':'🛞','Ще управлявам автомобил':'🔑','Документи':'📄','Нова задача':'📋','Ново съобщение':'💬','Настройки':'⚙️','Смяна на парола':'🔒','Друг разход':'💶','Нов автомобил':'🚗','Редактирай автомобил':'🚗','Сервизни интервали':'🗓️','Нов потребител':'👤','Редактирай потребител':'👤'};
+const SHEET_EMO={'Застраховател':'📋','Ремонт':'🔧','Нова щета':'💥','Щета':'💥','Промени щета':'💥','Сутрешен километраж':'🛣️','Пътен запис':'📝','Проблем':'⚠️','Сигнал за проблем':'⚠️','Периодична проверка':'🔍','Проверка на гумите':'🛞','Проверка на светлините':'💡','Сервиз':'🔧','Смяна на гуми':'🛞','Ще управлявам автомобил':'🔑','Документи':'📄','Нова задача':'📋','Ново съобщение':'💬','Настройки':'⚙️','Смяна на парола':'🔒','Друг разход':'💶','Нов автомобил':'🚗','Редактирай автомобил':'🚗','Сервизни интервали':'🗓️','Нов потребител':'👤','Редактирай потребител':'👤'};
 function openSheet(title,html,onSubmit,label='Запази'){
   {const of=$('#sheetForm'),nf=of.cloneNode(false);of.parentNode.replaceChild(nf,of);nf.addEventListener('submit',onSheetSubmit)}
   const em=SHEET_EMO[title];$('#sheetTitle').innerHTML=(em?`<span class="shemo">${em}</span>`:'')+esc(title);
@@ -2138,12 +2140,13 @@ const isDmg=p=>p&&p.kind==='damage';
 const DZONES=[['fb','Предна броня'],['hl','Фарове'],['hood','Преден капак'],['wsf','Предно стъкло'],['roof','Покрив'],['wsr','Задно стъкло'],['trunk','Багажник'],['tl','Стопове'],['rb','Задна броня'],
   ['lf','Лява предна врата/калник'],['lr','Лява задна врата/калник'],['rf','Дясна предна врата/калник'],['rr','Дясна задна врата/калник'],['ml','Ляво огледало'],['mr','Дясно огледало'],
   ['wfl','Предна лява джанта'],['wfr','Предна дясна джанта'],['wrl','Задна лява джанта'],['wrr','Задна дясна джанта'],['other','Друго']];
-const DSTAT={new:'Нова',kasko:'Заведена в каско',repair:'В ремонт',resolved:'Оправена'};
+const DSTAT={new:'Отбелязана',claim:'Заведена при застраховател',partial:'Частично оправена',resolved:'Оправена'};
+const DINS={kasko:'Каско',go:'Гражданска на виновния',other:'Друго'};
 /* количка отгоре с отметки: натискаш кръгчето на частта – става червено с ✓ */
 const DPINS={fb:[[100,8]],hl:[[60,34],[140,34]],hood:[[100,76]],wsf:[[100,128]],roof:[[100,190]],wsr:[[100,250]],trunk:[[100,296]],tl:[[60,334],[140,334]],rb:[[100,356]],
   lf:[[44,124]],lr:[[44,262]],rf:[[156,124]],rr:[[156,262]],ml:[[16,146]],mr:[[184,146]],wfl:[[22,86]],wfr:[[178,86]],wrl:[[22,282]],wrr:[[178,282]]};
-function carMap(sel,ro){
-  const pins=Object.entries(DPINS).filter(([k])=>!ro||sel.has(k)).map(([k,pts])=>pts.map(([x,y])=>`<g class="pin${sel.has(k)?' on':''}"${ro?'':` data-act="dzTog" data-z="${k}"`} transform="translate(${x} ${y})"><circle r="${ro?9:11}"/><text y="${ro?3.5:4.5}">${sel.has(k)?'✓':'+'}</text></g>`).join('')).join('');
+function carMap(sel,ro,o={}){const fx=o.fixed||new Set(),act=o.act||'dzTog',keys=k=>o.only?o.only.has(k):(!ro||sel.has(k)||fx.has(k));
+  const pins=Object.entries(DPINS).filter(([k])=>keys(k)).map(([k,pts])=>pts.map(([x,y])=>{const c=fx.has(k)?'fx':sel.has(k)?'on':'',t=fx.has(k)?'✓':sel.has(k)?(o.only?'!':'✓'):'+';return `<g class="pin${c?' '+c:''}"${ro&&!o.only?'':` data-act="${act}" data-z="${k}"`} transform="translate(${x} ${y})"><circle r="${ro&&!o.only?9:11}"/><text y="${ro&&!o.only?3.5:4.5}">${t}</text></g>`}).join('')).join('');
   return `<svg class="dmap${ro?' ro':''}" viewBox="0 -14 200 388" role="img" aria-label="Количка">
   <defs><linearGradient id="cb" x1="0" x2="1"><stop offset="0" stop-color="#D9E0EA"/><stop offset=".5" stop-color="#FBFCFE"/><stop offset="1" stop-color="#D9E0EA"/></linearGradient>
    <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3B4B66"/><stop offset="1" stop-color="#1E2838"/></linearGradient></defs>
@@ -2176,18 +2179,16 @@ const openDamage=guard((carId,id)=>{
    <div hidden>${DZONES.map(([k])=>`<input type="checkbox" name="z_${k}" ${z.has(k)?'checked':''}>`).join('')}</div>${chkInline('z_other_v','Друго (опиши долу)',z.has('other'))}</fieldset>
   ${fld('Описание',ta('info',p?.info||''),'Напр. „одраскана задна лява врата, вдлъбнатина“')}
   <fieldset id="dmgCrash"${(p?.dtype||'body')==='crash'?'':' hidden'}><legend>ПТП</legend>
-   <div class="grid2">${fld('Двустранен протокол',yn('bilateral',p?.bilateral))}${fld('Полиция',yn('police',p?.police))}</div>
-   ${fld('Виновен',sel('fault',[['','—'],['us','Нашият шофьор'],['other','Другият участник'],['unknown','Неясно']],p?.fault||''))}</fieldset>
-  ${staff?`<fieldset><legend>Каско</legend>${chk('kasko','Заведена в каско',!!p?.kasko)}${fld('Номер на щетата',inp('kaskoNo',p?.kaskoNo||'','text','placeholder="по желание"'))}</fieldset>`:''}
+   ${fld('Кой е виновен',sel('fault',[['','—'],['us','Нашият шофьор'],['other','Другият участник'],['unknown','Неясно']],p?.fault||''))}
+   <div class="grid2">${fld('Двустранен протокол',yn('bilateral',p?.bilateral))}${fld('Полиция',yn('police',p?.police))}</div></fieldset>
   ${p?'':fld('Снимка (по желание)','<input type="file" id="f_photo" name="photo" accept="image/*">')}`,async f=>{
     f.z_other=!!f.z_other_v;const zones=DZONES.map(x=>x[0]).filter(k=>f['z_'+k]);if(!zones.length)fail('Натисни на количката къде е повредено.');
     const b3=v=>v==='yes'?true:v==='no'?false:null,data={dtype:f.dtype,date:f.date,km:num(f.km),zones,info:f.info.trim(),cat:f.dtype==='crash'?'ПТП':'Щета по купето',desc:zones.map(k=>DZONES.find(x=>x[0]===k)[1]).join(', '),priority:f.dtype==='crash'?'high':'mid',
       bilateral:f.dtype==='crash'?b3(f.bilateral):null,police:f.dtype==='crash'?b3(f.police):null,fault:f.dtype==='crash'?(f.fault||null):null};
-    if(staff){data.kasko=!!f.kasko;data.kaskoNo=(f.kaskoNo||'').trim();}
-    if(p){const sh=[...(p.statusHist||[])];if(staff&&data.kasko&&!p.kasko&&p.status==='new'){data.status='kasko';sh.push({status:'kasko',ts:new Date().toISOString(),by:meId})}data.statusHist=sh;
+    if(p){data.fixed=(p.fixed||[]).filter(k=>zones.includes(k));
       await withRetry(()=>db.doc('problems/'+p.id).update(clean(data)));toast('Щетата е променена');return}
     let photo=null;if(f.photo&&f.photo[0])photo=await compressImage(f.photo[0]);
-    const nid=uid(),st=staff&&data.kasko?'kasko':'new';
+    const nid=uid(),st='new';
     await withRetry(()=>db.doc('problems/'+nid).set(clean({...data,kind:'damage',carId:f.car,photo,status:st,by:meId,ts:new Date().toISOString(),statusHist:[{status:st,ts:new Date().toISOString(),by:meId}]})));
     toast('Щетата е записана');
   },p?'Запази':'Запиши щетата');
@@ -2197,29 +2198,50 @@ const openDamage=guard((carId,id)=>{
 function dmgCard(p){const c=S.cars[p.carId],done=p.status==='resolved';
   return `<button class="dmg${done?' done':''}${p.dtype==='crash'?' crash':''}" data-act="viewDamage" data-id="${p.id}">${p.photo?`<img src="${p.photo}" alt="">`:`<span class="dmg-ic">${p.dtype==='crash'?'💥':'🚗'}</span>`}
    <span class="dmg-t"><b>${p.dtype==='crash'?'ПТП':'Щета'}: ${esc(dmgZones(p))}</b>${p.info?`<small>${esc(p.info)}</small>`:''}<small>${fd(p.date)} · ${esc(uname(p.by))}${R.tab!=='car'?' · '+esc(regText(c?.reg)):''}</small>
-   <span class="dmg-tags"><i class="st ${p.status}">${DSTAT[p.status]||'Нова'}</i>${p.dtype==='crash'&&p.bilateral!=null?`<i>${p.bilateral?'Двустранен протокол':'Без двустранен'}</i>`:''}${p.kasko?`<i class="ks">Каско${p.kaskoNo?' № '+esc(p.kaskoNo):''}</i>`:''}</span></span></button>`}
+   <span class="dmg-tags"><i class="st ${p.status}">${DSTAT[p.status]||'Нова'}</i>${p.dtype==='crash'&&p.bilateral!=null?`<i>${p.bilateral?'Двустранен протокол':'Без двустранен'}</i>`:''}${p.claim?`<i class="ks">${esc(DINS[p.claim.ins]||'')}${p.claim.no?' № '+esc(p.claim.no):''}</i>`:''}${p.status==='partial'?`<i>Оправени ${(p.fixed||[]).length} от ${(p.zones||[]).length}</i>`:''}</span></span></button>`}
 function secDamage(c){const L=Object.values(S.problems).filter(p=>isDmg(p)&&p.carId===c.id).sort((a,b)=>(b.date||'').localeCompare(a.date||'')),act=L.filter(p=>p.status!=='resolved'),done=L.filter(p=>p.status==='resolved');
-  const cur=new Set(act.flatMap(p=>p.zones||[]));
+  const cur=new Set(act.flatMap(p=>(p.zones||[]).filter(z=>!(p.fixed||[]).includes(z))));
   return `<div class="card dmg-sum"><h3>Състояние на купето</h3><div class="dmap-w">${carMap(cur,true)}</div><p class="small muted">${act.length?'Червено – неоправени щети':'Няма неоправени щети ✓'}</p></div>
   <button class="btn primary wide" data-act="damage" data-car="${c.id}">💥 Нова щета / ПТП</button>
   ${act.length?`<div class="sec"><h3>Сега · ${act.length}</h3><div class="dmg-l">${act.map(dmgCard).join('')}</div></div>`:'<div class="empty">Колата няма отбелязани щети.</div>'}
   ${done.length?`<div class="sec"><h3>История – оправени щети · ${done.length}</h3><div class="dmg-l">${done.map(dmgCard).join('')}</div></div>`:''}`}
 function vDamageAll(){HEAD={title:'Щети',back:'home'};const ids=scopeIds(),L=Object.values(S.problems).filter(p=>isDmg(p)&&ids.has(p.carId)&&p.status!=='resolved').sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   return L.length?`<div class="dmg-l">${L.map(dmgCard).join('')}</div>`:'<div class="empty">Няма неоправени щети.</div>'}
-function viewDamage(id){const p=S.problems[id];if(!p)return;const c=S.cars[p.carId],m=canManage(c),yes=v=>v===true?'Да':v===false?'Не':'—';
+function viewDamage(id){const p=S.problems[id];if(!p)return;const c=S.cars[p.carId],m=canManage(c),yes=v=>v===true?'Да':v===false?'Не':'—',fixed=new Set(p.fixed||[]),zs=new Set(p.zones||[]);
   const hist=(p.statusHist||[]).map(s=>`<div class="li"><div class="l"><b style="font-weight:500">${DSTAT[s.status]||s.status}${s.note?': '+esc(s.note):''}</b><span>${fts(s.ts)} · ${esc(uname(s.by))}</span></div></div>`).join('');
+  const st=p.status,step=(n,l,done,cur)=>`<span class="${done?'ok':cur?'cur':''}">${done?'✓ ':n+'. '}${l}</span>`;
   const html=`<div class="row">${plate(c?.reg)}<span class="small muted">${esc(carName(c))}</span></div>
-  <div class="panel"><b>${p.dtype==='crash'?'ПТП':'Щета по купето'}: ${esc(dmgZones(p))}</b>${p.info?`<p>${esc(p.info)}</p>`:''}<span class="small muted">${fd(p.date)} · ${fint(p.km)} км · ${esc(uname(p.by))}</span><div class="dmap-w sm">${carMap(new Set(p.zones||[]),true)}</div>${p.photo?`<img class="photo" src="${p.photo}" alt="Снимка на щетата">`:''}</div>
-  <div class="kv">${p.dtype==='crash'?`<div><span>Двустранен протокол</span><b>${yes(p.bilateral)}</b></div><div><span>Полиция</span><b>${yes(p.police)}</b></div><div><span>Виновен</span><b>${{us:'Нашият шофьор',other:'Другият участник',unknown:'Неясно'}[p.fault]||'—'}</b></div>`:''}
-   <div><span>Каско</span><b>${p.kasko?'Заведена'+(p.kaskoNo?' № '+esc(p.kaskoNo):''):'Не'}</b></div><div><span>Статус</span><b>${DSTAT[p.status]||'Нова'}</b></div></div>
+  <div class="dsteps">${step(1,'Отбелязана',true)}${step(2,'Застраховател',!!p.claim,!p.claim)}${step(3,'Ремонт',st==='resolved',!!p.claim&&st!=='resolved')}</div>
+  <div class="panel"><b>${p.dtype==='crash'?'ПТП':'Щета по купето'}: ${esc(dmgZones(p))}</b>${p.info?`<p>${esc(p.info)}</p>`:''}<span class="small muted">${fd(p.date)} · ${fint(p.km)} км · ${esc(uname(p.by))}</span>
+   <div class="dmap-w sm">${carMap(new Set([...zs].filter(z=>!fixed.has(z))),true,{fixed})}</div>${fixed.size?`<p class="small" style="text-align:center;margin:0"><span style="color:#C92A2A">● повредено</span> · <span style="color:#1A8A4B">● оправено</span></p>`:''}${p.photo?`<img class="photo" src="${p.photo}" alt="Снимка на щетата">`:''}</div>
+  <div class="kv">${p.dtype==='crash'?`<div><span>Виновен</span><b>${{us:'Нашият шофьор',other:'Другият участник',unknown:'Неясно'}[p.fault]||'—'}</b></div><div><span>Двустранен протокол</span><b>${yes(p.bilateral)}</b></div><div><span>Полиция</span><b>${yes(p.police)}</b></div>`:''}
+   <div><span>Застраховател</span><b>${p.claim?esc(DINS[p.claim.ins]||'')+(p.claim.company?' · '+esc(p.claim.company):'')+(p.claim.no?' · № '+esc(p.claim.no):''):'Не е заведена'}</b></div><div><span>Статус</span><b>${DSTAT[st]||'Отбелязана'}</b></div></div>
+  ${st!=='resolved'?`<div class="grid2">${!p.claim?`<button type="button" class="btn sm primary" data-act="dmgClaim" data-id="${p.id}">📋 Заведена при застраховател</button>`:`<button type="button" class="btn sm" data-act="dmgClaim" data-id="${p.id}">📋 Промени застраховател</button>`}<button type="button" class="btn sm go" data-act="dmgRepair" data-id="${p.id}">🔧 Отбележи ремонт</button></div>`:''}
   ${hist?`<div class="sec"><h3>Ход</h3><div class="list">${hist}</div></div>`:''}
-  ${m?`<fieldset><legend>Промени статуса</legend>${fld('Статус',sel('status',Object.entries(DSTAT),p.status))}${fld('Бележка',inp('note','','text','placeholder="напр. в сервиз Авто Мастер"'))}</fieldset>
-  <div class="grid2"><button type="button" class="btn sm" data-act="editDamage" data-id="${p.id}">Редактирай</button>${p.status!=='resolved'?`<button type="button" class="btn sm go" data-act="fixDamage" data-id="${p.id}">✓ Оправена</button>`:''}</div>`:''}`;
-  openSheet('Щета',html,m?async f=>{if(f.status===p.status&&!f.note.trim())return;
-    const sh=[...(p.statusHist||[]),{status:f.status,note:f.note.trim(),ts:new Date().toISOString(),by:meId}];
-    await withRetry(()=>db.doc('problems/'+id).update({status:f.status,statusHist:sh}));toast(f.status==='resolved'?'Щетата е отбелязана като оправена':'Статусът е обновен')}:null)}
-async function fixDamage(id){const p=S.problems[id];if(!p)return;const sh=[...(p.statusHist||[]),{status:'resolved',ts:new Date().toISOString(),by:meId}];
-  try{await withRetry(()=>db.doc('problems/'+id).update({status:'resolved',statusHist:sh}));closeSheet();toast('Щетата е изчистена ✓');fxSaved()}catch(e){toast(dbMsg(e))}}
+  ${m?`<button type="button" class="linkbtn" data-act="editDamage" data-id="${p.id}">Редактирай щетата</button>`:''}`;
+  openSheet('Щета',html,null)}
+const dmgHist=(p,status,note)=>[...(p.statusHist||[]),{status,note:note||'',ts:new Date().toISOString(),by:meId}];
+function openClaim(id){const p=S.problems[id];if(!p)return;const cl=p.claim||{};
+  openSheet('Застраховател',`${fld('Къде е заведена',sel('ins',Object.entries(DINS),cl.ins||(p.fault==='other'?'go':'kasko')))}
+  ${fld('Застрахователна компания',inp('company',cl.company||'','text','placeholder="напр. ДЗИ, Булстрад"'))}
+  <div class="grid2">${fld('Номер на щетата',inp('no',cl.no||'','text','placeholder="по желание"'))}${fld('Дата',inp('date',cl.date||today(),'date'))}</div>`,async f=>{
+    const claim={ins:f.ins,company:f.company.trim(),no:f.no.trim(),date:f.date,by:meId};
+    const status=p.status==='new'?'claim':p.status;
+    await withRetry(()=>db.doc('problems/'+id).update(clean({claim,status,statusHist:dmgHist(p,'claim',[DINS[f.ins],claim.company,claim.no&&'№ '+claim.no].filter(Boolean).join(' · '))})));toast('Отбелязано: заведена при застраховател')},'Запиши')}
+function openRepair(id){const p=S.problems[id];if(!p)return;const zs=new Set(p.zones||[]),fx=new Set(p.fixed||[]);
+  openSheet('Ремонт',`<p class="small muted">Натисни частите, които са <b>оправени</b> – стават зелени. Червените остават за ремонт.</p>
+  <div class="dmap-w">${carMap(new Set([...zs].filter(z=>!fx.has(z))),false,{only:zs,fixed:fx,act:'rpTog'})}</div><div class="dz-sel" id="rpSel"></div>
+  <div hidden>${[...zs].map(k=>`<input type="checkbox" name="fx_${k}" ${fx.has(k)?'checked':''}>`).join('')}</div>
+  <button type="button" class="btn sm" data-act="rpAll" style="width:100%">Всичко е оправено</button>
+  ${fld('Бележка',inp('note','','text','placeholder="напр. сервиз Авто Мастер, боядисана броня"'))}`,async f=>{
+    const fixed=[...zs].filter(k=>f['fx_'+k]),all=fixed.length===zs.size,status=all?'resolved':fixed.length?'partial':p.status;
+    await withRetry(()=>db.doc('problems/'+id).update({fixed,status,statusHist:dmgHist(p,status,(fixed.length?'оправено: '+fixed.map(k=>DZONES.find(x=>x[0]===k)?.[1]||k).join(', '):'')+(f.note.trim()?' · '+f.note.trim():''))}));
+    toast(all?'Щетата е оправена ✓':'Ремонтът е отбелязан')},'Запиши ремонта');rpUpd()}
+function rpUpd(){const f=$('#sheetForm');if(!f)return;const all=[...f.querySelectorAll('input[name^="fx_"]')],ok=all.filter(x=>x.checked).map(x=>DZONES.find(d=>d[0]===x.name.slice(3))?.[1]);
+  $('#rpSel').innerHTML=ok.length?`Оправени ${ok.length} от ${all.length}: <b style="color:#1A8A4B">${ok.map(esc).join(', ')}</b>`:'<span class="muted">Още нищо не е отбелязано като оправено</span>'}
+function rpTog(d){const f=$('#sheetForm'),cb=f&&f.querySelector(`input[name="fx_${d.z}"]`);if(!cb)return;cb.checked=!cb.checked;
+  f.querySelectorAll(`.pin[data-z="${d.z}"]`).forEach(x=>{x.classList.toggle('fx',cb.checked);x.classList.toggle('on',!cb.checked);x.querySelector('text').textContent=cb.checked?'✓':'!'});rpUpd()}
+function rpAll(){const f=$('#sheetForm');f.querySelectorAll('input[name^="fx_"]').forEach(cb=>{if(!cb.checked)rpTog({z:cb.name.slice(3)})})}
 function viewProblem(id){
   const p=S.problems[id];if(!p)return;const c=S.cars[p.carId],m=canManage(c);
   const hist=(p.statusHist||[]).map(s=>`<div class="li"><div class="l"><b style="font-weight:500">${PSTAT[s.status]}${s.note?': '+esc(s.note):''}</b><span>${fts(s.ts)} · ${esc(uname(s.by))}</span></div></div>`).join('');
@@ -3012,7 +3034,7 @@ const ACT={
   closeSheet:closeSheet,
   morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
   takeover:d=>openTakeover(d.car),endSession:d=>openEndSession(d.car),viewProblem:d=>viewProblem(d.id),
-  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),docCheck:(d,b)=>checkDoc(d.car,d.k,b),qaToggle:(d,b)=>qaToggle(b),noKm:()=>openNoKm(),seenProblem:d=>seenProblem(d.id),dzTog:(d,b)=>dzTog(d,b),damage:d=>openDamage(d.car),viewDamage:d=>viewDamage(d.id),editDamage:d=>openDamage(null,d.id),fixDamage:d=>fixDamage(d.id),calNav:d=>calNav(d.k),calDay:d=>{R.calD=d.d;R.calM=d.d.slice(0,7);render()},bookCal:d=>bookCal(d.id),alToggle:(d,b)=>alToggle(d,b),newBook:d=>openBook(d.car),editBook:d=>openBook(null,d.id),viewBook:d=>viewBook(d.id),seenBook:d=>seenBook(d.id),doneBook:d=>doneBook(d.id),loadOld:d=>loadOld(null,d.car),
+  editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),docCheck:(d,b)=>checkDoc(d.car,d.k,b),qaToggle:(d,b)=>qaToggle(b),noKm:()=>openNoKm(),seenProblem:d=>seenProblem(d.id),dzTog:(d,b)=>dzTog(d,b),damage:d=>openDamage(d.car),viewDamage:d=>viewDamage(d.id),editDamage:d=>openDamage(null,d.id),dmgClaim:d=>openClaim(d.id),dmgRepair:d=>openRepair(d.id),rpTog:d=>rpTog(d),rpAll:()=>rpAll(),calNav:d=>calNav(d.k),calDay:d=>{R.calD=d.d;R.calM=d.d.slice(0,7);render()},bookCal:d=>bookCal(d.id),alToggle:(d,b)=>alToggle(d,b),newBook:d=>openBook(d.car),editBook:d=>openBook(null,d.id),viewBook:d=>viewBook(d.id),seenBook:d=>seenBook(d.id),doneBook:d=>doneBook(d.id),loadOld:d=>loadOld(null,d.car),
   newTask:openNewTask,doneTask:d=>doneTask(d.id),delEntry:d=>delEntry(d.car,d.id),
   editUser:d=>openEditUser(d.id),editDept:d=>openEditDept(d.id),editSettings:openSettings,myPass:openMyPass,demo:loadDemo,csv:downloadCsv,
   logout:()=>{if(WQ.length){toast('Изчакай – има записи, които още се изпращат.');flushQ();return}const t=TOKEN;logoutLocal();if(t)gs('logout',t).catch(()=>{})},
