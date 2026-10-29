@@ -1470,13 +1470,13 @@ function vMyCar(){
 }
 const q4Btn=(a,c,i,l,attr='',n=0)=>`<button class="q4b ${c}" data-act="${a}" ${attr}><span class="q4i">${QT_EMO[l]||icon(i)}</span><b>${QT_SHY[l]||l}</b>${n?`<i class="q4n">${n}</i>`:''}</button>`;
 function myCarTiles(car){const cid=`data-car="${car.id}"`;
-  const t=[['morning','purple','road','Километраж'],['fuel','blue','fuel','Зареждане'],['check','green','tyre','Проверка'],['problem','orange','alert','Проблем'],['trip','grey','doc','Пътен запис'],['myBook','navy','doc','Книжка']];
+  const t=[['morning','purple','road','Километраж'],['fuel','blue','fuel','Зареждане'],['check','green','tyre','Проверка'],['problem','orange','alert','Проблем'],['trip','grey','doc','Пътен запис'],['myBook','navy','doc','Книжка'],['carDocs','grey','doc','Документи'],['carSvc','blue','wrench','Сервиз']];
   return `<div class="q4">${t.map(([a,c,i,l])=>q4Btn(a,c,i,l,cid)).join('')}</div>`}
 function actionTiles(car){
   const cid=car?`data-car="${car.id}"`:'';
   const t=[['fuel','blue','fuel','Зареждане'],['morning','purple','road','Километраж'],['check','green','tyre','Проверка'],['problem','orange','alert','Проблем']];
   if(isStaff())t.push(['trip','grey','doc','Пътен запис'],['takeover','navy','wheel','Ще управлявам']);
-  else t.push(['carDocs','grey','doc','Документи'],['tab" data-k="tasks','red','tasks','Моите задачи']);
+  else t.push(['carDocs','grey','doc','Документи'],...(car?[['carSvc','navy','wrench','Сервиз'],['myBook','purple','doc','Книжка']]:[]),['tab" data-k="tasks','red','tasks','Моите задачи']);
   const n=!isStaff()&&car?allAlerts().filter(a=>a.car.id===car.id&&!isRead(a)).length:0;
   return `<div class="q4">${t.map(([a,c,i,l])=>q4Btn(a,c,i,l,cid,a.startsWith('tab')&&n?n:0)).join('')}</div>`+
     `<button class="dmgb" data-act="damage" ${cid}><span>💥</span>Щета или ПТП<span class="dmgb-a">›</span></button>`+
@@ -3089,6 +3089,7 @@ async function printPdf(){
 /* ============ events ============ */
 const ACT={
   tab:d=>{R.tab=d.k;if(d.k==='cal'){R.calD=R.calM=null;try{localStorage.setItem('pk_cal_seen',today())}catch(e){}}if(d.k==='cars')R.carBack='cars';toTop();render()},
+  carSvc:d=>{R.carBack=R.tab;R.tab='car';R.carId=d.car;R.carSec='service';toTop();render()},
   myBook:d=>{R.carBack=R.tab;R.tab='car';R.carId=d.car;R.carSec='book';toTop();render()},
   openCar:d=>{R.carBack=R.tab==='car'?R.carBack:R.tab;R.tab='car';R.carId=d.car;R.listCar=d.car;R.carSec='overview';toTop();render()},
   carSec:d=>{R.carSec=d.k;render()},
