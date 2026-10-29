@@ -1262,7 +1262,7 @@ const lvlPill=l=>l==='crit'?'<span class="pill crit">Критично</span>':l=
 
 /* ============ sheet ============ */
 let sheetSubmit=null;
-const SHEET_EMO={'Застраховател':'📋','Ремонт':'🔧','Нова щета':'💥','Щета':'💥','Промени щета':'💥','Сутрешен километраж':'🛣️','Пътен запис':'📝','Проблем':'⚠️','Сигнал за проблем':'⚠️','Периодична проверка':'🔍','Проверка на гумите':'🛞','Проверка на светлините':'💡','Сервиз':'🔧','Смяна на гуми':'🛞','Ще управлявам автомобил':'🔑','Документи':'📄','Нова задача':'📋','Ново съобщение':'💬','Настройки':'⚙️','Смяна на парола':'🔒','Друг разход':'💶','Нов автомобил':'🚗','Редактирай автомобил':'🚗','Сервизни интервали':'🗓️','Нов потребител':'👤','Редактирай потребител':'👤'};
+const SHEET_EMO={'Застраховател':'📋','Ремонт':'🔧','Нова щета':'💥','Щета':'💥','Промени щета':'💥','Сутрешен километраж':'🛣️','Километраж при поемане':'🛣️','Пътен запис':'📝','Проблем':'⚠️','Сигнал за проблем':'⚠️','Периодична проверка':'🔍','Проверка на гумите':'🛞','Проверка на светлините':'💡','Сервиз':'🔧','Смяна на гуми':'🛞','Ще управлявам автомобил':'🔑','Документи':'📄','Нова задача':'📋','Ново съобщение':'💬','Настройки':'⚙️','Смяна на парола':'🔒','Друг разход':'💶','Нов автомобил':'🚗','Редактирай автомобил':'🚗','Сервизни интервали':'🗓️','Нов потребител':'👤','Редактирай потребител':'👤'};
 /* тези прозорци на телефона се отварят на цял екран, като отделна страница */
 const FULL_SHEETS=new Set(['Нова щета','Промени щета','Щета','Застраховател','Ремонт']);
 function openSheet(title,html,onSubmit,label='Запази'){
@@ -1659,7 +1659,7 @@ function alertAct(a){
 }
 function tripLi(e){
   if(e.idle){const c=S.cars[e.carId];return `<div class="li idle"><div class="l"><b style="color:var(--muted)">Не е карана</b><span>${fd(e.date)}${R.tab!=='car'?' · '+esc(regText(c?.reg)):''} · изчислено автоматично</span><span class="num">Километраж: ${fint(e.reading)}</span></div><div class="r"><b class="num" style="color:var(--muted)">0 км</b></div></div>`}
-  const c=S.cars[e.carId],desc=e.route||[e.from,e.to].filter(Boolean).join(' – ')||(e.morning?'Начален километраж':'Без маршрут');
+  const c=S.cars[e.carId],desc=e.route||[e.from,e.to].filter(Boolean).join(' – ')||(e.morning?(multiDrv(c)?'Километраж при поемане':'Начален километраж'):'Без маршрут');
   const tags=[e.temp?'<span class="pill acc">Временно</span>':'',e.by&&e.by!==e.driver?`<span class="small muted">въвел: ${esc(uname(e.by))}</span>`:''].join(' ');
   return `<div class="li"><div class="l"><b>${esc(desc)}</b><span>${fd(e.date)}${e.time?' '+esc(e.time):''} · ${esc(uname(e.driver))}${R.tab!=='car'?' · '+esc(regText(c?.reg)):''}${e.purpose?' · '+esc(e.purpose):''}</span><span class="num">${e.morning?`Начален: ${fint(e.startKm)}${e.pending?'':' → следващ: '+fint(e.endKm)}`:`${fint(e.startKm)} → ${fint(e.endKm)}`}</span></div>
   <div class="r">${e.morning&&e.pending?'<span class="small muted" style="text-align:right">км за деня –<br>при следващия запис</span>':`<b class="num">${fint(e.km)} км</b>`}${tags}${isAdmin()||(isMgr()&&canManage(c))?`<button class="linkbtn small" data-act="delEntry" data-car="${e.carId}" data-id="${e.id}">Изтрий</button>`:''}</div></div>`;
@@ -2030,7 +2030,7 @@ function vDepts(){
   const ds=Object.values(S.depts).sort((a,b)=>a.name.localeCompare(b.name,'bg'));
   HEAD={title:'Отдели',back:'more',plus:'editDept'};
   return `
-  ${ds.length?`<div class="list">${ds.map(d=>{const nc=Object.values(S.cars).filter(c=>c.dept===d.id&&c.active!==false).length,nu=Object.values(S.users).filter(u=>u.dept===d.id&&u.active!==false).length;return `<div class="li"><div class="l"><b>${esc(d.name)}</b><span>${nc} автомобила · ${nu} потребителя</span></div><div class="r"><button class="btn sm" data-act="editDept" data-id="${d.id}">Преименувай</button></div></div>`}).join('')}</div>`:'<div class="empty">Няма отдели. Създай първия отдел, преди да добавяш автомобили.</div>'}`;
+  ${ds.length?`<div class="list">${ds.map(d=>{const nc=Object.values(S.cars).filter(c=>c.dept===d.id&&c.active!==false).length,nu=Object.values(S.users).filter(u=>u.dept===d.id&&u.active!==false).length;return `<div class="li"><div class="l"><b>${esc(d.name)}</b><span>${nc} автомобила · ${nu} потребителя${d.multi?' · няколко шофьора на ден':''}</span></div><div class="r"><button class="btn sm" data-act="editDept" data-id="${d.id}">Преименувай</button></div></div>`}).join('')}</div>`:'<div class="empty">Няма отдели. Създай първия отдел, преди да добавяш автомобили.</div>'}`;
 }
 function vSettings(){
   if(!isAdmin()){R.tab='more';return vMore()}
@@ -2061,24 +2061,27 @@ function driverField(car,val){
 function guard(fn){return(...a)=>{try{return fn(...a)}catch(e){toast(e.message)}}}
 function onCarChange(form,cb){const s=form.querySelector('#f_car');if(s&&s.tagName==='SELECT')s.addEventListener('change',()=>cb(S.cars[s.value]))}
 
+/* отдел с няколко шофьора на ден: всеки въвежда километража при поемане */
+const multiDrv=c=>!!S.depts[c?.dept]?.multi;
 const openTrip=guard((carId,morning)=>{
-  const cf=carField(carId),car=S.cars[cf.id];
+  const cf=carField(carId),car=S.cars[cf.id],multi=morning&&multiDrv(car);
   const kmBox=`<div class="calc" id="kmCalc"></div><div class="note" id="kmWarn" hidden></div>`;
   const html=cf.html+
-    (morning?`${fld('Начален километраж днес',`<div class="mk-row">${ninp('endKm',car.odo?String(car.odo):'','required placeholder="напр. 123 456"')}<button type="submit" class="btn go shine">✓ Потвърди</button></div>`,'Километражът сутрин, преди да тръгнеш. Изминатите км за предния ден се смятат сами.')}<input type="hidden" name="startKm" id="f_startKm" value="${car.odo||0}">`+kmBox:'')+
+    (morning?`${fld(multi?'Километраж при поемане':'Начален километраж днес',`<div class="mk-row">${ninp('endKm',car.odo?String(car.odo):'','required placeholder="напр. 123 456"')}<button type="submit" class="btn go shine">✓ Потвърди</button></div>`,multi?'Километражът от таблото, когато вземаш колата. Километрите на предишния шофьор се смятат сами.':'Километражът сутрин, преди да тръгнеш. Изминатите км за предния ден се смятат сами.')}<input type="hidden" name="startKm" id="f_startKm" value="${car.odo||0}">`+kmBox:'')+
     `<div id="dz">${driverField(car)}</div>`+
     `${fld('Дата',inp('date',today(),'date'))}<input type="hidden" name="time" value="${nowTime()}">${fld('Вид път',sel('road',Object.entries(ROADS),'mixed'))}`+
     (morning?'':`<div class="grid2">${fld('Начален км',ninp('startKm',car.odo||''))}${fld('Краен км',ninp('endKm',''))}</div>`+kmBox)+
     (morning?`<fieldset><legend>Маршрут (по желание)</legend>`:'')+
     `<div class="grid2">${fld('От',inp('from','','text','placeholder="Варна"'))}${fld('До',inp('to','','text','placeholder="Добрич"'))}</div>${fld('Маршрут',inp('route','','text','placeholder="Варна – Аксаково – Добрич"'))}${fld('Цел на пътуването',inp('purpose','','text','placeholder="Доставка на стока"'))}`+
     (morning?'</fieldset>':'')+fld('Бележка',ta('note'));
-  openSheet(morning?'Сутрешен километраж':'Пътен запис',html,async f=>{
+  openSheet(morning?(multi?'Километраж при поемане':'Сутрешен километраж'):'Пътен запис',html,async f=>{
     const c=S.cars[f.car];const s=num(f.startKm),e=num(f.endKm);
     if(e==null||isNaN(e))fail('Въведи краен километраж.');
     if(s==null||isNaN(s))fail('Въведи начален километраж.');
     if(s<(c.odo||0))fail(`Километражът не може да намалява. Последен запис: ${fint(c.odo)} км.`);
     if(e<s)fail(`Крайният километраж (${fint(e)}) е по-малък от началния (${fint(s)}).`);
-    if(morning&&entries().some(x=>x.carId===c.id&&x.t==='trip'&&x.morning&&!x.virtual&&x.date===f.date))fail('За тази дата вече има начален километраж. Ако е грешен, помоли мениджъра или администратора да го изтрие.');
+    if(morning&&multiDrv(c)&&entries().some(x=>x.carId===c.id&&x.t==='trip'&&x.morning&&!x.virtual&&x.date===f.date&&+x.reading===e))fail(`Километраж ${fint(e)} км вече е въведен днес.`);
+    if(morning&&!multiDrv(c)&&entries().some(x=>x.carId===c.id&&x.t==='trip'&&x.morning&&!x.virtual&&x.date===f.date))fail('За тази дата вече има начален километраж. Ако е грешен, помоли мениджъра или администратора да го изтрие.');
     if(c.session&&c.session.userId!==f.driver)fail(`Автомобилът е поет временно от ${uname(c.session.userId)}. Първо приключи временното управление.`);
     await addEntry(c.id,{t:'trip',date:f.date,time:f.time,driver:f.driver,road:f.road,from:f.from.trim(),to:f.to.trim(),route:f.route.trim(),purpose:f.purpose.trim(),note:f.note.trim(),startKm:s,endKm:e,km:e-s,morning:!!morning});
     if(e>(c.odo||0))await carUpdate(c.id,{odo:e});
@@ -2089,7 +2092,8 @@ const openTrip=guard((carId,morning)=>{
     const calc=$('#kmCalc'),w=$('#kmWarn');
     if(morning){form.startKm.value=c.odo||0}
     if(morning){const pm=entries().filter(x=>x.carId===c.id&&x.t==='trip'&&x.morning&&!x.virtual).pop();
-      calc.innerHTML=`<div><span class="cemo">📍</span>Предишен начален: <span class="num">${pm?fint(pm.reading)+' км':'—'}</span>${pm?' <small>('+fd(pm.date)+')</small>':''}</div>`+(pm&&e!=null&&!isNaN(e)&&e>=pm.reading?`<div class="cgo"><span class="cemo">✅</span>Изминати на ${fds(pm.date)}: <span class="num">${fint(e-pm.reading)} км</span></div>`:'');}
+      const mu=multiDrv(c),who=pm?.driver?uname(pm.driver):'';
+      calc.innerHTML=`<div><span class="cemo">📍</span>${mu?'Предишен':'Предишен начален'}: <span class="num">${pm?fint(pm.reading)+' км':'—'}</span>${pm?' <small>('+(mu?[who,fd(pm.date)+(pm.time?' '+pm.time:'')].filter(Boolean).join(', '):fd(pm.date))+')</small>':''}</div>`+(pm&&e!=null&&!isNaN(e)&&e>=pm.reading?`<div class="cgo"><span class="cemo">✅</span>${mu?'Изминати от '+(who?esc(who):'предишния шофьор'):'Изминати на '+fds(pm.date)}: <span class="num">${fint(e-pm.reading)} км</span></div>`:'');}
     else calc.innerHTML=`Предишен запис: <span class="num">${fint(c.odo)} км</span>`+(e!=null&&!isNaN(e)&&s!=null?` · Изминати: <span class="num">${fint(e-s)} км</span>`:'');
     w.hidden=true;w.classList.remove('bad');
     const blk=morning&&e!=null&&!isNaN(e)&&e<(c.odo||0);
@@ -2811,9 +2815,9 @@ function openMyPass(){
 }
 function openEditDept(id){
   const d=id?S.depts[id]:null;
-  openSheet(d?'Преименувай отдел':'Нов отдел',fld('Име на отдела',inp('name',d?.name,'text','placeholder="Доставки"')),async f=>{
+  openSheet(d?'Преименувай отдел':'Нов отдел',fld('Име на отдела',inp('name',d?.name,'text','placeholder="Доставки"'))+chk('multi','Няколко шофьора на ден',!!d?.multi)+'<p class="small muted" style="margin:4px 0 0">Всеки шофьор, който вземе колата през деня, въвежда километража при поемане. Изминатите км се смятат на всеки поотделно.</p>',async f=>{
     const n=f.name.trim();if(!n)fail('Въведи име.');if(Object.values(S.depts).some(x=>x.id!==id&&x.name.toLowerCase()===n.toLowerCase()))fail('Вече има отдел с това име.');
-    await withRetry(()=>db.doc('depts/'+(id||uid())).set({name:n}));toast('Запазено');
+    await withRetry(()=>db.doc('depts/'+(id||uid())).set({...(d||{}),name:n,multi:!!f.multi}));toast('Запазено');
   });
 }
 function openSettings(){
