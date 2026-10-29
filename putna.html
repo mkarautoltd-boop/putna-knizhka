@@ -951,6 +951,7 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .q4b.red{background:linear-gradient(160deg,#F08080,#E04848);--qs:rgba(224,72,72,.6)}.q4b.grey{background:linear-gradient(160deg,#F2C35C,#E3A23A);--qs:rgba(227,162,58,.6)}
 .q4b.navy{background:linear-gradient(160deg,#3E5A86,#22385E);--qs:rgba(34,56,94,.6)}
 .q4b:active{transform:scale(.95)}
+.q4n{position:absolute;top:6px;right:6px;z-index:1;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#E5352B;color:#fff;font-style:normal;font-size:11.5px;font-weight:800;display:grid;place-items:center;box-shadow:0 0 0 2px rgba(255,255,255,.9)}
 </style>
 </head>
 <body>
@@ -1467,16 +1468,17 @@ function vMyCar(){
     if(last.length)h+=`<div class="sec"><h3>Последни записи</h3><div class="list">${last.map(tripLi).join('')}</div></div>`;}
   return h;
 }
+const q4Btn=(a,c,i,l,attr='',n=0)=>`<button class="q4b ${c}" data-act="${a}" ${attr}><span class="q4i">${QT_EMO[l]||icon(i)}</span><b>${QT_SHY[l]||l}</b>${n?`<i class="q4n">${n}</i>`:''}</button>`;
 function myCarTiles(car){const cid=`data-car="${car.id}"`;
   const t=[['morning','purple','road','Километраж'],['fuel','blue','fuel','Зареждане'],['check','green','tyre','Проверка'],['problem','orange','alert','Проблем'],['trip','grey','doc','Пътен запис'],['myBook','navy','doc','Книжка']];
-  return `<div class="qa three">${t.map(([a,c,i,l])=>`<button class="qt ${c}" data-act="${a}" ${cid}>${qtIn(i,l)}</button>`).join('')}</div>`}
+  return `<div class="q4">${t.map(([a,c,i,l])=>q4Btn(a,c,i,l,cid)).join('')}</div>`}
 function actionTiles(car){
   const cid=car?`data-car="${car.id}"`:'';
   const t=[['fuel','blue','fuel','Зареждане'],['morning','purple','road','Километраж'],['check','green','tyre','Проверка'],['problem','orange','alert','Проблем']];
   if(isStaff())t.push(['trip','grey','doc','Пътен запис'],['takeover','navy','wheel','Ще управлявам']);
   else t.push(['carDocs','grey','doc','Документи'],['tab" data-k="tasks','red','tasks','Моите задачи']);
   const n=!isStaff()&&car?allAlerts().filter(a=>a.car.id===car.id&&!isRead(a)).length:0;
-  return `<div class="qa three">${t.map(([a,c,i,l])=>`<button class="qt ${c}" data-act="${a}" ${cid}>${qtIn(i,l)}${a.startsWith('tab')&&n?`<i>${n}</i>`:''}</button>`).join('')}</div>`+
+  return `<div class="q4">${t.map(([a,c,i,l])=>q4Btn(a,c,i,l,cid,a.startsWith('tab')&&n?n:0)).join('')}</div>`+
     `<button class="dmgb" data-act="damage" ${cid}><span>💥</span>Щета или ПТП<span class="dmgb-a">›</span></button>`+
     (!isStaff()&&car?`<button class="btn wide" data-act="trip" ${cid}>${icon('plus')} Пътен запис с маршрут</button>`:'');
 }
