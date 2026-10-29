@@ -39,6 +39,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" media="print" onload="this.media='all'">
 <style>
+.q4s,.tsv{display:none}
+
 :root{
   --navy:#0E2748; --navy2:#17375F; --navy-ink:#FFFFFF; --navy-sub:#B9C8DD;
   --bg:#EDF1F6; --surface:#FFFFFF; --surface2:#F3F6FA; --ink:#0F1B2D; --muted:#5B6B80; --line:#DCE3EC;
@@ -1149,6 +1151,52 @@ html.lux .login-mark h1{color:#F1E4C4!important}
 html.lux .login-mark p{color:var(--muted)!important}
 html.lux .status,html.lux .vi .status,html.lux .vhero-meta .status{background:none!important;box-shadow:none!important;border:0!important;padding:0!important}
 html.lux .status.crit,html.lux .status.warn,html.lux .status.ok,html.lux .status.good,html.lux .vhero-st .status,html.lux .vi .status.crit,html.lux .vi .status.warn{background:none!important;box-shadow:none!important;border:0!important}
+/* ===== Black Edition (проба) ===== */
+html.lux{--bg:#0B0D10;--surface:#1D2229;--surface2:#252A31;--ink:#F2F2EF;--muted:#9AA1AA;--line:#30343A;--rimg:#30343A;
+ --gold:linear-gradient(180deg,#D4B57C,#C6A66B 55%,#B39258);--steel:#1D2229;--steel2:#252A31;--accent:#C6A66B}
+html.lux,html.lux body::before{background:#0B0D10!important}
+html.lux body::after{background:radial-gradient(70% 30% at 100% 0%,rgba(198,166,107,.07),transparent 70%),#0B0D10!important}
+html.lux .top{background:#14171C!important;box-shadow:0 1px 0 #30343A!important}
+html.lux .card,html.lux .vhero,html.lux .qa-more,html.lux .shop,html.lux .empty,html.lux .tablewrap,html.lux .sec .list,html.lux .list,html.lux .kv>div,html.lux .info,html.lux .irow,html.lux .ub-row,html.lux .np-row,html.lux .dmgb,html.lux .nk-top,html.lux .vcard,html.lux .bookc,html.lux .dcard,html.lux .dmg,html.lux .panel,html.lux .calc,html.lux .sheet-car,html.lux .cl-ev,html.lux fieldset{background:#1D2229!important;box-shadow:inset 0 0 0 1px #30343A!important;border-radius:14px}
+html.lux .li,html.lux .ub-row,html.lux .np-row,html.lux .irow,html.lux .kv>div,html.lux .info>div{background:#252A31!important}
+html.lux .vhero{background:#1D2229!important}
+html.lux .sec>h3,html.lux .sec-head h3,html.lux legend{color:#F2F2EF!important}
+html.lux .linkbtn,html.lux .qa-more,html.lux a{color:#C6A66B!important}
+html.lux .tabs-in{background:#14171C!important;box-shadow:inset 0 0 0 1px #30343A,0 10px 30px -10px #000!important}
+html.lux .tabs-in [aria-current="page"],html.lux .tab.on{background:#29261F!important}
+html.lux .tab.on *{color:#C6A66B!important}
+html.lux input,html.lux select,html.lux textarea,html.lux #q{background:#252A31!important;border-color:#30343A!important;box-shadow:none!important}
+html.lux .sheet-card,html.lux #sheet.full .sheet-card{background:#14171C!important}
+html.lux .sheet-h,html.lux .sheet-head{background:#14171C!important;border-bottom:1px solid #30343A!important}
+/* числата горе: графит с цветно число */
+html.lux .kpi.red,html.lux .kpi.orange,html.lux .kpi.green,html.lux .kpi.plain{background:#1D2229!important;box-shadow:inset 0 0 0 1px #30343A!important}
+html.lux .kpi::after{display:none}
+html.lux .kpi span{color:#9AA1AA!important;text-shadow:none!important}html.lux .kpi b{text-shadow:none!important}
+html.lux .kpi.red b{color:#F07878!important}html.lux .kpi.orange b{color:#F0C477!important}html.lux .kpi.green b{color:#5FCB91!important}html.lux .kpi.plain b{color:#F2F2EF!important}
+/* статуси */
+html.lux .status.crit,html.lux .pill.crit{color:#F07878!important}html.lux .status.warn,html.lux .pill.warn{color:#F0C477!important}html.lux .status.ok,html.lux .pill.ok{color:#5FCB91!important}
+html.lux .irow.new{box-shadow:inset 0 0 0 1.5px #C6A66B!important}
+/* А: бутоните графит, цветна иконка */
+html.lux .q4b.blue,html.lux .q4b.purple,html.lux .q4b.green,html.lux .q4b.orange,html.lux .q4b.red,html.lux .q4b.grey,html.lux .q4b.navy{background:#1D2229!important;box-shadow:inset 0 0 0 1px #30343A!important}
+html.lux .q4b::after{display:none!important}
+html.lux .q4b b{color:#F2F2EF!important;text-shadow:none!important}
+html.lux .q4i{border:0!important;box-shadow:none!important}
+html.lux .q4b.blue .q4i{background:rgba(121,188,235,.16)!important}html.lux .q4b.purple .q4i{background:rgba(170,140,230,.16)!important}
+html.lux .q4b.green .q4i{background:rgba(95,203,145,.16)!important}html.lux .q4b.orange .q4i{background:rgba(240,196,119,.16)!important}
+html.lux .q4b.red .q4i{background:rgba(240,120,120,.16)!important}html.lux .q4b.grey .q4i{background:rgba(198,166,107,.18)!important}
+html.lux .q4b.navy .q4i{background:rgba(176,182,190,.14)!important}
+
+/* линейни златни иконки вместо картинки */
+html.lux .q4e,html.lux .tab .temo:not(.tcal){display:none!important}
+html.lux .q4s{display:block!important;width:30px;height:30px;stroke:#C6A66B!important;stroke-width:1.7}
+html.lux .q4i{background:none!important;width:auto!important;height:34px!important}
+html.lux .tab .tsv{display:block!important;width:25px;height:25px;margin:0 auto 2px;stroke:#9AA1AA!important;stroke-width:1.7}
+html.lux .tab[aria-current="true"] .tsv{stroke:#C6A66B!important}
+html.lux .tab[aria-current="true"]{background:#29261F!important;box-shadow:inset 0 0 0 1px rgba(198,166,107,.35)!important}
+html.lux .tab[aria-current="true"],html.lux .tab[aria-current="true"] *{color:#C6A66B!important}
+html.lux .qa-more{background:linear-gradient(180deg,#D4B57C,#C6A66B 55%,#B39258)!important;color:#0B0D10!important;box-shadow:none!important}
+html.lux .qa-more *{color:#0B0D10!important}
+
 </style>
 </head>
 <body>
@@ -1542,7 +1590,8 @@ const IC={
 };
 const icon=(k,cls='')=>`<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${IC[k]||''}</svg>`;
 const TAB_EMO={home:'🏠',mycar:'🚙',cars:'🚗',tasks:'📋',reports:'📊',cal:'📅',more:'🗂️'};
-const ICONS=Object.fromEntries(Object.entries(TAB_EMO).map(([k,e])=>[k,`<span class="temo">${e}</span>`]));
+const TAB_IC={home:'home',mycar:'car',cars:'car',tasks:'tasks',reports:'reports',more:'more'};
+const ICONS=Object.fromEntries(Object.entries(TAB_EMO).map(([k,e])=>[k,`<span class="temo">${e}</span>${icon(TAB_IC[k]||'more','tsv')}`]));
 /* цветни иконки (емоджи) за плочките */
 const QT_EMO={'Щета/ПТП':'💥','Щети':'💥','Километраж':'🛣️','Километри':'🛣️','Зареждане':'⛽','Гориво':'⛽','Проверка':'🔍','Проблем':'⚠️','Проблеми':'⚠️','Пътен запис':'📝','Книжка':'📒','Ще управлявам':'🔑','Документи':'📄','Моите задачи':'📋','Задачи':'📋','Автомобили':'🚗','Отдели':'🏢','Шофьори':'🧑‍✈️','Потребители':'👥','Сервиз':'🔧','Гуми':'🛞','Отчети':'📊','Съобщения':'💬','Настройки':'⚙️'};
 const QT_SHY={'Потребители':'Потреби&shy;тели','Автомобили':'Автомо&shy;били','Документи':'Доку&shy;менти','Километраж':'Кило&shy;метраж','Километри':'Кило&shy;метри','Зареждане':'Зареж&shy;дане','Съобщения':'Съоб&shy;щения'};
@@ -1669,7 +1718,7 @@ function vMyCar(){
     if(last.length)h+=`<div class="sec"><h3>Последни записи</h3><div class="list">${last.map(tripLi).join('')}</div></div>`;}
   return h;
 }
-const q4Btn=(a,c,i,l,attr='',n=0)=>`<button class="q4b ${c}" data-act="${a}" ${attr}><span class="q4i">${QT_EMO[l]||icon(i)}</span><b>${QT_SHY[l]||l}</b>${n?`<i class="q4n">${n}</i>`:''}</button>`;
+const q4Btn=(a,c,i,l,attr='',n=0)=>`<button class="q4b ${c}" data-act="${a}" ${attr}><span class="q4i"><i class="q4e">${QT_EMO[l]||icon(i)}</i>${icon(i,'q4s')}</span><b>${QT_SHY[l]||l}</b>${n?`<i class="q4n">${n}</i>`:''}</button>`;
 function myCarTiles(car){const cid=`data-car="${car.id}"`;
   const t=[['morning','purple','road','Километраж'],['fuel','blue','fuel','Зареждане'],['check','green','tyre','Проверка'],['problem','orange','alert','Проблем'],['trip','grey','doc','Пътен запис'],['myBook','navy','doc','Книжка'],['damage','red','alert','Щета/ПТП'],['carDocs','grey','doc','Документи']];
   return `<div class="q4">${t.map(([a,c,i,l])=>q4Btn(a,c,i,l,cid)).join('')}</div>`}
@@ -1753,7 +1802,7 @@ function vHome(){
       [T('staff'),'grey','users','Шофьори'],[T('messages'),'orange','bell','Съобщения'],[T('damageAll'),'orange','alert','Щети'],[T('docsAll'),'grey','doc','Документи'],
       ['fuel','blue','fuel','Зареждане'],[T('serviceAll'),'orange','wrench','Сервиз'],['takeover','navy','wheel','Ще управлявам']];
   {const open=qaOpen(),N=8,more=qa.length>N;
-  h+=`<div class="sec"><h3>Бързи действия</h3><div class="q4">${qa.map(([a,c,i,l],k)=>`<button class="q4b ${c}${more&&k>=N?' qx':''}" data-act="${a}"${more&&k>=N&&!open?' hidden':''}><span class="q4i">${QT_EMO[l]||icon(i)}</span><b>${QT_SHY[l]||l}</b></button>`).join('')}</div>${more?`<button class="qa-more" data-act="qaToggle" aria-expanded="${open}"><span>${open?'Скрий':`Още ${qa.length-N} бутона`}</span><i>${open?'▴':'▾'}</i></button>`:''}${isMgr()?sosBtn():''}</div>`}
+  h+=`<div class="sec"><h3>Бързи действия</h3><div class="q4">${qa.map(([a,c,i,l],k)=>`<button class="q4b ${c}${more&&k>=N?' qx':''}" data-act="${a}"${more&&k>=N&&!open?' hidden':''}><span class="q4i"><i class="q4e">${QT_EMO[l]||icon(i)}</i>${icon(i,'q4s')}</span><b>${QT_SHY[l]||l}</b></button>`).join('')}</div>${more?`<button class="qa-more" data-act="qaToggle" aria-expanded="${open}"><span>${open?'Скрий':`Още ${qa.length-N} бутона`}</span><i>${open?'▴':'▾'}</i></button>`:''}${isMgr()?sosBtn():''}</div>`}
   const al=allAlerts();
   const worst=cars.slice().sort((a,b)=>({crit:0,warn:1,ok:2}[carLevel(a)])-({crit:0,warn:1,ok:2}[carLevel(b)]));
   h+=`<div class="sec"><div class="sec-head"><h3>Автомобили</h3><button class="linkbtn" data-act="tab" data-k="cars">Виж всички (${cars.length})</button></div><div class="carlist">${worst.slice(0,5).map(carCard).join('')}</div></div>`;
