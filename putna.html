@@ -714,6 +714,7 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 
 /* ---- лаптоп/компютър (мишка): меню вляво, съдържанието – широко, на колони ---- */
 @media (min-width:1000px) and (hover:hover) and (pointer:fine){
+  #main .q4{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}#main .q4b{aspect-ratio:auto;min-height:112px}
   #shell:not([hidden]){flex-direction:row!important;align-items:stretch}
   #shell>.tabs{order:-1;position:sticky!important;top:0;bottom:auto!important;height:100vh;width:236px!important;flex:0 0 236px!important;max-width:none!important;padding:0!important;background:linear-gradient(180deg,#0B2244 0%,#123463 100%)!important;box-shadow:4px 0 24px -12px rgba(11,34,68,.6)!important;border:0!important;z-index:7}
   #shell>.tabs .tabs-in{display:flex!important;flex-direction:column;gap:4px;max-width:none!important;margin:0!important;padding:22px 14px!important;background:none!important;box-shadow:none!important;border-radius:0!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
@@ -939,6 +940,17 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 
 .qa-more{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:10px;min-height:48px;border:0;border-radius:16px;background:#fff;color:#2E55D6;font:inherit;font-weight:700;font-size:15.5px;box-shadow:0 6px 16px -10px rgba(15,35,65,.35);cursor:pointer}
 .qa-more i{font-style:normal;font-size:14px}
+/* бързи бутони на началния екран: по 4 на ред (като в „Гуми автопарк“) */
+.q4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.q4b{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;aspect-ratio:1/1.12;padding:8px 4px;border:0;border-radius:20px;color:#fff;font:inherit;cursor:pointer;text-align:center;overflow:hidden;box-shadow:0 8px 18px -10px var(--qs,rgba(15,35,65,.5))}
+.q4b::after{content:"";position:absolute;right:-26px;top:-26px;width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.12)}
+.q4i{width:44px;height:44px;border-radius:14px;background:rgba(255,255,255,.22);display:grid;place-items:center;font-size:24px}
+.q4b b{font-size:12.5px;font-weight:800;line-height:1.15;letter-spacing:-.01em;text-shadow:0 1px 1px rgba(0,0,0,.15)}
+.q4b.blue{background:linear-gradient(160deg,#62A6EC,#3E7ED6);--qs:rgba(62,126,214,.6)}.q4b.purple{background:linear-gradient(160deg,#A784F0,#7B52DE);--qs:rgba(123,82,222,.6)}
+.q4b.green{background:linear-gradient(160deg,#6CCB8A,#36A55C);--qs:rgba(54,165,92,.6)}.q4b.orange{background:linear-gradient(160deg,#F5A45A,#E57A2A);--qs:rgba(229,122,42,.6)}
+.q4b.red{background:linear-gradient(160deg,#F08080,#E04848);--qs:rgba(224,72,72,.6)}.q4b.grey{background:linear-gradient(160deg,#F2C35C,#E3A23A);--qs:rgba(227,162,58,.6)}
+.q4b.navy{background:linear-gradient(160deg,#3E5A86,#22385E);--qs:rgba(34,56,94,.6)}
+.q4b:active{transform:scale(.95)}
 </style>
 </head>
 <body>
@@ -1504,8 +1516,8 @@ function streakCard(c){const n=streakOf(c);if(n<3)return '';
 /* при всяко отваряне на приложението бутоните са затворени; помни се само докато е отворено */
 let QA_OPEN=false;const qaOpen=()=>QA_OPEN;
 function qaToggle(b){const o=!qaOpen();QA_OPEN=o;
-  document.querySelectorAll('.qt.qx').forEach(x=>{x.hidden=!o;if(o){x.style.animation='none';void x.offsetWidth;x.style.animation='fxRise .35s cubic-bezier(.2,.8,.2,1) both'}});
-  b.setAttribute('aria-expanded',o);b.innerHTML=`<span>${o?'Скрий':`Още ${document.querySelectorAll('.qt.qx').length} бутона`}</span><i>${o?'▴':'▾'}</i>`;}
+  document.querySelectorAll('.qx').forEach(x=>{x.hidden=!o;if(o){x.style.animation='none';void x.offsetWidth;x.style.animation='fxRise .35s cubic-bezier(.2,.8,.2,1) both'}});
+  b.setAttribute('aria-expanded',o);b.innerHTML=`<span>${o?'Скрий':`Още ${document.querySelectorAll('.qx').length} бутона`}</span><i>${o?'▴':'▾'}</i>`;}
 function vHome(){
   const u=me(),cars=scopeCars();
   let h=sessionCards();
@@ -1537,8 +1549,8 @@ function vHome(){
     :[[T('cars'),'blue','car','Автомобили'],[T('tasks'),'purple','tasks','Задачи'],[T('tripsAll'),'purple','road','Километри'],[T('reports'),'green','reports','Отчети'],
       [T('staff'),'grey','users','Шофьори'],[T('messages'),'orange','bell','Съобщения'],[T('damageAll'),'orange','alert','Щети'],[T('docsAll'),'grey','doc','Документи'],
       ['fuel','blue','fuel','Зареждане'],[T('serviceAll'),'orange','wrench','Сервиз'],['takeover','navy','wheel','Ще управлявам']];
-  {const open=qaOpen(),N=6,more=qa.length>N;
-  h+=`<div class="sec"><h3>Бързи действия</h3><div class="qa three">${qa.map(([a,c,i,l],k)=>`<button class="qt ${c}${more&&k>=N?' qx':''}" data-act="${a}"${more&&k>=N&&!open?' hidden':''}>${qtIn(i,l)}</button>`).join('')}</div>${more?`<button class="qa-more" data-act="qaToggle" aria-expanded="${open}"><span>${open?'Скрий':`Още ${qa.length-N} бутона`}</span><i>${open?'▴':'▾'}</i></button>`:''}${isMgr()?sosBtn():''}</div>`}
+  {const open=qaOpen(),N=8,more=qa.length>N;
+  h+=`<div class="sec"><h3>Бързи действия</h3><div class="q4">${qa.map(([a,c,i,l],k)=>`<button class="q4b ${c}${more&&k>=N?' qx':''}" data-act="${a}"${more&&k>=N&&!open?' hidden':''}><span class="q4i">${QT_EMO[l]||icon(i)}</span><b>${QT_SHY[l]||l}</b></button>`).join('')}</div>${more?`<button class="qa-more" data-act="qaToggle" aria-expanded="${open}"><span>${open?'Скрий':`Още ${qa.length-N} бутона`}</span><i>${open?'▴':'▾'}</i></button>`:''}${isMgr()?sosBtn():''}</div>`}
   const al=allAlerts();
   const worst=cars.slice().sort((a,b)=>({crit:0,warn:1,ok:2}[carLevel(a)])-({crit:0,warn:1,ok:2}[carLevel(b)]));
   h+=`<div class="sec"><div class="sec-head"><h3>Автомобили</h3><button class="linkbtn" data-act="tab" data-k="cars">Виж всички (${cars.length})</button></div><div class="carlist">${worst.slice(0,5).map(carCard).join('')}</div></div>`;
@@ -3185,7 +3197,7 @@ const oldBtn=c=>LOGFROM&&!OLDK.has('car:'+c.id)?`<button class="btn wide" data-a
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&!WQ.length&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyServer(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='77';let _verAt=0;
+const APP_VER='78';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
