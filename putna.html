@@ -920,6 +920,8 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .book-btn{margin-bottom:10px}
 
 .upb{display:flex;flex-direction:column;gap:6px}
+.vg-sum{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:10px 14px;border-radius:16px;background:linear-gradient(135deg,#EAF2FF,#F3EEFF);font-size:15px}.vg-sum b{font-size:20px}
+.vg-tot{font-size:26px;font-weight:800;color:#1650C8;letter-spacing:-.02em}.vg-note{font-size:12px;color:#5B6778;margin:-2px 2px 2px}.ub-s.vg-p{color:#1650C8;background:#EAF2FF}
 .nwp{display:flex;flex-direction:column;gap:6px;border:2px solid #FFC9C9;background:linear-gradient(180deg,#FFF5F5,#fff 60%)}
 .nwp .card-h h3{color:#C92A2A;font-size:16px}
 .np-row{display:flex;gap:10px;align-items:center;background:#fff;border-radius:14px;padding:8px 10px;box-shadow:0 4px 12px -10px rgba(201,42,42,.5)}
@@ -1036,7 +1038,7 @@ const PRIO={low:'Нисък',mid:'Среден',high:'Висок'};
 const PSTAT={new:'Нов',progress:'В процес',resolved:'Решен'};
 const TTYPES={svcbook:'Час за сервиз',service:'Сервиз',gtp:'ГТП',go:'Гражданска',kasko:'Каско',vignette:'Винетка',tyres:'Гуми',pressure:'Проверка на гуми',repair:'Ремонт',other:'Друго'};
 const ECATS=['Измиване','Паркинг','Тол такса','Консумативи','Глоба','Друго'];
-const DEFAULTS={winterPct:10,summerPct:0,winterMonths:[11,12,1,2,3],summerMonths:[6,7,8],warnDays:30,serviceWarnKm:500,pressureDays:14};
+const DEFAULTS={winterPct:10,summerPct:0,winterMonths:[11,12,1,2,3],summerMonths:[6,7,8],warnDays:30,serviceWarnKm:500,pressureDays:14,vigPrice:49.6,vigDays:45};
 
 /* ============ state ============ */
 const S={users:{},depts:{},cars:{},logs:{},problems:{},tasks:{},settings:{...DEFAULTS},loaded:new Set()};
@@ -1523,7 +1525,7 @@ function vHome(){
   if(!cars.length){
     return h+`<div class="empty">${icon('car')}<b>Още няма автомобили${isMgr()?' в твоя отдел':''}.</b>${isAdmin()?`Започни с отдел, потребители и първия автомобил или зареди примерните данни от спецификацията.<div class="row" style="justify-content:center"><button class="btn primary" data-act="editCar">Добави автомобил</button><button class="btn" data-act="demo">Зареди примерни данни</button></div>`:''}</div>`;
   }
-  h=newProblems(cars)+kpis(cars)+h+upcomingBooks(cars);
+  h=newProblems(cars)+kpis(cars)+h+upcomingBooks(cars)+(isAdmin()?vigDue(cars):'');
   const T=k=>`tab" data-k="${k}`;
   const qa=isAdmin()?[[T('cars'),'blue','car','Автомобили'],[T('depts'),'purple','building','Отдели'],[T('staff'),'green','user','Шофьори'],[T('users'),'grey','users','Потребители'],
       [T('tasks'),'purple','tasks','Задачи'],[T('problemsAll'),'red','alert','Проблеми'],[T('damageAll'),'orange','alert','Щети'],[T('serviceAll'),'orange','wrench','Сервиз'],[T('docsAll'),'grey','doc','Документи'],
@@ -2665,6 +2667,17 @@ function upcomingBooks(cars){const ids=new Set(cars.map(c=>c.id)),L=Object.value
     return `<button class="ub-row" data-act="viewBook" data-id="${b.id}"><span class="ub-d${n<=1?' soon':''}${n<0?' late':''}"><b>${d.getDate()}</b><small>${MONTHS[d.getMonth()].slice(0,3).toLowerCase()}</small></span>
     <span class="ub-t"><b>${esc(regText(c?.reg))} · ${esc(carName(c))}</b><small>${esc(n<0?'пропуснат – '+fdw(b.due):fdw(b.due).split(',')[0])}${b.time?' в '+esc(b.time):''} · ${esc(shopOf(b)?.name||b.shopName||'')}</small><small>${esc(b.what||'')}</small></span>
     <span class="ub-s ${b.seen?'ok':''}">${b.seen?'✓ видял':'не е видял'}</span></button>`}).join('')}</div>`}
+/* винетки за плащане: изтичащи до vigDays дни (и вече изтеклите) с обща сума – за касата */
+function vigList(cars){const td=today(),n=+S.settings.vigDays||45;return cars.filter(c=>c.active!==false&&c.docs?.vignette&&daysBetween(td,c.docs.vignette)<=n).sort((a,b)=>a.docs.vignette.localeCompare(b.docs.vignette))}
+let VG_OPEN=false;
+function vigDue(cars){const L=vigList(cars);if(!L.length)return '';const pr=+S.settings.vigPrice||0,td=today();
+  return `<div class="card upb vgb"><div class="card-h"><h3>🛣️ Винетки за плащане · ${+S.settings.vigDays||45} дни</h3></div>
+  <div class="vg-sum"><span><b>${L.length}</b> ${L.length===1?'винетка':'винетки'}</span><span class="vg-tot">${eur(L.length*pr)}</span></div><small class="vg-note">по ${eur(pr)} за годишна винетка · цената се сменя от Настройки</small>
+  ${L.slice(0,VG_OPEN?L.length:3).map(c=>{const dt=c.docs.vignette,n=daysBetween(td,dt),d=new Date(dt+'T12:00:00');
+    return `<button class="ub-row" data-act="carDocs" data-car="${c.id}"><span class="ub-d${n<=7?' soon':''}${n<0?' late':''}"><b>${d.getDate()}</b><small>${MONTHS[d.getMonth()].slice(0,3).toLowerCase()}</small></span>
+    <span class="ub-t"><b>${esc(regText(c.reg))} · ${esc(carName(c))}</b><small>${n<0?'изтекла на '+fd(dt):n===0?'изтича днес':'изтича след '+n+' дни · '+fd(dt)}</small></span><span class="ub-s vg-p">${eur(pr)}</span></button>`}).join('')}
+  ${L.length>3?`<button class="qa-more" data-act="vigToggle" aria-expanded="${VG_OPEN}"><span>${VG_OPEN?'Скрий':'Покажи всички · още '+(L.length-3)}</span><i>${VG_OPEN?'▴':'▾'}</i></button>`:''}
+  <button class="btn wide" data-act="vigCopy">📋 Копирай за касата</button></div>`}
 const npKey=id=>'pseen:'+id;
 function newProblems(cars){const ids=new Set(cars.map(c=>c.id)),rd=(S.notif&&S.notif.read)||{};
   const L=Object.values(S.problems).filter(p=>ids.has(p.carId)&&p.status!=='resolved'&&p.by!==meId&&!rd[npKey(p.id)]).sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
@@ -2802,10 +2815,11 @@ function openSettings(){
   openSheet('Настройки',`<fieldset><legend>Сезонни норми</legend><div class="grid2">${fld('Зимна надбавка, %',ninp('winterPct',s.winterPct))}${fld('Зимни месеци',inp('winterMonths',(s.winterMonths||[]).join(', ')),'Номера на месеци, напр. 11, 12, 1, 2, 3')}</div>
   <div class="grid2">${fld('Лятна надбавка, %',ninp('summerPct',s.summerPct),'Напр. за климатик')}${fld('Летни месеци',inp('summerMonths',(s.summerMonths||[]).join(', ')))}</div></fieldset>
   <fieldset><legend>Пътна помощ</legend><div class="grid2">${fld('Телефон',inp('roadHelpPhone',s.roadHelpPhone,'tel','placeholder="напр. 0888 123 456"'))}${fld('Име / фирма',inp('roadHelpName',s.roadHelpName,'text','placeholder="напр. Пътна помощ Варна"'))}</div><small class="muted">Мениджърите ще виждат бутон „Звънни на пътна помощ“ на началния екран.</small></fieldset>
+  <fieldset><legend>Винетки за плащане</legend><div class="grid2">${fld('Годишна винетка, €',ninp('vigPrice',s.vigPrice))}${fld('Колко дни напред',ninp('vigDays',s.vigDays))}</div></fieldset>
   <fieldset><legend>Известия</legend><div class="grid3">${fld('Срок, дни',ninp('warnDays',s.warnDays))}${fld('Сервиз, км',ninp('serviceWarnKm',s.serviceWarnKm))}${fld('Проверка на, дни',ninp('pressureDays',s.pressureDays),'Масло, антифриз, гуми, светлини')}</div></fieldset>`,async f=>{
     const ms=v=>String(v).split(/[,\s]+/).map(Number).filter(n=>n>=1&&n<=12);
     const w=ms(f.winterMonths),su=ms(f.summerMonths);if(w.some(m=>su.includes(m)))fail('Един месец не може да е едновременно зимен и летен.');
-    await withRetry(()=>db.doc('meta/settings').set({...S.settings,winterPct:num(f.winterPct)||0,summerPct:num(f.summerPct)||0,winterMonths:w,summerMonths:su,warnDays:num(f.warnDays)||30,serviceWarnKm:num(f.serviceWarnKm)||500,pressureDays:num(f.pressureDays)||14,roadHelpPhone:f.roadHelpPhone.trim(),roadHelpName:f.roadHelpName.trim()}));toast('Настройките са запазени');
+    await withRetry(()=>db.doc('meta/settings').set({...S.settings,winterPct:num(f.winterPct)||0,summerPct:num(f.summerPct)||0,winterMonths:w,summerMonths:su,warnDays:num(f.warnDays)||30,serviceWarnKm:num(f.serviceWarnKm)||500,pressureDays:num(f.pressureDays)||14,roadHelpPhone:f.roadHelpPhone.trim(),roadHelpName:f.roadHelpName.trim(),vigPrice:num(f.vigPrice)||0,vigDays:num(f.vigDays)||45}));toast('Настройките са запазени');
   });
 }
 async function loadDemo(){
@@ -3068,6 +3082,10 @@ const ACT={
   markRead:markAllRead,newMsg:openNewMsg,delMsg:d=>delMsg(d.id),printPdf:printPdf,
   driverRep:d=>{R.tab='reports';R.rep='driver';R.repDriver=d.id;render()},
   pf:d=>{R.pf=d.k;render()},
+  vigToggle:()=>{VG_OPEN=!VG_OPEN;render()},
+  vigCopy:()=>{const L=vigList(scopeCars()),pr=+S.settings.vigPrice||0;
+    const t=`Винетки за плащане (следващите ${+S.settings.vigDays||45} дни): ${L.length} бр. · общо ${eur(L.length*pr)}\n`+L.map(c=>`${regText(c.reg)} ${carName(c)} – до ${fd(c.docs.vignette)} – ${eur(pr)}`).join('\n');
+    const done=()=>toast('Копирано – постави го в съобщение до касата');try{navigator.clipboard.writeText(t).then(done,()=>toast('Не успях да копирам'))}catch(e){toast('Не успях да копирам')}},
   copyText:()=>{const t=$('#f_msg');const done=()=>toast('Копирано');try{navigator.clipboard.writeText(t.value).then(done,()=>{t.select();document.execCommand('copy');done()})}catch(e){t.select();document.execCommand('copy');done()}}
 };
 document.addEventListener('scroll',e=>{const r=e.target;if(!r||(r.id!=='heroRail'&&r.id!=='listRail'))return;clearTimeout(r._t);
