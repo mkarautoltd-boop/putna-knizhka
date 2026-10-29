@@ -1688,7 +1688,6 @@ function vCars(){
   const cur=cars.find(c=>c.id===R.listCar)||cars[0];R.listCar=cur.id;
   const al=carAlerts(cur).filter(a=>a.lvl!=='good');
   return h+(cars.length>1?`<div class="vhero-rail" id="listRail">${cars.map(x=>`<div class="vhero-slot${x.id===cur.id?' on':''}" data-id="${x.id}">${carHero(x,true)}</div>`).join('')}</div>${heroDots(cars,cur)}`:`<div class="vhero-one">${carHero(cur,true)}</div>`)+
-    `<button class="btn primary wide" data-act="openCar" data-car="${cur.id}">Отвори ${esc(carName(cur))}</button>`+
     (al.length?`<div class="sec"><h3>Задачи за тази кола</h3>${alertList(al.slice(0,3))}</div>`:'');
 }
 const canAddCar=()=>isAdmin()||isMgr();
