@@ -1111,14 +1111,17 @@ const ftOf=(c,e)=>isBi(c)?(e.ft==='petrol'?'petrol':'gas'):'main';
 const ftLabel=(c,e)=>{const t=ftOf(c,e);return t==='petrol'?'Бензин':t==='gas'?gasName(c):''};
 /* бензинът при газови коли се превръща в еквивалентни литри газ: газ/бензин по нормите (по подразбиране 1.2) */
 const petrolRatio=c=>{const g=+(c?.norms?.mixed)||0,p=+(c?.nPetrol)||0;return g&&p?g/p:1.2};
+/* вид гориво за сбора „Заредено гориво“ (дизел, бензин, газ, метан…) */
+const fuelKind=(c,e)=>{const t=ftOf(c,e);if(t==='petrol')return 'Бензин';if(t==='gas')return /Метан/.test(c?.fuel||'')?'Метан':'Газ';const f=c?.fuel||'';return f==='Хибрид'?'Бензин':f==='Електрически'?'Ток':f||'Друго'};
+const FK_ORDER=['Дизел','Бензин','Газ','Метан','Ток','Друго'];
 const eqL=(c,e)=>ftOf(c,e)==='petrol'?(e.liters||0)*petrolRatio(c):(e.liters||0);
 const tripNorm=(car,e)=>(e.km||0)*normRate(car,e.road||'mixed',e.date)/100;
 
 function agg(list){
-  const r={km:0,fuelL:0,fuelCost:0,normL:0,service:0,other:0,trips:0,fuels:0,gasL:0,petrolL:0,bi:false};
+  const r={km:0,fuelL:0,fuelCost:0,normL:0,service:0,other:0,trips:0,fuels:0,gasL:0,petrolL:0,bi:false,types:{}};
   for(const e of list){const car=S.cars[e.carId];
     if(e.t==='trip'){r.km+=e.km||0;r.normL+=tripNorm(car,e);if(!e.idle)r.trips++}
-    else if(e.t==='fuel'){r.fuelL+=eqL(car,e);r.fuelCost+=e.sum||0;r.fuels++;const t=ftOf(car,e);if(t!=='main'){r.bi=true;r[t+'L']+=e.liters||0}}
+    else if(e.t==='fuel'){r.fuelL+=eqL(car,e);r.fuelCost+=e.sum||0;r.fuels++;{const k=fuelKind(car,e);r.types[k]=(r.types[k]||0)+(e.liters||0)}const t=ftOf(car,e);if(t!=='main'){r.bi=true;r[t+'L']+=e.liters||0}}
     else if(e.t==='service'){r.service+=e.cost||0}
     else if(e.t==='expense'){r.other+=e.sum||0}}
   r.avgPrice=r.fuelL?r.fuelCost/r.fuelL:null;
@@ -1707,11 +1710,14 @@ function vCar(){
   const F={overview:secOverview,book:secBook,fuel:secFuel,service:secService,docs:secDocs,tyres:secTyres,damage:secDamage,problems:secProblems,history:secHistory};
   return h+(F[R.carSec]||secOverview)(c,m);
 }
+function fuelLines(a){const t={...(a.types||{})};if(a.bi){if(!('Газ' in t)&&!('Метан' in t))t['Газ']=0;if(!('Бензин' in t))t['Бензин']=0}
+  const k=Object.keys(t).sort((x,y)=>(FK_ORDER.indexOf(x)+99)%99-(FK_ORDER.indexOf(y)+99)%99);
+  return k.length>1?k.map(x=>`${x} ${fnum(t[x])} ${x==='Ток'?'kWh':'л'}`).join('<br>'):fnum(a.fuelL)+' л'}
 function kvBlock(a,withMoney=true){
   const ec=a.econ;
   return `<div class="kv">
     <div><span>Изминати км</span><b>${fint(a.km)}</b></div>
-    <div><span>Заредено гориво</span><b>${a.bi?`Газ ${fnum(a.gasL)} л<br>Бензин ${fnum(a.petrolL)} л`:fnum(a.fuelL)+' л'}</b></div>
+    <div><span>Заредено гориво</span><b>${fuelLines(a)}</b></div>
     <div><span>Фактически разход</span><b>${fnum(a.actual)} л/100</b></div>
     <div><span>Норматив</span><b>${fnum(a.normRate)} л/100</b></div>
     <div><span>Нормативно гориво</span><b>${fnum(a.normL)} л</b></div>
