@@ -1693,10 +1693,10 @@ function patchKeepQ(mn,html){const q=document.activeElement;if(!q||q.id!=='q'||q
   for(const n of before)mn.insertBefore(n,q);for(const n of after)mn.appendChild(n);mn._h=html;return true}
 /* тема „Нощ и злато“ – само за администратора, пази се на устройството */
 const luxOn=()=>{try{return localStorage.getItem('pk_lux')==='1'}catch(e){return false}};
-/* шофьорите винаги са в нощната синя тема (тази преди черната) */
+/* шофьорите винаги са в нощната синя тема, мениджърите – в черната (като админа) */
 function applyLux(){const u=meId&&me(),drv=!!u&&u.role==='driver',h=document.documentElement;
-  h.classList.toggle('lux',drv||(luxOn()&&(!meId||isAdmin())));h.classList.toggle('navy',drv);
-  try{localStorage.setItem('pk_navy',drv?'1':'0')}catch(e){}}
+  h.classList.toggle('lux',drv||isMgr()||(luxOn()&&(!meId||isAdmin())));h.classList.toggle('navy',drv);
+  try{localStorage.setItem('pk_navy',drv?'1':'0');if(u&&u.role==='manager')localStorage.setItem('pk_lux','1')}catch(e){}}
 try{applyLux()}catch(e){}
 function render(){applyLux();
   clearMemo();if(!db)return;
