@@ -1251,6 +1251,9 @@ html.lux .qa-more *{color:#0B0D10!important}
   }
   fit();window.addEventListener('orientationchange',function(){setTimeout(fit,200)});window.addEventListener('resize',fit);
 })();
+/* при отваряне първо проверява за нова версия (до 1.5 с) – иначе за миг излиза старата */
+var VER_OK=location.protocol==='file:';
+try{if(localStorage.getItem('pk_lux')==='1')document.documentElement.classList.add('lux')}catch(e){}
 window.addEventListener('error',e=>{const b=document.getElementById('bootErr');if(b&&!document.getElementById('boot').hidden){b.textContent='Грешка: '+(e.message||e);b.hidden=false}});
 const PREFILL=new URLSearchParams(location.search).get('u')||'';
 const API_URL='https://script.google.com/macros/s/AKfycbwqRZRiavSu2EORzG_kHWtKDJtGgIHxP51Fchagv1NC71JTDCwdKgwecgsexl0hW4aRgQ/exec';
@@ -1568,6 +1571,7 @@ const IC={
   fuel:'<path d="M4 21V5a1.5 1.5 0 0 1 1.5-1.5h7A1.5 1.5 0 0 1 14 5v16M3 21h12M4 10h10M14 8.5l3.2 1.6V17a1.4 1.4 0 0 0 2.8 0V9l-3-3"/>',
   road:'<path d="M9 3L5 21M15 3l4 18M12 4v3M12 10.5v3M12 17v3"/>',
   wrench:'<path d="M14.7 6.3a4 4 0 0 0-5.3 5L3.8 16.9a1.9 1.9 0 0 0 2.7 2.7l5.6-5.6a4 4 0 0 0 5-5.3l-2.5 2.5-2.4-.5-.5-2.4z"/>',
+  burst:'<path d="M12 2.5l1.9 5.2 5.3-1.8-2.9 4.8 4.7 3-5.5.7.6 5.6-4.1-3.8-4.1 3.8.6-5.6-5.5-.7 4.7-3-2.9-4.8 5.3 1.8z"/>',
   alert:'<path d="M10.3 3.9L2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v5M12 17.5v.01"/>',
   tyre:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="M12 3v5.5M12 15.5V21M3 12h5.5M15.5 12H21"/>',
   doc:'<path d="M6 3h8.5L19 7.5V21H6z"/><path d="M14 3v5h5M9 12.5h7M9 16.5h7"/>',
@@ -1681,6 +1685,7 @@ function applyLux(){document.documentElement.classList.toggle('lux',luxOn()&&(!m
 try{applyLux()}catch(e){}
 function render(){applyLux();
   clearMemo();if(!db)return;
+  if(!VER_OK)return;
   if(!S.loaded.has('users')&&!Object.keys(S.users).length)return;
   const u=me();
   if(!u||u.active===false){showLogin();return}
@@ -1720,13 +1725,13 @@ function vMyCar(){
 }
 const q4Btn=(a,c,i,l,attr='',n=0)=>`<button class="q4b ${c}" data-act="${a}" ${attr}><span class="q4i"><i class="q4e">${QT_EMO[l]||icon(i)}</i>${icon(i,'q4s')}</span><b>${QT_SHY[l]||l}</b>${n?`<i class="q4n">${n}</i>`:''}</button>`;
 function myCarTiles(car){const cid=`data-car="${car.id}"`;
-  const t=[['morning','purple','road','Километраж'],['fuel','blue','fuel','Зареждане'],['check','green','tyre','Проверка'],['problem','orange','alert','Проблем'],['trip','grey','doc','Пътен запис'],['myBook','navy','doc','Книжка'],['damage','red','alert','Щета/ПТП'],['carDocs','grey','doc','Документи']];
+  const t=[['morning','purple','road','Километраж'],['fuel','blue','fuel','Зареждане'],['check','green','tyre','Проверка'],['problem','orange','alert','Проблем'],['trip','grey','doc','Пътен запис'],['myBook','navy','doc','Книжка'],['damage','red','burst','Щета/ПТП'],['carDocs','grey','doc','Документи']];
   return `<div class="q4">${t.map(([a,c,i,l])=>q4Btn(a,c,i,l,cid)).join('')}</div>`}
 function actionTiles(car){
   const cid=car?`data-car="${car.id}"`:'';
   const t=[['fuel','blue','fuel','Зареждане'],['morning','purple','road','Километраж'],['check','green','tyre','Проверка'],['problem','orange','alert','Проблем']];
   if(isStaff())t.push(['trip','grey','doc','Пътен запис'],['takeover','navy','wheel','Ще управлявам']);
-  else t.push(['carDocs','grey','doc','Документи'],['damage','red','alert','Щета/ПТП'],...(car?[['myBook','navy','doc','Книжка']]:[]),['tab" data-k="tasks','purple','tasks','Моите задачи']);
+  else t.push(['carDocs','grey','doc','Документи'],['damage','red','burst','Щета/ПТП'],...(car?[['myBook','navy','doc','Книжка']]:[]),['tab" data-k="tasks','purple','tasks','Моите задачи']);
   const n=!isStaff()&&car?allAlerts().filter(a=>a.car.id===car.id&&!isRead(a)).length:0;
   return `<div class="q4">${t.map(([a,c,i,l])=>q4Btn(a,c,i,l,cid,a.startsWith('tab')&&n?n:0)).join('')}</div>`+
     (isStaff()?`<button class="dmgb" data-act="damage" ${cid}><span>💥</span>Щета или ПТП<span class="dmgb-a">›</span></button>`:'')+
@@ -1795,11 +1800,11 @@ function vHome(){
   h=newProblems(cars)+kpis(cars)+h+upcomingBooks(cars)+(isAdmin()?vigDue(cars):'');
   const T=k=>`tab" data-k="${k}`;
   const qa=isAdmin()?[[T('cars'),'blue','car','Автомобили'],[T('depts'),'purple','building','Отдели'],[T('staff'),'green','user','Шофьори'],[T('users'),'grey','users','Потребители'],
-      [T('tasks'),'purple','tasks','Задачи'],[T('problemsAll'),'red','alert','Проблеми'],[T('damageAll'),'orange','alert','Щети'],[T('serviceAll'),'orange','wrench','Сервиз'],[T('docsAll'),'grey','doc','Документи'],
+      [T('tasks'),'purple','tasks','Задачи'],[T('problemsAll'),'red','alert','Проблеми'],[T('damageAll'),'orange','burst','Щети'],[T('serviceAll'),'orange','wrench','Сервиз'],[T('docsAll'),'grey','doc','Документи'],
       [T('tyresAll'),'blue','tyre','Гуми'],[T('fuelAll'),'orange','fuel','Гориво'],[T('tripsAll'),'purple','road','Километри'],[T('reports'),'green','reports','Отчети'],
       [T('messages'),'blue','bell','Съобщения'],['takeover','navy','wheel','Ще управлявам'],['trip','grey','doc','Пътен запис'],[T('settings'),'grey','gear','Настройки']]
     :[[T('cars'),'blue','car','Автомобили'],[T('tasks'),'purple','tasks','Задачи'],[T('tripsAll'),'purple','road','Километри'],[T('reports'),'green','reports','Отчети'],
-      [T('staff'),'grey','users','Шофьори'],[T('messages'),'orange','bell','Съобщения'],[T('damageAll'),'orange','alert','Щети'],[T('docsAll'),'grey','doc','Документи'],
+      [T('staff'),'grey','users','Шофьори'],[T('messages'),'orange','bell','Съобщения'],[T('damageAll'),'orange','burst','Щети'],[T('docsAll'),'grey','doc','Документи'],
       ['fuel','blue','fuel','Зареждане'],[T('serviceAll'),'orange','wrench','Сервиз'],['takeover','navy','wheel','Ще управлявам']];
   {const open=qaOpen(),N=8,more=qa.length>N;
   h+=`<div class="sec"><h3>Бързи действия</h3><div class="q4">${qa.map(([a,c,i,l],k)=>`<button class="q4b ${c}${more&&k>=N?' qx':''}" data-act="${a}"${more&&k>=N&&!open?' hidden':''}><span class="q4i"><i class="q4e">${QT_EMO[l]||icon(i)}</i>${icon(i,'q4s')}</span><b>${QT_SHY[l]||l}</b></button>`).join('')}</div>${more?`<button class="qa-more" data-act="qaToggle" aria-expanded="${open}"><span>${open?'Скрий':`Още ${qa.length-N} бутона`}</span><i>${open?'▴':'▾'}</i></button>`:''}${isMgr()?sosBtn():''}</div>`}
@@ -3459,6 +3464,9 @@ async function checkUpdate(){
     if(m&&m[1]!==APP_VER){const go=()=>location.replace(location.pathname+'?v='+m[1]+'&t='+Date.now());
       if($('#sheet').hidden)go();else{const w=setInterval(()=>{if($('#sheet').hidden){clearInterval(w);go()}},2000)}}}catch(e){}
 }
+(function verFirst(){if(VER_OK)return;const done=()=>{if(!VER_OK){VER_OK=true;try{render()}catch(e){}}};const to=setTimeout(done,1500);
+  fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/const APP_VER='([^']+)'/);
+    if(m&&m[1]!==APP_VER){clearTimeout(to);location.replace(location.pathname+'?v='+m[1]+'&t='+Date.now())}else{clearTimeout(to);_verAt=Date.now();done()}}).catch(()=>{clearTimeout(to);done()})})();
 setTimeout(checkUpdate,2000);setInterval(checkUpdate,10*60000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate()});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&TOKEN)refresh()});
