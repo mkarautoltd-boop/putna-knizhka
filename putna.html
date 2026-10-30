@@ -1197,6 +1197,7 @@ html.lux .tab[aria-current="true"],html.lux .tab[aria-current="true"] *{color:#C
 html.lux .qa-more{background:linear-gradient(180deg,#D4B57C,#C6A66B 55%,#B39258)!important;color:#0B0D10!important;box-shadow:none!important}
 html.lux .qa-more *{color:#0B0D10!important}
 
+html.lux .vhero-bg:not(.svg){opacity:.9;object-position:72% 60%;filter:brightness(.85) saturate(1.05);-webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,.9) 55%,#000 100%);mask-image:linear-gradient(90deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,.9) 55%,#000 100%)}
 </style>
 </head>
 <body>
@@ -1833,7 +1834,7 @@ function tipCard(){const d=new Date(),k=Math.floor((d-new Date(d.getFullYear(),0
 /* ---- карта на колата (стил „документи в телефона“) ---- */
 function carHero(c,act){
   const m=canManage(c),mk=String(c.make||'?').trim(),ini=mk.slice(0,1).toUpperCase();
-  const bg=`<img class="vhero-bg" src="${c.photo||'car-bg.jpg'}" alt="">`;
+  const bg=`<img class="vhero-bg" src="${c.photo||(document.documentElement.classList.contains('lux')?'car-bg-lux.jpg':'car-bg.jpg')}" alt="">`;
   return `<div class="vhero"${act?` data-act="openCar" data-car="${c.id}"`:''}>${bg}
     ${m&&!act?`<button class="vhero-gear" data-act="editCar" data-car="${c.id}" aria-label="Редактирай">${icon('gear')}</button>`:''}
     <div class="vhero-top"><span class="vhero-logo">${esc(ini)}</span><b class="vhero-name">${esc(carName(c).toUpperCase())}</b></div>
