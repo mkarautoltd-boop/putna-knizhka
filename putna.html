@@ -1217,6 +1217,9 @@ html.lux .ftsw #ft_petrol:checked+label{background:linear-gradient(155deg,#23665
 html.lux .nk-row{background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.02))!important;box-shadow:inset 0 0 0 1px var(--rimg)!important;color:var(--ink)!important}
 html.lux .nk-row b{color:var(--ink)!important}html.lux .nk-row span{color:var(--muted)!important}html.lux .nk-row small{color:#E6CF95!important}
 html.lux:not(.navy) .sheet-actions{background:linear-gradient(180deg,rgba(20,23,28,0),#14171C 30%)!important}
+/* тема: само надписът при изтичащ (жълто) или изтекъл (червено) документ; валидните са както са */
+html.lux .dcard.warn .dc-left,html.lux .dcard .dc-left.dc-warn{color:#F0C477!important}
+html.lux .dcard.crit .dc-left,html.lux .dcard .dc-left.dc-crit{color:#F07878!important}
 </style>
 </head>
 <body>
@@ -3463,7 +3466,7 @@ const oldBtn=c=>LOGFROM&&!OLDK.has('car:'+c.id)?`<button class="btn wide" data-a
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&!WQ.length&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyServer(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='89';let _verAt=0;
+const APP_VER='90';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
