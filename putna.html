@@ -953,6 +953,7 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .q4b:active{transform:scale(.95)}
 .lux-sw{flex:none;width:46px;height:28px;border-radius:14px;background:#D5DCE6;position:relative;transition:background .2s}.lux-sw i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.25);transition:left .2s}.lux-sw.on{background:linear-gradient(135deg,#F6E3A8,#C9A24E)}.lux-sw.on i{left:21px}
 .q4b b.q4l{font-size:min(11.5px,3vw)!important;letter-spacing:-.03em!important;white-space:nowrap}
+.ff-prov{font-size:11px;font-weight:700;color:#E08A00;margin-left:4px}
 .q4n{position:absolute;top:6px;right:6px;z-index:1;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#E5352B;color:#fff;font-style:normal;font-size:11.5px;font-weight:800;display:grid;place-items:center;box-shadow:0 0 0 2px rgba(255,255,255,.9)}
 /* ===================== ТЕМА „НОЩ И ЗЛАТО“ (металик) ===================== */
 html.lux{color-scheme:dark;
@@ -1403,6 +1404,18 @@ const FK_ORDER=['Дизел','Бензин','Газ','Метан','Ток','Др
 const eqL=(c,e)=>ftOf(c,e)==='petrol'?(e.liters||0)*petrolRatio(c):(e.liters||0);
 const tripNorm=(car,e)=>(e.km||0)*normRate(car,e.road||'mixed',e.date)/100;
 
+const fKey=e=>(e.date||'')+' '+(e.time||'')+' '+String(e.km??0).padStart(9,'0');
+function fullToFull(list){
+  const by={};for(const e of list)if(e.t==='fuel'&&!e.del)(by[e.carId]=by[e.carId]||[]).push(e);
+  let L=0,km=0,n=0,prov=false;
+  for(const[cid,fs]of Object.entries(by)){const car=S.cars[cid];fs.sort((a,b)=>fKey(a).localeCompare(fKey(b)));
+    const first=fs[0],last=fs[fs.length-1];
+    /* затварящото зареждане – първото след последното в периода (в началото на следващия месец) */
+    const close=byCar(cid).filter(e=>e.t==='fuel'&&!e.del&&fKey(e)>fKey(last)).sort((a,b)=>fKey(a).localeCompare(fKey(b)))[0];
+    const end=close||last,inner=fs.slice(1).concat(close?[close]:[]);
+    const d=(+end.km||0)-(+first.km||0),l=inner.reduce((t,e)=>t+eqL(car,e),0);
+    if(d>0&&l>0){L+=l;km+=d;n++;if(!close)prov=true}}
+  return{L,km,n,prov}}
 function agg(list){
   const r={km:0,fuelL:0,fuelCost:0,normL:0,service:0,other:0,trips:0,fuels:0,gasL:0,petrolL:0,bi:false,types:{}};
   for(const e of list){const car=S.cars[e.carId];
@@ -1411,9 +1424,11 @@ function agg(list){
     else if(e.t==='service'){r.service+=e.cost||0}
     else if(e.t==='expense'){r.other+=e.sum||0}}
   r.avgPrice=r.fuelL?r.fuelCost/r.fuelL:null;
-  r.actual=r.km&&r.fuelL?r.fuelL/r.km*100:null;
+  /* фактически разход „от пълен до пълен“: винаги се пълни до горе, а в началото на следващия месец задължително */
+  {const ft=fullToFull(list);r.ffL=ft.L;r.ffKm=ft.km;r.ffProv=ft.prov;r.ffCars=ft.n;
+   r.actual=ft.km>0&&ft.L>0?ft.L/ft.km*100:null;}
   r.normRate=r.km?r.normL/r.km*100:null;
-  r.econ=r.fuelL?r.normL-r.fuelL:null;
+  r.econ=r.actual!=null&&r.km?r.normL-r.actual*r.km/100:null;
   r.econEur=r.econ!=null&&r.avgPrice!=null?r.econ*r.avgPrice:null;
   return r;
 }
@@ -2015,7 +2030,7 @@ function kvBlock(a,withMoney=true){
   return `<div class="kv">
     <div><span>Изминати км</span><b>${fint(a.km)}</b></div>
     <div><span>Заредено гориво</span><b>${fuelLines(a)}</b></div>
-    <div><span>Фактически разход</span><b>${fnum(a.actual)} л/100</b></div>
+    <div><span>Фактически разход${a.ffProv&&a.actual!=null?' <small class="ff-prov">предварително</small>':''}</span><b>${fnum(a.actual)} л/100</b></div>
     <div><span>Норматив</span><b>${fnum(a.normRate)} л/100</b></div>
     <div><span>Нормативно гориво</span><b>${fnum(a.normL)} л</b></div>
     <div><span>${ec==null?'Икономия / преразход':ec>=0?'Икономия':'Преразход'}</span><b class="${ec==null?'':ec>=0?'pos':'neg'}">${ec==null?'—':fnum(Math.abs(ec))+' л'}</b></div>
@@ -2034,7 +2049,7 @@ function secOverview(c,m){
   const n=c.norms||{},sf=seasonFactor(c,today());
   return `<div class="info"><div><span>Марка / Модел</span><b>${esc(carName(c))}</b></div><div><span>Рег. номер</span><b>${esc(regText(c.reg))}</b></div><div><span>Година</span><b>${esc(c.year||'—')}</b></div><div><span>Гориво</span><b>${esc(c.fuel||'—')}</b></div><div><span>VIN номер</span><b style="font-family:ui-monospace,Menlo,monospace;font-size:14px;word-break:break-all">${esc(c.vin||'—')}</b></div><div><span>Размер на гумите</span><b>${esc(c.tyreSize||'—')}</b></div><div><span>Пробег</span><b>${fint(c.odo)} км</b></div><div><span>Отдел</span><b>${esc(dname(c.dept))}</b></div><div><span>${drvIds(c).length>1?'Шофьори':'Постоянен шофьор'}</span><b>${drvIds(c).length?drvIds(c).map(x=>esc(uname(x))).join('<br>'):'—'}</b></div></div>
   ${svcBooks(c).map(bookCard).join('')}${tankCard(c)}<div class="sec"><h3>Задачи и известия</h3>${alertList(carAlerts(c),true)}</div>
-  <div class="sec"><h3>${monthLabel(ym)}</h3>${kvBlock(a)}<p class="small muted">Фактическият разход се смята по зареденото гориво за периода.</p></div>
+  <div class="sec"><h3>${monthLabel(ym)}</h3>${kvBlock(a)}<p class="small muted">Фактическият разход се смята „от пълен до пълен“: литрите от зарежданията след първото в месеца до първото в следващия месец, делено на километрите между тях.</p></div>
   <div class="sec"><div class="sec-head"><h3>Норми за разход</h3>${m?`<button class="linkbtn" data-act="editCar" data-car="${c.id}">Промени</button>`:''}</div>
   <div class="kv"><div><span>Градско</span><b>${fnum(+n.city||null,1)}</b></div><div><span>Извънградско</span><b>${fnum(+n.highway||null,1)}</b></div><div><span>Смесено</span><b>${fnum(+n.mixed||null,1)}</b></div><div><span>Сезонен коефициент днес</span><b>×${sf.toFixed(2)}</b></div></div></div>`;
 }
