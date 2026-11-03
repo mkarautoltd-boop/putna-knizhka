@@ -1434,7 +1434,20 @@ function agg(list){
   r.econEur=r.econ!=null&&r.avgPrice!=null?r.econ*r.avgPrice:null;
   return r;
 }
-function tank(car){
+/* резервоар: винаги се пълни до горе → след последното зареждане е пълен и спада с изминатите км
+   (до последния начален километраж) по истинския разход „от пълен до пълен“; без него – по норма */
+function tankInfo(car){
+  if(!car.tankCap)return null;const cap=+car.tankCap,L=byCar(car.id);
+  const fs=L.filter(e=>e.t==='fuel'&&!e.del&&ftOf(car,e)!=='petrol'&&e.km!=null);
+  if(!fs.length){const v=tankOld(car);return v==null?null:{v,by:'norm'}}
+  const last=fs.reduce((a,b)=>fKey(b)>fKey(a)?b:a);
+  const ff=fullToFull(L.filter(e=>e.t==='fuel'));
+  const rate=ff.km>0&&ff.L>0?ff.L/ff.km*100:null,nr=normRate(car,'mixed',today());
+  let rd=+last.km;for(const e of L)if(e.t==='trip'&&e.morning&&!e.virtual&&!e.del&&(e.date>last.date||(e.date===last.date&&(e.time||'')>=(last.time||''))))rd=Math.max(rd,+e.reading||+e.endKm||0);
+  const km=Math.max(0,rd-(+last.km)),r=rate??nr;
+  return{v:Math.max(0,Math.min(cap,cap-km*(r||0)/100)),by:rate!=null?'real':'norm',rate:r,km,since:last.date}}
+function tank(car){const t=tankInfo(car);return t?t.v:null}
+function tankOld(car){
   if(!car.tankCap||car.tankStart===''||car.tankStart==null)return null;
   const since=car.tankStartDate||'0000-00-00',cut=LOGFROM?LOGFROM+'-01':'';let v=+car.tankStart;
   /* по-старите месеци не са на телефона: сървърът праща сбора им (TANKPRE) */
@@ -2045,7 +2058,7 @@ function kvBlock(a,withMoney=true){
 }
 function tankCard(c){const tk=tank(c);if(tk==null)return '';const cap=+c.tankCap||1,p=Math.max(0,Math.min(1,tk/cap));
   return `<div class="card"><div class="card-h"><h3>Резервоар</h3></div><div class="tgc"><div class="tg"><svg viewBox="0 0 150 84" aria-hidden="true"><defs><linearGradient id="tgGrad" x1="0" x2="1"><stop offset="0" stop-color="#E0342F"/><stop offset=".35" stop-color="#F08A18"/><stop offset=".7" stop-color="#34C173"/><stop offset="1" stop-color="#1FA35A"/></linearGradient></defs><path class="trk" d="M15 75a60 60 0 0 1 120 0"/><path class="val" d="M15 75a60 60 0 0 1 120 0" style="stroke-dashoffset:${(188.5*(1-p)).toFixed(1)}"/><g class="ndl" style="transform:rotate(${(-90+180*p).toFixed(1)}deg)"><line x1="75" y1="75" x2="75" y2="28"/><circle cx="75" cy="75" r="6"/></g></svg></div>
-    <div class="tgt"><b>${fnum(tk,1)} л</b><span>${p<.15?'<span class="lo">Малко гориво</span> · ':''}от ${fint(c.tankCap)} л${isBi(c)?' · '+gasName(c).toLowerCase():''}</span><span style="display:block;font-size:12px">изчислено по норма</span></div></div></div>`}
+    <div class="tgt"><b>${fnum(tk,1)} л</b><span>${p<.15?'<span class="lo">Малко гориво</span> · ':''}от ${fint(c.tankCap)} л${isBi(c)?' · '+gasName(c).toLowerCase():''}</span><span style="display:block;font-size:12px">${(()=>{const t=tankInfo(c);return t&&t.since?`пълен на ${fds(t.since)} · ${fint(t.km)} км по ${t.by==='real'?'разхода':'норма'} ${fnum(t.rate,1)} л/100`:'изчислено по норма'})()}</span></div></div></div>`}
 function secOverview(c,m){
   const ym=today().slice(0,7),a=agg(entries().filter(e=>e.carId===c.id&&e.date?.startsWith(ym)));
   const n=c.norms||{},sf=seasonFactor(c,today());
