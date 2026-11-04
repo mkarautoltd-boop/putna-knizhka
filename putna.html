@@ -802,9 +802,9 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .btn,.qa>*,.kpi,.irow,.vcard,.chip,.dcard.tap,.li{transition:transform .12s ease}
 .btn:active,.qa>*:active,.kpi:active,.irow:active,.vcard:active,.chip:active,.dcard.tap:active{transform:scale(.96)}
 /* 6 картите изплуват при отваряне на страница */
-#main.anim>*{animation:fxRise .5s cubic-bezier(.2,.8,.2,1) both}
-#main.anim>*:nth-child(2){animation-delay:.06s}#main.anim>*:nth-child(3){animation-delay:.12s}#main.anim>*:nth-child(4){animation-delay:.18s}
-#main.anim>*:nth-child(5){animation-delay:.24s}#main.anim>*:nth-child(6){animation-delay:.3s}#main.anim>*:nth-child(n+7){animation-delay:.34s}
+#main.anim>*{animation:fxRise .3s cubic-bezier(.2,.8,.2,1) both}
+#main.anim>*:nth-child(2){animation-delay:.03s}#main.anim>*:nth-child(3){animation-delay:.06s}#main.anim>*:nth-child(4){animation-delay:.09s}
+#main.anim>*:nth-child(5){animation-delay:.12s}#main.anim>*:nth-child(6){animation-delay:.14s}#main.anim>*:nth-child(n+7){animation-delay:.15s}
 @keyframes fxRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 /* 3 пулсираща точка */
 .irow .isq{position:relative}
@@ -1199,7 +1199,10 @@ html.lux:not(.navy) .tab[aria-current="true"],html.lux:not(.navy) .tab[aria-curr
 html.lux:not(.navy) .qa-more{background:linear-gradient(180deg,#D4B57C,#C6A66B 55%,#B39258)!important;color:#0B0D10!important;box-shadow:none!important}
 html.lux:not(.navy) .qa-more *{color:#0B0D10!important}
 
-html.lux:not(.navy) .vhero-bg:not(.svg){opacity:.9;object-position:72% 60%;filter:brightness(.85) saturate(1.05);-webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,.9) 55%,#000 100%);mask-image:linear-gradient(90deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,.9) 55%,#000 100%)}
+/* снимката: без filter/mask (на iPhone са много бавни при 60 карти) – затъмняването е с прост слой отгоре */
+html.lux:not(.navy) .vhero-bg:not(.svg){opacity:1;object-position:72% 60%}
+html.lux:not(.navy) .vhero::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(29,34,41,.72) 0%,rgba(29,34,41,.18) 55%,rgba(29,34,41,0) 100%)}
+html.lux:not(.navy) .vhero>*:not(.vhero-bg){z-index:1}
 /* тема: живи петна отзад и златна отметка „Записано“ */
 html.lux:not(.navy) body::after{background:
  radial-gradient(38% 26% at 88% 6%,rgba(198,166,107,.55),transparent 70%),
@@ -1892,7 +1895,7 @@ function tipCard(){const d=new Date(),k=Math.floor((d-new Date(d.getFullYear(),0
 /* ---- карта на колата (стил „документи в телефона“) ---- */
 function carHero(c,act){
   const m=canManage(c),mk=String(c.make||'?').trim(),ini=mk.slice(0,1).toUpperCase();
-  const bg=`<img class="vhero-bg" src="${c.photo||(document.documentElement.matches('.lux:not(.navy)')?'car-bg-lux.jpg':'car-bg.jpg')}" alt="">`;
+  const bg=`<img class="vhero-bg" loading="lazy" decoding="async" src="${c.photo||(document.documentElement.matches('.lux:not(.navy)')?'car-bg-lux.jpg':'car-bg.jpg')}" alt="">`;
   return `<div class="vhero"${act?` data-act="openCar" data-car="${c.id}"`:''}>${bg}
     ${m&&mp('cars')&&!act?`<button class="vhero-gear" data-act="editCar" data-car="${c.id}" aria-label="Редактирай">${icon('gear')}</button>`:''}
     <div class="vhero-top"><span class="vhero-logo">${esc(ini)}</span><b class="vhero-name">${esc(carName(c).toUpperCase())}</b></div>
