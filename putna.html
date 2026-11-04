@@ -2035,7 +2035,7 @@ function vCar(){
   const secs=[['overview','Информация'],['book','Книжка'],['fuel','Гориво'],['service','Сервиз'],['docs','Документи'],['tyres','Гуми'],['damage','Щети'],['problems','Проблеми'],['history','История']];
   let h=heroRail(c)+`<div class="vhero-meta"><span class="status ${lvl}">${lvl==='off'?'Неактивен':lvl==='ok'?'Изправен':lvl==='crit'?'Критично':'Има предстоящи задачи'}</span>${isStaff()?`<span class="small muted">Отдел: ${esc(dname(c.dept))}</span>`:''}
     ${c.session?`<span class="pill acc">Временно: ${esc(uname(c.session.userId))} от ${fds(c.session.date)} ${esc(c.session.time||'')}</span>`:''}</div>
-    ${m&&mp('cars')?`<div class="grid2"><button class="btn sm" data-act="editCar" data-car="${c.id}">Редактирай</button><button class="btn sm" data-act="toggleCar" data-car="${c.id}">${c.active===false?'Активирай':'Деактивирай'}</button></div>`:''}`;
+    `;
   if(c.session)h+=sessionCard(c);
   if(c.active!==false)h+=actionTiles(c);
   h+=`<div class="chips" role="tablist">${secs.map(([k,l])=>`<button class="chip" data-act="carSec" data-k="${k}" aria-pressed="${R.carSec===k}">${l}</button>`).join('')}</div>`;
@@ -2776,7 +2776,7 @@ function openEditCar(id){
   <fieldset><legend>Гуми</legend>
     ${fld('Размер на гумите',inp('tyreSize',c?.tyreSize,'text','placeholder="напр. 185/65 R15"'))}
     ${fld('Монтирани в момента',sel('tyreSeason',[['summer','Летни'],['winter','Зимни'],['all','Всесезонни']],c?.tyreSeason||tyreTarget(today())))}
-    <div class="grid2">${fld('Налягане предни, bar',ninp('pFront',p.front,'placeholder="2.2"'))}${fld('Налягане задни, bar',ninp('pRear',p.rear,'placeholder="2.2"'))}</div></fieldset>`,async f=>{
+    <div class="grid2">${fld('Налягане предни, bar',ninp('pFront',p.front,'placeholder="2.2"'))}${fld('Налягане задни, bar',ninp('pRear',p.rear,'placeholder="2.2"'))}</div></fieldset>${c?`<button type="button" class="linkbtn" style="margin:6px auto 0;display:block;color:var(--crit)" data-act="toggleCar" data-car="${c.id}">${c.active===false?'Активирай автомобила':'Деактивирай автомобила'}</button>`:''}`,async f=>{
     if(isMgr())f.dept=me().dept;
     const reg=normReg(f.reg);if(!f.make.trim()||!f.model.trim())fail('Въведи марка и модел.');if(!reg)fail('Въведи регистрационен номер.');
     const dup=Object.values(S.cars).find(x=>x.id!==c?.id&&x.active!==false&&normReg(x.reg)===reg);
