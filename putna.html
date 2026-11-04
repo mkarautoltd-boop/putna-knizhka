@@ -1206,8 +1206,8 @@ html.lux:not(.navy) body::after{background:
  radial-gradient(42% 30% at 8% 42%,rgba(230,120,40,.42),transparent 70%),
  radial-gradient(40% 28% at 92% 70%,rgba(190,80,30,.40),transparent 70%),
  radial-gradient(45% 28% at 15% 96%,rgba(198,166,107,.38),transparent 70%),
- #0B0D10!important;background-size:140% 140%!important;animation:luxGlow 22s ease-in-out infinite alternate}
-@keyframes luxGlow{0%{background-position:0% 0%}50%{background-position:60% 40%}100%{background-position:100% 100%}}
+ #0B0D10!important;inset:-25%!important;will-change:transform;animation:luxGlow 22s ease-in-out infinite alternate}
+@keyframes luxGlow{0%{transform:translate3d(0,0,0)}50%{transform:translate3d(-6%,4%,0) scale(1.04)}100%{transform:translate3d(5%,-5%,0)}}
 html.lux #fxOk .box{background:linear-gradient(180deg,#1D2229,#14171C)!important;box-shadow:inset 0 0 0 1px rgba(198,166,107,.45),0 24px 50px -18px rgba(0,0,0,.9)!important}
 html.lux #fxOk circle{fill:#C6A66B}
 html.lux #fxOk path{stroke:#0B0D10}
@@ -3515,13 +3515,13 @@ setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hid
 const APP_VER='92';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
-  try{const t=await(await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();
+  try{const t=await(await fetch(location.pathname.replace(/[^/]*$/,'')+'ver.txt?'+Date.now(),{cache:'no-store'})).text();
     const m=t.match(/const APP_VER='([^']+)'/);
     if(m&&m[1]!==APP_VER){const go=()=>location.replace(location.pathname+'?v='+m[1]+'&t='+Date.now());
       if($('#sheet').hidden)go();else{const w=setInterval(()=>{if($('#sheet').hidden){clearInterval(w);go()}},2000)}}}catch(e){}
 }
-(function verFirst(){if(VER_OK)return;const done=()=>{if(!VER_OK){VER_OK=true;try{render()}catch(e){}}};const to=setTimeout(done,1500);
-  fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/const APP_VER='([^']+)'/);
+(function verFirst(){if(VER_OK)return;const done=()=>{if(!VER_OK){VER_OK=true;try{render()}catch(e){}}};const to=setTimeout(done,1000);
+  fetch(location.pathname.replace(/[^/]*$/,'')+'ver.txt?'+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/const APP_VER='([^']+)'/);
     if(m&&m[1]!==APP_VER){clearTimeout(to);location.replace(location.pathname+'?v='+m[1]+'&t='+Date.now())}else{clearTimeout(to);_verAt=Date.now();done()}}).catch(()=>{clearTimeout(to);done()})})();
 setTimeout(checkUpdate,2000);setInterval(checkUpdate,10*60000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate()});
