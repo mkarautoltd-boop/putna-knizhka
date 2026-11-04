@@ -1202,7 +1202,8 @@ html.lux:not(.navy) .qa-more *{color:#0B0D10!important}
 /* снимката: без filter/mask (на iPhone са много бавни при 60 карти) – затъмняването е с прост слой отгоре */
 html.lux:not(.navy) .vhero-bg:not(.svg){opacity:1;object-position:72% 60%}
 html.lux:not(.navy) .vhero::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(29,34,41,.72) 0%,rgba(29,34,41,.18) 55%,rgba(29,34,41,0) 100%)}
-html.lux:not(.navy) .vhero>*:not(.vhero-bg){z-index:1}
+html.lux:not(.navy) .vhero>*:not(.vhero-bg):not(.vhero-gear){z-index:1}
+html.lux:not(.navy) .vhero>.vhero-gear{z-index:3}
 /* тема: живи петна отзад и златна отметка „Записано“ */
 html.lux:not(.navy) body::after{background:
  radial-gradient(38% 26% at 88% 6%,rgba(198,166,107,.55),transparent 70%),
