@@ -1231,6 +1231,16 @@ html.lux .session b{color:var(--ink)!important}html.lux .session .small,html.lux
 html.lux .session .num{color:#E6CF95!important}
 html.lux .session .isq{background:linear-gradient(160deg,rgba(255,255,255,.12),rgba(255,255,255,.03))!important;box-shadow:inset 0 0 0 1px var(--rimg)!important}
 html.lux .session .isq .ic{stroke:#E6CF95!important}
+/* тема на компютър: страничното меню като на телефона (графит и злато) */
+@media (min-width:1000px) and (hover:hover) and (pointer:fine){
+  html.lux:not(.navy) #shell>.tabs{background:#14171C!important;box-shadow:1px 0 0 #30343A!important}
+  html.lux.navy #shell>.tabs{background:linear-gradient(180deg,#0B1428,#14213D)!important;box-shadow:1px 0 0 rgba(214,184,120,.28)!important}
+  html.lux #shell>.tabs .tabs-in{background:none!important;box-shadow:none!important;border:0!important}
+  html.lux #shell>.tabs .tabs-in::before{color:#E6CF95!important;border-bottom-color:#30343A!important}
+  html.lux #shell>.tabs .tab .tsv{margin:0!important;flex:none}
+  html.lux #shell>.tabs .tab{justify-content:flex-start!important;color:#A8B2C8!important}
+  html.lux #shell>.tabs .tab[aria-current="true"]{background:#29261F!important;box-shadow:inset 0 0 0 1px rgba(198,166,107,.35)!important}
+}
 </style>
 </head>
 <body>
@@ -1288,7 +1298,7 @@ html.lux .session .isq .ic{stroke:#E6CF95!important}
 /* при отваряне първо проверява за нова версия (до 1.5 с) – иначе за миг излиза старата */
 var VER_OK=location.protocol==='file:';
 try{if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js')}catch(e){}
-try{if(localStorage.getItem('pk_navy')==='1')document.documentElement.classList.add('lux','navy');else if(localStorage.getItem('pk_lux')==='1')document.documentElement.classList.add('lux')}catch(e){}
+try{if(localStorage.getItem('pk_navy')==='1')document.documentElement.classList.add('lux','navy');else if(localStorage.getItem('pk_lux')!=='0')document.documentElement.classList.add('lux')}catch(e){}
 window.addEventListener('error',e=>{const b=document.getElementById('bootErr');if(b&&!document.getElementById('boot').hidden){b.textContent='Грешка: '+(e.message||e);b.hidden=false}});
 const PREFILL=new URLSearchParams(location.search).get('u')||'';
 const API_URL='https://script.google.com/macros/s/AKfycbwqRZRiavSu2EORzG_kHWtKDJtGgIHxP51Fchagv1NC71JTDCwdKgwecgsexl0hW4aRgQ/exec';
@@ -1745,7 +1755,7 @@ function patchKeepQ(mn,html){const q=document.activeElement;if(!q||q.id!=='q'||q
   const before=[],after=[];let seen=false;for(const n of [...t.content.childNodes]){if(n===nq){seen=true;continue}(seen?after:before).push(n)}
   for(const n of before)mn.insertBefore(n,q);for(const n of after)mn.appendChild(n);mn._h=html;return true}
 /* тема „Нощ и злато“ – само за администратора, пази се на устройството */
-const luxOn=()=>{try{return localStorage.getItem('pk_lux')==='1'}catch(e){return false}};
+const luxOn=()=>{try{return localStorage.getItem('pk_lux')!=='0'}catch(e){return true}};
 /* шофьорите винаги са в нощната синя тема, мениджърите – в черната (като админа) */
 function applyLux(){const u=meId&&me(),drv=!!u&&u.role==='driver',h=document.documentElement;
   h.classList.toggle('lux',drv||isMgr()||(luxOn()&&(!meId||isAdmin())));h.classList.toggle('navy',drv);
