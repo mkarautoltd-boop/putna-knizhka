@@ -1243,6 +1243,24 @@ html.lux .session .isq .ic{stroke:#E6CF95!important}
   html.lux #shell>.tabs .tab{justify-content:flex-start!important;color:#A8B2C8!important}
   html.lux #shell>.tabs .tab[aria-current="true"]{background:#29261F!important;box-shadow:inset 0 0 0 1px rgba(198,166,107,.35)!important}
 }
+/* екран „кола“: на телефон обвивките не съществуват за подредбата */
+.car-l,.car-r{display:contents}
+#main.anim>.car-l>*,#main.anim>.car-r>*{animation:fxRise .3s cubic-bezier(.2,.8,.2,1) both}
+@media (min-width:1000px) and (hover:hover) and (pointer:fine){
+  #main[data-tab="car"]{display:grid!important;grid-template-columns:minmax(360px,420px) minmax(0,1fr);gap:24px;align-items:start}
+  #main[data-tab="car"]>.car-l,#main[data-tab="car"]>.car-r{display:flex;flex-direction:column;gap:14px;min-width:0}
+  #main[data-tab="car"] .car-l .vhero-slot{flex:0 0 100%!important}
+  #main[data-tab="car"] .car-l .q4{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  #main[data-tab="car"] .car-l .dmgb{align-self:flex-end}
+  #main[data-tab="car"] .car-r>.chips{position:sticky;top:0;z-index:5}
+  /* списък „Коли“: всички карти в мрежа, без плъзгане */
+  #main[data-tab="cars"] .vhero-rail{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));overflow:visible!important;scroll-snap-type:none}
+  #main[data-tab="cars"] .vhero-slot{flex:none!important}
+  #main[data-tab="cars"] .vhero-rail::before,#main[data-tab="cars"] .vhero-rail::after{display:none!important}
+  #main[data-tab="car"] .car-r .dcards{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))!important}
+  #main[data-tab="cars"] .vhero-slot:not(.on) .vhero{opacity:1!important;transform:none!important}
+  #main[data-tab="cars"] .vhero-dots,#main[data-tab="cars"] .vhero-count,#main[data-tab="cars"] .vhero-rail~.sec{display:none!important}
+}
 </style>
 </head>
 <body>
@@ -2057,9 +2075,9 @@ function vCar(){
     `;
   if(c.session)h+=sessionCard(c);
   if(c.active!==false)h+=actionTiles(c);
-  h+=`<div class="chips" role="tablist">${secs.map(([k,l])=>`<button class="chip" data-act="carSec" data-k="${k}" aria-pressed="${R.carSec===k}">${l}</button>`).join('')}</div>`;
   const F={overview:secOverview,book:secBook,fuel:secFuel,service:secService,docs:secDocs,tyres:secTyres,damage:secDamage,problems:secProblems,history:secHistory};
-  return h+(F[R.carSec]||secOverview)(c,m);
+  /* car-l / car-r: на телефон не се виждат (display:contents), на лаптоп са две колони */
+  return `<div class="car-l">${h}</div><div class="car-r"><div class="chips" role="tablist">${secs.map(([k,l])=>`<button class="chip" data-act="carSec" data-k="${k}" aria-pressed="${R.carSec===k}">${l}</button>`).join('')}</div>`+(F[R.carSec]||secOverview)(c,m)+'</div>';
 }
 function fuelLines(a){const t={...(a.types||{})};if(a.bi){if(!('Газ' in t)&&!('Метан' in t))t['Газ']=0;if(!('Бензин' in t))t['Бензин']=0}
   const k=Object.keys(t).sort((x,y)=>(FK_ORDER.indexOf(x)+99)%99-(FK_ORDER.indexOf(y)+99)%99);
