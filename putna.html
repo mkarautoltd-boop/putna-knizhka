@@ -7,6 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Пътна книжка">
+<link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0E2748">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-180.png">
@@ -1286,6 +1287,7 @@ html.lux .session .isq .ic{stroke:#E6CF95!important}
 })();
 /* при отваряне първо проверява за нова версия (до 1.5 с) – иначе за миг излиза старата */
 var VER_OK=location.protocol==='file:';
+try{if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js')}catch(e){}
 try{if(localStorage.getItem('pk_navy')==='1')document.documentElement.classList.add('lux','navy');else if(localStorage.getItem('pk_lux')==='1')document.documentElement.classList.add('lux')}catch(e){}
 window.addEventListener('error',e=>{const b=document.getElementById('bootErr');if(b&&!document.getElementById('boot').hidden){b.textContent='Грешка: '+(e.message||e);b.hidden=false}});
 const PREFILL=new URLSearchParams(location.search).get('u')||'';
