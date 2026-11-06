@@ -1903,12 +1903,8 @@ function vHome(){
   if(!cars.length){
     return h+`<div class="empty">${icon('car')}<b>Още няма автомобили${isMgr()?' в твоя отдел':''}.</b>${isAdmin()?`Започни с отдел, потребители и първия автомобил или зареди примерните данни от спецификацията.<div class="row" style="justify-content:center"><button class="btn primary" data-act="editCar">Добави автомобил</button><button class="btn" data-act="demo">Зареди примерни данни</button></div>`:''}</div>`;
   }
-<<<<<<< HEAD
-  h=newProblems(cars)+kpis(cars)+h+upcomingBooks(cars);
-=======
-  const P={np:newProblems(cars),kp:kpis(cars),ses:h,bk:upcomingBooks(cars)+(isAdmin()?vigDue(cars):'')};
+  const P={np:newProblems(cars),kp:kpis(cars),ses:h,bk:upcomingBooks(cars)};
   h=P.np+P.kp+P.ses+P.bk;const hq0=h.length;
->>>>>>> a92f9c6 (Лаптоп: Начало и Автомобили подредени като екрана на колата (две колони) (чака одобрение))
   const T=k=>`tab" data-k="${k}`;
   const qa=isAdmin()?[[T('cars'),'blue','car','Автомобили'],[T('depts'),'purple','building','Отдели'],[T('staff'),'green','user','Шофьори'],[T('users'),'grey','users','Потребители'],
       [T('tasks'),'purple','tasks','Задачи'],[T('problemsAll'),'red','alert','Проблеми'],[T('damageAll'),'orange','burst','Щети'],[T('serviceAll'),'orange','wrench','Сервиз'],[T('docsAll'),'grey','doc','Документи'],
