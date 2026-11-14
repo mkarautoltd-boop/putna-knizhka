@@ -1913,20 +1913,15 @@ function vHome(){
   const P={np:newProblems(cars),kp:kpis(cars),ses:h,bk:upcomingBooks(cars)+(isAdmin()?vigDue(cars):'')};
   h=P.np+P.kp+P.ses+P.bk;const hq0=h.length;
   const T=k=>`tab" data-k="${k}`;
-  const qa=isAdmin()?[[T('cars'),'blue','car','Автомобили'],[T('depts'),'purple','building','Отдели'],[T('staff'),'green','user','Шофьори'],[T('users'),'grey','users','Потребители'],
-      [T('tasks'),'purple','tasks','Задачи'],[T('problemsAll'),'red','alert','Проблеми'],[T('damageAll'),'orange','burst','Щети'],[T('serviceAll'),'orange','wrench','Сервиз'],[T('docsAll'),'grey','doc','Документи'],
+  const qa=isAdmin()?[[T('staff'),'green','user','Шофьори'],[T('problemsAll'),'red','alert','Проблеми'],[T('damageAll'),'orange','burst','Щети'],[T('serviceAll'),'orange','wrench','Сервиз'],[T('docsAll'),'grey','doc','Документи'],
       [T('tyresAll'),'blue','tyre','Гуми'],[T('fuelAll'),'orange','fuel','Гориво'],[T('tripsAll'),'purple','road','Километри'],[T('reports'),'green','reports','Отчети'],
-      [T('messages'),'blue','bell','Съобщения'],['takeover','navy','wheel','Ще управлявам'],['trip','grey','doc','Пътен запис'],[T('settings'),'grey','gear','Настройки']]
-    :[[T('cars'),'blue','car','Автомобили'],[T('tasks'),'purple','tasks','Задачи'],[T('tripsAll'),'purple','road','Километри'],[T('reports'),'green','reports','Отчети'],
+      [T('messages'),'blue','bell','Съобщения'],['takeover','navy','wheel','Ще управлявам'],['trip','grey','doc','Пътен запис']]
+    :[[T('tripsAll'),'purple','road','Километри'],[T('reports'),'green','reports','Отчети'],
       [T('staff'),'grey','users','Шофьори'],[T('messages'),'orange','bell','Съобщения'],[T('damageAll'),'orange','burst','Щети'],[T('docsAll'),'grey','doc','Документи'],
       ['fuel','blue','fuel','Зареждане'],[T('serviceAll'),'orange','wrench','Сервиз'],['takeover','navy','wheel','Ще управлявам']];
   {if(!mp('reports'))qa.splice(0,qa.length,...qa.filter(x=>x[3]!=='Отчети'));const open=qaOpen(),N=8,more=qa.length>N;
   h+=`<div class="sec"><h3>Бързи действия</h3><div class="q4">${qa.map(([a,c,i,l],k)=>`<button class="q4b ${c}${more&&k>=N?' qx':''}" data-act="${a}"${more&&k>=N&&!open?' hidden':''}><span class="q4i"><i class="q4e">${QT_EMO[l]||icon(i)}</i>${icon(i,'q4s')}</span><b${l==='Автомобили'?' class="q4l"':''}>${QT_SHY[l]||l}</b></button>`).join('')}</div>${more?`<button class="qa-more" data-act="qaToggle" aria-expanded="${open}"><span>${open?'Скрий':`Още ${qa.length-N} бутона`}</span><i>${open?'▴':'▾'}</i></button>`:''}${isMgr()&&mp('sos')?sosBtn():''}</div>`}
   P.qa=h.slice(hq0);const hq1=h.length;
-  const al=allAlerts();
-  const worst=cars.slice().sort((a,b)=>({crit:0,warn:1,ok:2}[carLevel(a)])-({crit:0,warn:1,ok:2}[carLevel(b)]));
-  h+=`<div class="sec"><div class="sec-head"><h3>Автомобили</h3><button class="linkbtn" data-act="tab" data-k="cars">Виж всички (${cars.length})</button></div><div class="carlist">${worst.slice(0,5).map(carCard).join('')}</div></div>`;
-  if(al.length)h+=`<div class="card"><div class="card-h"><h3>Предупреждения</h3><button class="linkbtn" data-act="tab" data-k="tasks">Виж всички</button></div>${alertList(al.slice(0,4))}</div>`;
   const recent=histItems(e=>scopeIds().has(e.carId)&&e.t!=='edit').slice(0,4);
   if(recent.length)h+=`<div class="card"><div class="card-h"><h3>Последни събития</h3></div><div class="alerts">${recent.map(i=>`<div class="irow" style="box-shadow:none;padding:4px 0;cursor:default"><span class="isq ${i.kind==='fuel'?'blue':i.kind==='problem'?'red':i.kind==='service'?'orange':i.kind==='trip'?'purple':'grey'}">${icon(i.kind==='fuel'?'fuel':i.kind==='problem'?'alert':i.kind==='service'?'wrench':i.kind==='trip'?'road':'history')}</span><div class="tx"><b style="font-weight:600;font-size:14px">${esc(i.text)}</b><span class="d">${esc(regText(S.cars[i.carId]?.reg))} · ${fts(i.ts)} · ${esc(uname(i.by))}</span></div></div>`).join('')}</div></div>`;
   const depts=isAdmin()?Object.values(S.depts):[];
