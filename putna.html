@@ -1897,8 +1897,8 @@ function qaToggle(b){const o=!qaOpen();QA_OPEN=o;
 /* лаптоп/компютър – същото условие като в CSS блока за лаптоп */
 const DESKQ=matchMedia('(min-width:1000px) and (hover:hover) and (pointer:fine)'),DESK=()=>DESKQ.matches;
 try{DESKQ.addEventListener('change',()=>{try{render()}catch(e){}})}catch(e){}
-/* новогодишно пожелание: 1–4 януари, за всички */
-function nyCard(){const d=new Date();if(d.getMonth()!==0||d.getDate()>4)return '';const y=d.getFullYear();
+/* новогодишно пожелание: 1–5 януари, за всички */
+function nyCard(){const d=new Date();if(d.getMonth()!==0||d.getDate()>5)return '';const y=d.getFullYear();
   return `<div class="nyc"><i class="ny-s s1">✦</i><i class="ny-s s2">✦</i><i class="ny-s s3">✧</i><i class="ny-s s4">✦</i>
     <div class="ny-e">🎆</div><small>${y}</small><b>Честита Нова година!</b>
     <p>Здраве, късмет и спокойни пътища през ${y}! Благодарим на всички за труда през изминалата година.</p><span>Весели празници! 🥂</span></div>`}
