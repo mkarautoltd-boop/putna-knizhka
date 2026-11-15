@@ -913,6 +913,12 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .dmg-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}.dmg-tags i{font-style:normal;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:99px;background:#EEF1F6;color:#5B6778}
 .dmg-tags i.st.new{background:#FFF1E0;color:#B45F00}.dmg-tags i.st.claim,.dmg-tags i.ks{background:#E7EEFF;color:#2E55D6}.dmg-tags i.st.partial{background:#F3E8FF;color:#7C3AED}
 .dsteps{display:flex;gap:6px;margin:4px 0 2px}.dsteps span{flex:1;text-align:center;font-size:11.5px;font-weight:700;padding:7px 4px;border-radius:10px;background:#EEF1F6;color:#8A97AB}.dsteps span.ok{background:#E6F7EC;color:#1A8A4B}.dsteps span.cur{background:#FFF1E0;color:#B45F00}.dmg-tags i.st.resolved{background:#E6F7EC;color:#1A8A4B}
+.fillc{border-radius:20px;padding:16px;background:linear-gradient(135deg,#FFF6E6,#FFE9C7);box-shadow:inset 0 0 0 1px rgba(214,150,40,.35);display:flex;flex-direction:column;gap:10px}
+.fillc .fc-h{display:flex;align-items:center;gap:12px}.fillc .fc-i{font-size:30px;line-height:1}
+.fillc small{display:block;font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#B4730F}
+.fillc b{display:block;font-size:17px}.fillc p{margin:0;font-size:14px;line-height:1.4;opacity:.85}
+html.lux .fillc{background:linear-gradient(160deg,rgba(230,150,50,.20),rgba(230,150,50,.06))!important;box-shadow:inset 0 0 0 1px rgba(230,160,70,.45)!important;color:var(--ink)}
+html.lux .fillc small{color:#E9B66A}
 .nokm-l{display:flex;flex-direction:column;gap:8px}
 .nk-top{display:flex;align-items:center;gap:10px;width:100%;margin-bottom:12px;padding:12px 14px;border:2px solid #FFD8A8;border-radius:16px;background:linear-gradient(90deg,#FFF3E0,#fff 80%);font:inherit;color:inherit;text-align:left;cursor:pointer}
 .nk-top span{font-size:22px}.nk-top b{flex:1;color:#B45F00;font-size:15.5px}.nk-top i{font-style:normal;font-size:22px;color:#B45F00}
@@ -1873,6 +1879,17 @@ const kmMissing=c=>{const td=today();return !byCar(c.id).some(e=>e.t==='trip'&&e
 const NOKM_HOUR=10;
 function noKmList(){if(!isWorkday()||new Date().getHours()<NOKM_HOUR)return [];return scopeCars().filter(c=>c.active!==false&&drvIds(c).length&&kmMissing(c))}
 function openNoKm(){const L=noKmList();openSheet(`Без километраж днес · ${L.length}`,L.length?`<p class="small muted">Шофьорите не са въвели началния километраж за ${fd(today())}.</p><div class="nokm-l">${L.map(c=>`<button class="nk-row" data-act="openCar" data-car="${c.id}"><b>${esc(regText(c.reg))}</b><span>${esc(carName(c))}</span><small>${esc(drvIds(c).map(uname).join(', '))}</small></button>`).join('')}</div>`:'<div class="empty">Всички са въвели километража.</div>',null)}
+/* зареждане до пълно за новия месец: от първия работен ден, докато колата не зареди този месец (до 15-о число) */
+const FILL_TO=15,MNG=['януари','февруари','март','април','май','юни','юли','август','септември','октомври','ноември','декември'];
+function firstWd(ym){for(let d=1;d<8;d++){const ds=ym+'-0'+d,g=new Date(ds+'T12:00:00').getDay();if(g>0&&g<6)return ds}return ym+'-01'}
+function needFill(c){const td=today(),ym=td.slice(0,7);if(td<firstWd(ym)||+td.slice(8)>FILL_TO)return false;return !byCar(c.id).some(e=>e.t==='fuel'&&!e.del&&(e.date||'')>=ym+'-01')}
+function fillList(){return scopeCars().filter(c=>c.active!==false&&drvIds(c).length&&needFill(c))}
+function fillMonths(){const m=new Date().getMonth();return [MNG[m],MNG[(m+11)%12]]}
+function fillCard(c){if(!needFill(c))return '';const [cur,prev]=fillMonths();
+  return `<div class="fillc"><div class="fc-h"><span class="fc-i">⛽</span><div><small>Нов месец · ${cur}</small><b>Зареди до пълно днес</b></div></div><p>Пълният резервоар в началото на месеца затваря разхода за ${prev}.</p><button class="btn go wide" data-act="fuel" data-car="${c.id}">${icon('fuel')} Зареди</button></div>`}
+function fillStaff(){const L=fillList();if(!L.length)return '';const all=scopeCars().filter(c=>c.active!==false&&drvIds(c).length).length,[cur]=fillMonths();
+  return `<div class="fillc"><div class="fc-h"><span class="fc-i">⛽</span><div><small>Нов месец · ${cur}</small><b>Не са заредили до пълно · ${L.length} от ${all}</b></div></div><p>${esc(L.slice(0,6).map(c=>regText(c.reg)).join(', '))}${L.length>6?' и още '+(L.length-6):''}</p><button class="btn wide" data-act="openFill">Виж колите</button></div>`}
+function openFill(){const L=fillList(),[cur,prev]=fillMonths();openSheet(`Без зареждане за ${cur} · ${L.length}`,L.length?`<p class="small muted">Тези коли още не са заредили до пълно. Без него разходът за ${prev} остава „предварителен“.</p><div class="nokm-l">${L.map(c=>`<button class="nk-row" data-act="openCar" data-car="${c.id}"><b>${esc(regText(c.reg))}</b><span>${esc(carName(c))}</span><small>${esc(drvIds(c).map(uname).join(', '))}</small></button>`).join('')}</div>`:'<div class="empty">Всички са заредили.</div>',null)}
 function kpis(cars){
   const lv=cars.map(carLevel),crit=lv.filter(x=>x==='crit').length,warn=lv.filter(x=>x==='warn').length;
   return `<div class="kpis">
@@ -1911,7 +1928,7 @@ function vHome0(){
     if(!my.length)return h+`<div class="empty">${icon('car')}<b>Нямаш назначен автомобил.</b>Обърни се към администратора или мениджъра на отдела.</div>`;
     for(const c of my){
       const al=carAlerts(c);
-      h=drvStats(c)+h+svcBooks(c).map(bookCard).join('')+carHero(c,true)+streakCard(c);
+      h=drvStats(c)+h+fillCard(c)+svcBooks(c).map(bookCard).join('')+carHero(c,true)+streakCard(c);
       if(al.length)h+=`<div class="card"><div class="card-h"><h3>Моите задачи</h3><button class="linkbtn" data-act="tab" data-k="tasks">Всички</button></div>${alertList(al.slice(0,4))}
         ${al.some(a=>a.kind==='pressure')?`<button class="btn go wide" data-act="check" data-car="${c.id}">${icon('plus')} Направи проверката</button>`:''}</div>`;
       h+=`<div class="sec"><h3>Бързи действия</h3>${actionTiles(c)}</div>`;
@@ -1925,7 +1942,7 @@ function vHome0(){
   if(!cars.length){
     return h+`<div class="empty">${icon('car')}<b>Още няма автомобили${isMgr()?' в твоя отдел':''}.</b>${isAdmin()?`Започни с отдел, потребители и първия автомобил или зареди примерните данни от спецификацията.<div class="row" style="justify-content:center"><button class="btn primary" data-act="editCar">Добави автомобил</button><button class="btn" data-act="demo">Зареди примерни данни</button></div>`:''}</div>`;
   }
-  const P={np:newProblems(cars),kp:kpis(cars),ses:h,bk:upcomingBooks(cars)+(isAdmin()?vigDue(cars):'')};
+  const P={np:newProblems(cars)+fillStaff(),kp:kpis(cars),ses:h,bk:upcomingBooks(cars)+(isAdmin()?vigDue(cars):'')};
   h=P.np+P.kp+P.ses+P.bk;const hq0=h.length;
   const T=k=>`tab" data-k="${k}`;
   const qa=isAdmin()?[[T('staff'),'green','user','Шофьори'],[T('problemsAll'),'red','alert','Проблеми'],[T('damageAll'),'orange','burst','Щети'],[T('serviceAll'),'orange','wrench','Сервиз'],[T('docsAll'),'grey','doc','Документи'],
@@ -3141,9 +3158,11 @@ function vCal(){HEAD={title:'Календар',back:'home'};
 function pbanList(){const ids=scopeIds(),rd=(S.notif&&S.notif.read)||{};return Object.values(S.problems).filter(p=>ids.has(p.carId)&&p.status!=='resolved'&&p.by!==meId&&!rd[npKey(p.id)]).sort((a,b)=>(b.ts||'').localeCompare(a.ts||''))}
 function pbanItems(){const when=ts=>ts&&fts(ts).slice(0,10)===fd(today())?'днес '+fts(ts).slice(-5):ts?fts(ts).slice(0,10):'';
   if(isStaff()){const out=pbanList().map(p=>{const c=S.cars[p.carId];return {k:'p:'+p.id,ts:p.ts,ic:isDmg(p)?'💥':'🚨',img:p.photo,red:1,t:(isDmg(p)?(p.dtype==='crash'?'ПТП – ':'Щета – '):'Нов сигнал от ')+uname(p.by),s:`${regText(c?.reg)} · ${p.cat}${p.desc?' – '+p.desc:''}`,w:when(p.ts),go:()=>viewProblem(p.id)}});
+    {const fl=fillList();if(fl.length)out.push({k:'fill:'+today().slice(0,7),ts:'',ic:'⛽',org:1,t:fl.length===1?'1 кола не е заредила за новия месец':fl.length+' коли не са заредили за новия месец',s:fl.map(c=>regText(c.reg)).join(', '),w:'днес',go:openFill})}
     const nk=noKmList();if(nk.length)out.push({k:'nokm:'+today(),ts:'',ic:'⏰',org:1,t:nk.length===1?'1 кола без километраж днес':nk.length+' коли без километраж днес',s:nk.map(c=>regText(c.reg)).join(', '),w:'днес',go:openNoKm});
     return out}
   const old=new Date(Date.now()-7*864e5).toISOString(),mc=new Set(myCars().map(c=>c.id)),out=[];
+  for(const c of myCars())if(needFill(c))out.push({k:'fill:'+today().slice(0,7)+':'+c.id,ts:'9',ic:'⛽',org:1,t:'Нов месец – зареди до пълно',s:regText(c.reg)+' · за да се затвори разходът за '+fillMonths()[1],w:'днес',go:()=>openFuel(c)});
   for(const m of visibleMsgs())if(m.by!==meId&&(m.ts||'')>=old)out.push({k:'m:'+m.id,ts:m.ts,ic:'💬',t:'Съобщение от '+uname(m.by),s:m.text,w:when(m.ts),go:()=>{R.tab='messages';toTop();render()}});
   for(const b of Object.values(S.tasks))if(b.type==='svcbook'&&b.status!=='done'&&!b.seen&&mc.has(b.carId))out.push({k:'b:'+b.id+':'+b.due+(b.time||''),ts:b.ts||'',ic:'📅',t:'Час за сервиз: '+fdw(b.due)+(b.time?' в '+b.time:''),s:`${regText(S.cars[b.carId]?.reg)} · ${shopOf(b)?.name||b.shopName||''}${b.what?' · '+b.what:''}`,w:'',go:()=>viewBook(b.id)});
   for(const t of Object.values(S.tasks))if(t.type!=='svcbook'&&t.status!=='done'&&t.by!==meId&&(t.assignee===meId||(!t.assignee&&mc.has(t.carId)))&&(t.ts||'9')>=old)out.push({k:'t:'+t.id,ts:t.ts,ic:'📋',t:'Нова задача: '+(t.title||TTYPES[t.type]||''),s:`${regText(S.cars[t.carId]?.reg)}${t.due?' · до '+fd(t.due):''}`,w:when(t.ts),go:()=>{R.tab='tasks';toTop();render()}});
@@ -3485,7 +3504,7 @@ const ACT={
   carFilter:d=>{R.carFilter=d.k;render()},toggleInactive:()=>{R.showInactive=!R.showInactive;render()},
   rep:d=>{R.rep=d.k;render()},
   closeSheet:closeSheet,
-  morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
+  morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),openFill:()=>openFill(),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
   takeover:d=>openTakeover(d.car),endSession:d=>openEndSession(d.car),viewProblem:d=>viewProblem(d.id),
   editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),docCheck:(d,b)=>checkDoc(d.car,d.k,b),qaToggle:(d,b)=>qaToggle(b),noKm:()=>openNoKm(),seenProblem:d=>seenProblem(d.id),damage:d=>openDamage(d.car),viewDamage:d=>viewDamage(d.id),editDamage:d=>openDamage(null,d.id),dmgClaim:d=>openClaim(d.id),dmgRepair:d=>openRepair(d.id),rpAll:()=>rpAll(),calNav:d=>calNav(d.k),calDay:d=>{R.calD=d.d;R.calM=d.d.slice(0,7);render()},bookCal:d=>bookCal(d.id),alToggle:(d,b)=>alToggle(d,b),newBook:d=>openBook(d.car),editBook:d=>openBook(null,d.id),viewBook:d=>viewBook(d.id),seenBook:d=>seenBook(d.id),doneBook:d=>doneBook(d.id),loadOld:d=>loadOld(null,d.car),
   newTask:openNewTask,doneTask:d=>doneTask(d.id),delEntry:d=>delEntry(d.car,d.id),
