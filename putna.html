@@ -2133,7 +2133,7 @@ function tankCard(c){const tk=tank(c);if(tk==null)return '';const cap=+c.tankCap
 function secOverview(c,m){
   const ym=today().slice(0,7),a=agg(entries().filter(e=>e.carId===c.id&&e.date?.startsWith(ym)));
   const n=c.norms||{},sf=seasonFactor(c,today());
-  return `<div class="info"><div><span>Марка / Модел</span><b>${esc(carName(c))}</b></div><div><span>Рег. номер</span><b>${esc(regText(c.reg))}</b></div><div><span>Година</span><b>${esc(c.year||'—')}</b></div><div><span>Гориво</span><b>${esc(c.fuel||'—')}</b></div><div><span>VIN номер</span><b style="font-family:ui-monospace,Menlo,monospace;font-size:14px;word-break:break-all">${esc(c.vin||'—')}</b></div><div><span>Размер на гумите</span><b>${esc(c.tyreSize||'—')}</b></div><div><span>Пробег</span><b>${fint(c.odo)} км</b></div><div><span>Отдел</span><b>${esc(dname(c.dept))}</b></div><div><span>${drvIds(c).length>1?'Шофьори':'Постоянен шофьор'}</span><b>${drvIds(c).length?drvIds(c).map(x=>esc(uname(x))).join('<br>'):'—'}</b></div></div>
+  return `<div class="info"><div><span>Марка / Модел</span><b>${esc(carName(c))}</b></div><div><span>Рег. номер</span><b>${esc(regText(c.reg))}</b></div><div><span>Година</span><b>${esc(c.year||'—')}</b></div><div><span>Гориво</span><b>${esc(c.fuel||'—')}</b></div><div><span>VIN номер</span><b style="font-family:ui-monospace,Menlo,monospace;font-size:14px;word-break:break-all">${esc(c.vin||'—')}</b></div><div><span>Размер на гумите</span><b>${esc(c.tyreSize||'—')}</b></div><div><span>Масло</span><b>${esc(c.oilType||'—')}</b></div><div><span>Пробег</span><b>${fint(c.odo)} км</b></div><div><span>Отдел</span><b>${esc(dname(c.dept))}</b></div><div><span>${drvIds(c).length>1?'Шофьори':'Постоянен шофьор'}</span><b>${drvIds(c).length?drvIds(c).map(x=>esc(uname(x))).join('<br>'):'—'}</b></div></div>
   ${svcBooks(c).map(bookCard).join('')}${tankCard(c)}<div class="sec"><h3>Задачи и известия</h3>${alertList(carAlerts(c),true)}</div>
   <div class="sec"><h3>${monthLabel(ym)}</h3>${kvBlock(a)}<p class="small muted">Фактическият разход се смята „от пълен до пълен“: литрите от зарежданията след първото в месеца до първото в следващия месец, делено на километрите между тях.</p></div>
   <div class="sec"><div class="sec-head"><h3>Норми за разход</h3>${m&&mp('cars')?`<button class="linkbtn" data-act="editCar" data-car="${c.id}">Промени</button>`:''}</div>
@@ -2727,7 +2727,7 @@ const fluidBox=(fk,title,sub,extra='')=>{const F=FLUIDS[fk];return `<div class="
 const openCheck=guard(carId=>{
   const cf=carField(carId),car=S.cars[cf.id];const p=car.pressure||{};
   openSheet('Периодична проверка',cf.html+`<p class="small muted">Проверява се на всеки ${S.settings.pressureDays} дни. Отбележи какво си проверил.</p>
-  <fieldset><legend>Масло и антифриз</legend>${fluidBox('oil','Масло в двигателя','Какво е нивото по щеката?')}${fluidBox('af','Антифриз','Какво е нивото в разширителния съд?')}</fieldset>
+  <fieldset><legend>Масло и антифриз</legend>${fluidBox('oil','Масло в двигателя','Какво е нивото по щеката?',car.oilType?`<div class="kv"><div><span>Масло за тази кола</span><b>${esc(car.oilType)}</b></div></div>`:'')}${fluidBox('af','Антифриз','Какво е нивото в разширителния съд?')}</fieldset>
   <fieldset><legend>Гуми</legend>${fluidBox('ty','Налягане в гумите','Какво е налягането?',`<div class="kv" id="presRec"><div><span>Предни гуми</span><b>${p.front?fnum(+p.front,1)+' bar':'—'}</b></div><div><span>Задни гуми</span><b>${p.rear?fnum(+p.rear,1)+' bar':'—'}</b></div></div><span class="small muted" style="margin-top:-4px">Препоръчително налягане</span>`)}</fieldset>
   <fieldset><legend>Светлини</legend><div class="fluid"><div class="fl-h"><span class="fl-ic lt">${FL_IC.lt}</span><div><b>Светлини</b><small>Светят ли всички лампи?</small></div></div>${ltPick('lt',true)}
   <div class="fl-warn2">Можеш да приключиш проверката, но напомнянето ще остане, докато не провериш светлините.</div></div></fieldset>
@@ -2839,6 +2839,7 @@ function openEditCar(id){
     ${fld('Зимна надбавка за този автомобил, %',ninp('winterPct',c?.winterPct,`placeholder="общата: ${S.settings.winterPct}%"`),'Остави празно за общата настройка')}</fieldset>
   <fieldset><legend>Резервоар</legend>
     <div class="grid3">${fld('Капацитет, л',ninp('tankCap',c?.tankCap,'placeholder="50"'))}${fld('Начално гориво, л',ninp('tankStart',c?.tankStart,'placeholder="20"'))}${fld('Към дата',inp('tankStartDate',c?.tankStartDate||today(),'date'))}</div></fieldset>
+  <fieldset><legend>Масло</legend>${fld('Вид масло (вискозитет)',inp('oilType',c?.oilType,'text','placeholder="напр. 5W-30" autocapitalize="characters"'),'Показва се в „Информация“ и при проверката')}</fieldset>
   <fieldset><legend>Гуми</legend>
     ${fld('Размер на гумите',inp('tyreSize',c?.tyreSize,'text','placeholder="напр. 185/65 R15"'))}
     ${fld('Монтирани в момента',sel('tyreSeason',[['summer','Летни'],['winter','Зимни'],['all','Всесезонни']],c?.tyreSeason||tyreTarget(today())))}
@@ -2853,7 +2854,7 @@ function openEditCar(id){
     const odoV=num(f.odo);if(odoV!=null&&isNaN(odoV))fail('Километражът трябва да е число.');
     const body={make:f.make.trim(),model:f.model.trim(),reg,year:f.year.trim(),fuel:f.fuel,dept:f.dept,driverIds:dIds,driverId:dIds[0]||null,odo:odoV||0,
       norms:{city:num(f.nCity),highway:num(f.nHighway),mixed:num(f.nMixed)},winterPct:num(f.winterPct),tankCap:num(f.tankCap),tankStart:num(f.tankStart),tankStartDate:f.tankStartDate,
-      vin:f.vin.trim().toUpperCase().replace(/\s/g,''),tyreSize:f.tyreSize.trim(),nPetrol:f.nPetrol!=null?num(f.nPetrol):(c?.nPetrol??null),
+      vin:f.vin.trim().toUpperCase().replace(/\s/g,''),tyreSize:f.tyreSize.trim(),oilType:(f.oilType||'').trim(),nPetrol:f.nPetrol!=null?num(f.nPetrol):(c?.nPetrol??null),
       tyreSeason:f.tyreSeason,pressure:{front:num(f.pFront),rear:num(f.pRear)}};
     if(isStaff()&&photo!==undefined)body.photo=photo;
     if(c){
