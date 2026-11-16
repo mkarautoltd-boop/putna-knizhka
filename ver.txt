@@ -1,1 +1,1 @@
-const APP_VER='105'
+const APP_VER='106'
