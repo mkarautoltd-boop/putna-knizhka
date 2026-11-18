@@ -447,7 +447,7 @@ body:not(.noscroll){overflow:visible!important;overflow-x:clip!important}
 /* iPhone: размазването зад лентата кара iOS да я рисува на грешно място при бързо превъртане – без него */
 @media (hover:none){.tabs-in{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(255,255,255,.985)!important}}
 /* iPhone: лентата е fixed (залепената sticky се разхождаше по екрана при превъртане); отдолу място за нея */
-@media (hover:none){#shell>.tabs{position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:15;-webkit-transform:none;transform:none;will-change:auto}#scroller{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}}
+@media (hover:none){#shell>.tabs{position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:15;-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0);-webkit-backface-visibility:hidden;backface-visibility:hidden}#scroller{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}}
 #scroller .wrap{padding-block:16px 24px}
 .drvlist{display:flex;flex-direction:column;gap:6px;margin:4px 0}
 .li.idle{background:#F6F8FB}
@@ -3193,6 +3193,11 @@ function pushCard(){const st=pushState();if((st!=='ask'&&st!=='home')||lsG('pk_p
 function pushRow(){const st=pushState();if(st==='off')return '';const on=st==='on';
   const sub={on:'Включени на този телефон',ask:'Изключени',home:'Първо добави приложението на началния екран',nosup:'Този телефон не поддържа известия',denied:'Забранени от Настройки на телефона'}[st];
   return `<button class="li" style="border-left:0;border-right:0;border-top:0;background:none;cursor:pointer;text-align:left" data-act="${on?'pushOff':'pushOn'}"><div class="l"><b>🔔 Известия на телефона</b><span>${sub}</span></div><span class="lux-sw${on?' on':''}"><i></i></span></button>`}
+/* iPhone: понякога рисува долната лента на грешно място при превъртане – след спиране на превъртането я „побутваме“, за да се върне на място */
+(()=>{if(!matchMedia('(hover:none)').matches)return;let t=0,f=0;
+  const nudge=()=>{const el=document.querySelector('#shell>.tabs');if(!el)return;f^=1;el.style.transform=f?'translate3d(0,0,0.01px)':'translate3d(0,0,0)'};
+  addEventListener('scroll',()=>{clearTimeout(t);t=setTimeout(nudge,120)},{passive:true});
+  addEventListener('resize',nudge,{passive:true});document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(nudge,50)})})();
 function pbanItems(){const when=ts=>ts&&fts(ts).slice(0,10)===fd(today())?'днес '+fts(ts).slice(-5):ts?fts(ts).slice(0,10):'';
   if(isStaff()){const out=pbanList().map(p=>{const c=S.cars[p.carId];return {k:'p:'+p.id,ts:p.ts,ic:isDmg(p)?'💥':'🚨',img:p.photo,red:1,t:(isDmg(p)?(p.dtype==='crash'?'ПТП – ':'Щета – '):'Нов сигнал от ')+uname(p.by),s:`${regText(c?.reg)} · ${p.cat}${p.desc?' – '+p.desc:''}`,w:when(p.ts),go:()=>viewProblem(p.id)}});
     {const fl=fillList();if(fl.length)out.push({k:'fill:'+today().slice(0,7),ts:'',ic:'⛽',org:1,t:fl.length===1?'1 кола не е заредила за новия месец':fl.length+' коли не са заредили за новия месец',s:fl.map(c=>regText(c.reg)).join(', '),w:'днес',go:openFill})}
@@ -3646,7 +3651,7 @@ const oldBtn=c=>LOGFROM&&!OLDK.has('car:'+c.id)?`<button class="btn wide" data-a
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&!WQ.length&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyServer(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='109';let _verAt=0;
+const APP_VER='110';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname.replace(/[^/]*$/,'')+'ver.txt?'+Date.now(),{cache:'no-store'})).text();
