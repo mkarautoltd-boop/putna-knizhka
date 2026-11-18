@@ -2418,6 +2418,7 @@ function vMore(){
   <button class="li" style="border-left:0;border-right:0;border-top:0;background:none;cursor:pointer;text-align:left" data-act="tab" data-k="settings"><div class="l"><b>Настройки</b><span>Зимна надбавка, срокове за известия</span></div><span class="muted">›</span></button>`;
   if(isAdmin())h+=`<button class="li" style="border-left:0;border-right:0;border-top:0;background:none;cursor:pointer;text-align:left" data-act="luxToggle"><div class="l"><b>Тема „Нощ и злато“</b><span>Тъмна златна визия – само на вашия профил</span></div><span class="lux-sw${luxOn()?' on':''}"><i></i></span></button>`;
   h+=pushRow();
+  if(isAdmin()&&FB_CFG)h+=`<button class="li" style="border-left:0;border-right:0;border-top:0;background:none;cursor:pointer;text-align:left" data-act="pushKey"><div class="l"><b>🔑 Ключ за известия</b><span>Поставя се веднъж от компютъра</span></div><span class="muted">›</span></button>`;
   h+=`<button class="li" style="border:0;background:none;cursor:pointer;text-align:left" data-act="logout"><div class="l"><b style="color:var(--crit)">Изход</b></div></button></div>`;
   if(!isStaff())h+=`<div class="sec"><h3>Моята история</h3>${histList(histItems(e=>e.driver===meId||e.by===meId||e.user===meId).slice(0,40))}</div>`;
   if(isStaff())h+=`<div class="sec"><h3>Последни действия</h3>${histList(histItems(e=>scopeIds().has(e.carId)).slice(0,25))}</div>`;
@@ -3160,6 +3161,8 @@ function pushRefresh(){if(!TOKEN||pushState()!=='on'||lsG('pk_push_d')===today()
 function pushCard(){const st=pushState();if((st!=='ask'&&st!=='home')||lsG('pk_push_no')===today().slice(0,7))return '';
   const what=isStaff()?'при нов проблем от шофьор и когато има коли без километраж':'за километража, часа за сервиз и зареждането в началото на месеца';
   return `<div class="pushc"><div class="pc-h"><span class="pc-i">🔔</span><div><b>Включи известията</b><p>Телефонът ще ти звъни ${what}, дори когато приложението е затворено.</p></div></div><div class="pc-b"><button class="btn go" data-act="pushOn">Включи</button><button class="btn" data-act="pushNo">Не сега</button></div></div>`}
+function openPushKey(){openSheet('Ключ за известия',`<p class="small muted">Само веднъж. Отвори изтегления от Firebase <b>.json</b> файл с Notepad, натисни Ctrl+A и Ctrl+C и го постави тук с Ctrl+V.</p>${fld('Текст от .json файла',ta('key'))}`,async f=>{
+  const r=await gs('setPushKey',TOKEN,f.key);toast(r&&r.sent?'Готово – провери телефона за пробно известие 🔔':'Ключът е записан. Включи известията на телефона (Още → Известия на телефона).')},'Запази ключа')}
 function pushRow(){const st=pushState();if(st==='off')return '';const on=st==='on';
   const sub={on:'Включени на този телефон',ask:'Изключени',home:'Първо добави приложението на началния екран',nosup:'Този телефон не поддържа известия',denied:'Забранени от Настройки на телефона'}[st];
   return `<button class="li" style="border-left:0;border-right:0;border-top:0;background:none;cursor:pointer;text-align:left" data-act="${on?'pushOff':'pushOn'}"><div class="l"><b>🔔 Известия на телефона</b><span>${sub}</span></div><span class="lux-sw${on?' on':''}"><i></i></span></button>`}
@@ -3508,7 +3511,7 @@ const ACT={
   carFilter:d=>{R.carFilter=d.k;render()},toggleInactive:()=>{R.showInactive=!R.showInactive;render()},
   rep:d=>{R.rep=d.k;render()},
   closeSheet:closeSheet,
-  morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),pushOn:()=>pushOn(),pushOff:()=>pushOff(),pushNo:()=>{lsS('pk_push_no',today().slice(0,7));render()},problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
+  morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),pushOn:()=>pushOn(),pushKey:()=>openPushKey(),pushOff:()=>pushOff(),pushNo:()=>{lsS('pk_push_no',today().slice(0,7));render()},problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
   takeover:d=>openTakeover(d.car),endSession:d=>openEndSession(d.car),viewProblem:d=>viewProblem(d.id),
   editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),docCheck:(d,b)=>checkDoc(d.car,d.k,b),qaToggle:(d,b)=>qaToggle(b),noKm:()=>openNoKm(),seenProblem:d=>seenProblem(d.id),damage:d=>openDamage(d.car),viewDamage:d=>viewDamage(d.id),editDamage:d=>openDamage(null,d.id),dmgClaim:d=>openClaim(d.id),dmgRepair:d=>openRepair(d.id),rpAll:()=>rpAll(),calNav:d=>calNav(d.k),calDay:d=>{R.calD=d.d;R.calM=d.d.slice(0,7);render()},bookCal:d=>bookCal(d.id),alToggle:(d,b)=>alToggle(d,b),newBook:d=>openBook(d.car),editBook:d=>openBook(null,d.id),viewBook:d=>viewBook(d.id),seenBook:d=>seenBook(d.id),doneBook:d=>doneBook(d.id),loadOld:d=>loadOld(null,d.car),
   newTask:openNewTask,doneTask:d=>doneTask(d.id),delEntry:d=>delEntry(d.car,d.id),
@@ -3609,7 +3612,7 @@ const oldBtn=c=>LOGFROM&&!OLDK.has('car:'+c.id)?`<button class="btn wide" data-a
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&!WQ.length&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyServer(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='107';let _verAt=0;
+const APP_VER='108';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname.replace(/[^/]*$/,'')+'ver.txt?'+Date.now(),{cache:'no-store'})).text();
