@@ -3165,12 +3165,12 @@ function vCal(){HEAD={title:'Календар',back:'home'};
 function pbanList(){const ids=scopeIds(),rd=(S.notif&&S.notif.read)||{};return Object.values(S.problems).filter(p=>ids.has(p.carId)&&p.status!=='resolved'&&p.by!==meId&&!rd[npKey(p.id)]).sort((a,b)=>(b.ts||'').localeCompare(a.ts||''))}
 /* ---- истински известия на телефона (Firebase Cloud Messaging) ----
  * FB_CFG и FB_VAPID са от конзолата на Firebase (не са тайни). Докато са празни, нищо не се показва. */
-const FB_CFG=null,FB_VAPID='';
+const FB_CFG={apiKey:'AIzaSyApoJ4yslHCjku7v_IgsOYGPqUtKFrblkg',authDomain:'putna-knizhka.firebaseapp.com',projectId:'putna-knizhka',storageBucket:'putna-knizhka.firebasestorage.app',messagingSenderId:'518881447000',appId:'1:518881447000:web:e04d877e85da43b8698e2d'},FB_VAPID='';
 const PUSH_OPEN='https://mkarautoltd-boop.github.io/putna-knizhka/putna.html';
 const lsG=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const isStandalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 const isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent);
-function pushState(){if(!FB_CFG)return 'off';if(isIOS()&&!isStandalone())return 'home';
+function pushState(){if(!FB_CFG||!FB_VAPID)return 'off';if(isIOS()&&!isStandalone())return 'home';
   if(!('serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window))return 'nosup';
   const p=Notification.permission;return p==='granted'?(lsG('pk_push')==='1'?'on':'ask'):p==='denied'?'denied':'ask'}
 let FBP=null;
