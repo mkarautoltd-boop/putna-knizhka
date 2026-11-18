@@ -913,6 +913,11 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .dmg-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}.dmg-tags i{font-style:normal;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:99px;background:#EEF1F6;color:#5B6778}
 .dmg-tags i.st.new{background:#FFF1E0;color:#B45F00}.dmg-tags i.st.claim,.dmg-tags i.ks{background:#E7EEFF;color:#2E55D6}.dmg-tags i.st.partial{background:#F3E8FF;color:#7C3AED}
 .dsteps{display:flex;gap:6px;margin:4px 0 2px}.dsteps span{flex:1;text-align:center;font-size:11.5px;font-weight:700;padding:7px 4px;border-radius:10px;background:#EEF1F6;color:#8A97AB}.dsteps span.ok{background:#E6F7EC;color:#1A8A4B}.dsteps span.cur{background:#FFF1E0;color:#B45F00}.dmg-tags i.st.resolved{background:#E6F7EC;color:#1A8A4B}
+.pushc{border-radius:20px;padding:16px;background:linear-gradient(135deg,#EAF2FF,#DCE8FB);box-shadow:inset 0 0 0 1px rgba(62,126,214,.3);display:flex;flex-direction:column;gap:12px;grid-column:1/-1}
+.pushc .pc-h{display:flex;gap:12px;align-items:flex-start}.pushc .pc-i{font-size:28px;line-height:1}.pushc b{display:block;font-size:17px;margin-bottom:2px}.pushc p{margin:0;font-size:14px;line-height:1.4;opacity:.85}
+.pushc .pc-b{display:grid;grid-template-columns:2fr 1fr;gap:8px}
+html.lux .pushc{background:linear-gradient(160deg,rgba(198,166,107,.18),rgba(198,166,107,.05))!important;box-shadow:inset 0 0 0 1px rgba(198,166,107,.45)!important;color:var(--ink)}
+.pushhow{margin:0 0 10px;padding-left:22px;display:flex;flex-direction:column;gap:8px;font-size:15px;line-height:1.4}
 .nokm-l{display:flex;flex-direction:column;gap:8px}
 .nk-top{display:flex;align-items:center;gap:10px;width:100%;margin-bottom:12px;padding:12px 14px;border:2px solid #FFD8A8;border-radius:16px;background:linear-gradient(90deg,#FFF3E0,#fff 80%);font:inherit;color:inherit;text-align:left;cursor:pointer}
 .nk-top span{font-size:22px}.nk-top b{flex:1;color:#B45F00;font-size:15.5px}.nk-top i{font-style:normal;font-size:22px;color:#B45F00}
@@ -1900,7 +1905,7 @@ function nyCard(){const d=new Date();if(d.getMonth()!==0||d.getDate()>5)return '
   return `<div class="nyc"><i class="ny-s s1">✦</i><i class="ny-s s2">✦</i><i class="ny-s s3">✧</i><i class="ny-s s4">✦</i>
     <div class="ny-e">🎆</div><small>${y}</small><b>Честита Нова година!</b>
     <p>Здраве, късмет и спокойни пътища през ${y}! Благодарим на всички за труда през изминалата година.</p><span>Весели празници! 🥂</span></div>`}
-function vHome(){return nyCard()+vHome0()}
+function vHome(){return nyCard()+pushCard()+vHome0()}
 function vHome0(){
   const u=me(),cars=scopeCars();
   let h=sessionCards();
@@ -2412,6 +2417,7 @@ function vMore(){
   <button class="li" style="border-left:0;border-right:0;border-top:0;background:none;cursor:pointer;text-align:left" data-act="tab" data-k="depts"><div class="l"><b>Отдели</b><span>${Object.keys(S.depts).length} отдела</span></div><span class="muted">›</span></button>
   <button class="li" style="border-left:0;border-right:0;border-top:0;background:none;cursor:pointer;text-align:left" data-act="tab" data-k="settings"><div class="l"><b>Настройки</b><span>Зимна надбавка, срокове за известия</span></div><span class="muted">›</span></button>`;
   if(isAdmin())h+=`<button class="li" style="border-left:0;border-right:0;border-top:0;background:none;cursor:pointer;text-align:left" data-act="luxToggle"><div class="l"><b>Тема „Нощ и злато“</b><span>Тъмна златна визия – само на вашия профил</span></div><span class="lux-sw${luxOn()?' on':''}"><i></i></span></button>`;
+  h+=pushRow();
   h+=`<button class="li" style="border:0;background:none;cursor:pointer;text-align:left" data-act="logout"><div class="l"><b style="color:var(--crit)">Изход</b></div></button></div>`;
   if(!isStaff())h+=`<div class="sec"><h3>Моята история</h3>${histList(histItems(e=>e.driver===meId||e.by===meId||e.user===meId).slice(0,40))}</div>`;
   if(isStaff())h+=`<div class="sec"><h3>Последни действия</h3>${histList(histItems(e=>scopeIds().has(e.carId)).slice(0,25))}</div>`;
@@ -3127,6 +3133,36 @@ function vCal(){HEAD={title:'Календар',back:'home'};
   return h}
 /* ---- падащо съобщение (веднъж на нещо за това устройство): за админ/мениджър – нов сигнал от шофьор; за шофьор – съобщение, час за сервиз, задача ---- */
 function pbanList(){const ids=scopeIds(),rd=(S.notif&&S.notif.read)||{};return Object.values(S.problems).filter(p=>ids.has(p.carId)&&p.status!=='resolved'&&p.by!==meId&&!rd[npKey(p.id)]).sort((a,b)=>(b.ts||'').localeCompare(a.ts||''))}
+/* ---- истински известия на телефона (Firebase Cloud Messaging) ----
+ * FB_CFG и FB_VAPID са от конзолата на Firebase (не са тайни). Докато са празни, нищо не се показва. */
+const FB_CFG={apiKey:'AIzaSyApoJ4yslHCjku7v_IgsOYGPqUtKFrblkg',authDomain:'putna-knizhka.firebaseapp.com',projectId:'putna-knizhka',storageBucket:'putna-knizhka.firebasestorage.app',messagingSenderId:'518881447000',appId:'1:518881447000:web:e04d877e85da43b8698e2d'},FB_VAPID='BPNnQY64GzuJ4yuaZhnQO13Zz8_ch67qGXTi9GEbplrAkd1KlznqwGP7olMUTANh9kVtkwHgHPjWAUe_e0OldpU';
+const PUSH_OPEN='https://mkarautoltd-boop.github.io/putna-knizhka/putna.html';
+const lsG=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+const isStandalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent);
+function pushState(){if(!FB_CFG||!FB_VAPID)return 'off';if(isIOS()&&!isStandalone())return 'home';
+  if(!('serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window))return 'nosup';
+  const p=Notification.permission;return p==='granted'?(lsG('pk_push')==='1'?'on':'ask'):p==='denied'?'denied':'ask'}
+let FBP=null;
+function fbLoad(){if(FBP)return FBP;const add=u=>new Promise((ok,no)=>{const x=document.createElement('script');x.src=u;x.onload=ok;x.onerror=()=>no(new Error('Няма връзка.'));document.head.appendChild(x)});
+  const v='https://www.gstatic.com/firebasejs/10.12.2/';FBP=add(v+'firebase-app-compat.js').then(()=>add(v+'firebase-messaging-compat.js')).then(()=>{if(!firebase.apps.length)firebase.initializeApp(FB_CFG);return firebase.messaging()}).catch(e=>{FBP=null;throw e});return FBP}
+async function pushToken(){const m=await fbLoad(),reg=await navigator.serviceWorker.register('sw.js');await navigator.serviceWorker.ready;return m.getToken({vapidKey:FB_VAPID,serviceWorkerRegistration:reg})}
+function pushHow(){openSheet('Известия на iPhone',`<ol class="pushhow"><li>Отвори приложението в <b>Safari</b>.</li><li>Натисни бутона за споделяне <b>⬆️</b> долу.</li><li>Избери <b>„Добави към началния екран“</b>.</li><li>Отвори „Пътна книжка“ от новата иконка и натисни <b>„Включи известията“</b>.</li></ol><p class="small muted">Трябва iPhone със система iOS 16.4 или по-нова.</p>`,null)}
+async function pushOn(){const st=pushState();if(st==='home'||st==='nosup'){pushHow();return}
+  if(st==='denied'){toast('Известията са забранени. Включи ги от Настройки на iPhone → Известия → Пътна книжка.');return}
+  let perm;try{perm=await Notification.requestPermission()}catch(e){perm='denied'}
+  if(perm!=='granted'){toast('Известията не са разрешени.');render();return}
+  try{const t=await pushToken();if(!t)throw new Error('няма отговор');await gs('pushReg',TOKEN,t,true);lsS('pk_push','1');lsS('pk_push_t',t);lsS('pk_push_d',today());toast('Известията са включени 🔔')}
+  catch(e){toast('Не успях да включа известията: '+(e.message||e))}render()}
+async function pushOff(){const t=lsG('pk_push_t');lsS('pk_push','0');try{if(t)await gs('pushReg',TOKEN,t,false)}catch(e){}toast('Известията са изключени');render()}
+function pushRefresh(){if(!TOKEN||pushState()!=='on'||lsG('pk_push_d')===today())return;lsS('pk_push_d',today());
+  pushToken().then(t=>{if(t){lsS('pk_push_t',t);return gs('pushReg',TOKEN,t,true)}}).catch(()=>{})}
+function pushCard(){const st=pushState();if((st!=='ask'&&st!=='home')||lsG('pk_push_no')===today().slice(0,7))return '';
+  const what=isStaff()?'при нов проблем от шофьор и когато има коли без километраж':'за километража, часа за сервиз и зареждането в началото на месеца';
+  return `<div class="pushc"><div class="pc-h"><span class="pc-i">🔔</span><div><b>Включи известията</b><p>Телефонът ще ти звъни ${what}, дори когато приложението е затворено.</p></div></div><div class="pc-b"><button class="btn go" data-act="pushOn">Включи</button><button class="btn" data-act="pushNo">Не сега</button></div></div>`}
+function pushRow(){const st=pushState();if(st==='off')return '';const on=st==='on';
+  const sub={on:'Включени на този телефон',ask:'Изключени',home:'Първо добави приложението на началния екран',nosup:'Този телефон не поддържа известия',denied:'Забранени от Настройки на телефона'}[st];
+  return `<button class="li" style="border-left:0;border-right:0;border-top:0;background:none;cursor:pointer;text-align:left" data-act="${on?'pushOff':'pushOn'}"><div class="l"><b>🔔 Известия на телефона</b><span>${sub}</span></div><span class="lux-sw${on?' on':''}"><i></i></span></button>`}
 function pbanItems(){const when=ts=>ts&&fts(ts).slice(0,10)===fd(today())?'днес '+fts(ts).slice(-5):ts?fts(ts).slice(0,10):'';
   if(isStaff()){const out=pbanList().map(p=>{const c=S.cars[p.carId];return {k:'p:'+p.id,ts:p.ts,ic:isDmg(p)?'💥':'🚨',img:p.photo,red:1,t:(isDmg(p)?(p.dtype==='crash'?'ПТП – ':'Щета – '):'Нов сигнал от ')+uname(p.by),s:`${regText(c?.reg)} · ${p.cat}${p.desc?' – '+p.desc:''}`,w:when(p.ts),go:()=>viewProblem(p.id)}});
     const nk=noKmList();if(nk.length)out.push({k:'nokm:'+today(),ts:'',ic:'⏰',org:1,t:nk.length===1?'1 кола без километраж днес':nk.length+' коли без километраж днес',s:nk.map(c=>regText(c.reg)).join(', '),w:'днес',go:openNoKm});
@@ -3136,7 +3172,7 @@ function pbanItems(){const when=ts=>ts&&fts(ts).slice(0,10)===fd(today())?'дн�
   for(const b of Object.values(S.tasks))if(b.type==='svcbook'&&b.status!=='done'&&!b.seen&&mc.has(b.carId))out.push({k:'b:'+b.id+':'+b.due+(b.time||''),ts:b.ts||'',ic:'📅',t:'Час за сервиз: '+fdw(b.due)+(b.time?' в '+b.time:''),s:`${regText(S.cars[b.carId]?.reg)} · ${shopOf(b)?.name||b.shopName||''}${b.what?' · '+b.what:''}`,w:'',go:()=>viewBook(b.id)});
   for(const t of Object.values(S.tasks))if(t.type!=='svcbook'&&t.status!=='done'&&t.by!==meId&&(t.assignee===meId||(!t.assignee&&mc.has(t.carId)))&&(t.ts||'9')>=old)out.push({k:'t:'+t.id,ts:t.ts,ic:'📋',t:'Нова задача: '+(t.title||TTYPES[t.type]||''),s:`${regText(S.cars[t.carId]?.reg)}${t.due?' · до '+fd(t.due):''}`,w:when(t.ts),go:()=>{R.tab='tasks';toTop();render()}});
   return out.sort((a,b)=>String(b.ts).localeCompare(String(a.ts)))}
-function pbanCheck(){if(!meId||document.getElementById('pban'))return;let shown=[];try{shown=JSON.parse(localStorage.getItem('pk_pban')||'[]')}catch(e){}
+function pbanCheck(){pushRefresh();if(!meId||document.getElementById('pban'))return;let shown=[];try{shown=JSON.parse(localStorage.getItem('pk_pban')||'[]')}catch(e){}
   let fresh=pbanItems().filter(x=>!shown.includes(x.k)&&!shown.includes(x.k.slice(2)));if(fresh.length>1)fresh=fresh.filter(x=>!x.org);if(!fresh.length)return;
   try{localStorage.setItem('pk_pban',JSON.stringify([...shown,...fresh.map(x=>x.k)].slice(-300)))}catch(e){}
   const x=fresh[0],one=fresh.length===1,el=document.createElement('div');el.id='pban';
@@ -3472,12 +3508,12 @@ const ACT={
   carFilter:d=>{R.carFilter=d.k;render()},toggleInactive:()=>{R.showInactive=!R.showInactive;render()},
   rep:d=>{R.rep=d.k;render()},
   closeSheet:closeSheet,
-  morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
+  morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),pushOn:()=>pushOn(),pushOff:()=>pushOff(),pushNo:()=>{lsS('pk_push_no',today().slice(0,7));render()},problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
   takeover:d=>openTakeover(d.car),endSession:d=>openEndSession(d.car),viewProblem:d=>viewProblem(d.id),
   editCar:d=>openEditCar(d.car),toggleCar:d=>toggleCar(d.car),svcIntervals:d=>openSvcIntervals(d.car),service:d=>openService(d.car,d.k),expense:d=>openExpense(d.car),editDoc:d=>openDoc(d.car,d.k),bulkKm:d=>openBulkKm(d.car),bulkFuel:d=>openBulkFuel(d.car),editDocs:d=>openDocs(d.car),docCheck:(d,b)=>checkDoc(d.car,d.k,b),qaToggle:(d,b)=>qaToggle(b),noKm:()=>openNoKm(),seenProblem:d=>seenProblem(d.id),damage:d=>openDamage(d.car),viewDamage:d=>viewDamage(d.id),editDamage:d=>openDamage(null,d.id),dmgClaim:d=>openClaim(d.id),dmgRepair:d=>openRepair(d.id),rpAll:()=>rpAll(),calNav:d=>calNav(d.k),calDay:d=>{R.calD=d.d;R.calM=d.d.slice(0,7);render()},bookCal:d=>bookCal(d.id),alToggle:(d,b)=>alToggle(d,b),newBook:d=>openBook(d.car),editBook:d=>openBook(null,d.id),viewBook:d=>viewBook(d.id),seenBook:d=>seenBook(d.id),doneBook:d=>doneBook(d.id),loadOld:d=>loadOld(null,d.car),
   newTask:openNewTask,doneTask:d=>doneTask(d.id),delEntry:d=>delEntry(d.car,d.id),
   editUser:d=>openEditUser(d.id),editDept:d=>openEditDept(d.id),editSettings:openSettings,myPass:openMyPass,demo:loadDemo,csv:downloadCsv,
-  logout:()=>{if(WQ.length){toast('Изчакай – има записи, които още се изпращат.');flushQ();return}const t=TOKEN;logoutLocal();if(t)gs('logout',t).catch(()=>{})},
+  logout:()=>{if(WQ.length){toast('Изчакай – има записи, които още се изпращат.');flushQ();return}const t=TOKEN;{const pt=lsG('pk_push_t');if(t&&pt&&lsG('pk_push')==='1'){gs('pushReg',t,pt,false).catch(()=>{});lsS('pk_push','0')}}logoutLocal();if(t)gs('logout',t).catch(()=>{})},
   userLink:d=>openUserLink(d.id),
   carDocs:d=>{R.carBack='home';R.tab='car';R.carId=d.car;R.carSec='docs';toTop();render()},
   markRead:markAllRead,newMsg:openNewMsg,delMsg:d=>delMsg(d.id),printPdf:printPdf,
@@ -3573,7 +3609,7 @@ const oldBtn=c=>LOGFROM&&!OLDK.has('car:'+c.id)?`<button class="btn wide" data-a
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&!WQ.length&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyServer(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='106';let _verAt=0;
+const APP_VER='107';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname.replace(/[^/]*$/,'')+'ver.txt?'+Date.now(),{cache:'no-store'})).text();
