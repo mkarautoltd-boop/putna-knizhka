@@ -2084,7 +2084,7 @@ function tripLi(e){
 
 /* ---- cars ---- */
 function listCars(){
-  let cars=scopeCars(isStaff()&&R.showInactive);
+  let cars=isStaff()&&R.showInactive?scopeCars(true).filter(c=>c.active===false):scopeCars();
   const q=R.q.trim().toLowerCase();
   if(q)cars=cars.filter(c=>[c.make,c.model,c.reg,drvIds(c).map(uname).join(' '),dname(c.dept)].join(' ').toLowerCase().includes(q)||normReg(c.reg).includes(normReg(q)));
   if(R.carFilter==='ok')cars=cars.filter(c=>c.active!==false&&carLevel(c)==='ok');
@@ -2092,7 +2092,8 @@ function listCars(){
   return cars;
 }
 function vCars(){
-  let all=scopeCars(isStaff()&&R.showInactive),cars=all;
+  const nOff=isStaff()?scopeCars(true).filter(c=>c.active===false).length:0;
+  let all=isStaff()&&R.showInactive?scopeCars(true).filter(c=>c.active===false):scopeCars(),cars=all;
   const q=R.q.trim().toLowerCase();
   if(q)cars=cars.filter(c=>[c.make,c.model,c.reg,drvIds(c).map(uname).join(' '),dname(c.dept)].join(' ').toLowerCase().includes(q)||normReg(c.reg).includes(normReg(q)));
   if(R.carFilter==='ok')cars=cars.filter(c=>c.active!==false&&carLevel(c)==='ok');
@@ -2101,12 +2102,12 @@ function vCars(){
   HEAD={title:isStaff()?'Автомобили':'Моите автомобили',back:'home',plus:canAddCar()?'editCar':null};
   let h='';
   if(isStaff()){
-    const nOk=all.filter(c=>c.active!==false&&carLevel(c)==='ok').length,nIs=all.filter(c=>c.active!==false&&carLevel(c)!=='ok').length;
+    const act=scopeCars(),nOk=act.filter(c=>carLevel(c)==='ok').length,nIs=act.filter(c=>carLevel(c)!=='ok').length;
     const f=R.carFilter||'';
     h+=`<input id="q" data-bind="q" placeholder="Търси по марка, номер, отдел…" value="${esc(R.q)}">
-    <div class="chips"><button class="chip" data-act="carFilter" data-k="" aria-pressed="${!f}">Всички (${all.length})</button><button class="chip" data-act="carFilter" data-k="ok" aria-pressed="${f==='ok'}">Изправни (${nOk})</button><button class="chip" data-act="carFilter" data-k="issue" aria-pressed="${f==='issue'}">С известия (${nIs})</button><button class="chip" data-act="toggleInactive" aria-pressed="${R.showInactive}">Неактивни</button></div>`;
+    <div class="chips"><button class="chip" data-act="carFilter" data-k="" aria-pressed="${!f&&!R.showInactive}">Всички (${scopeCars().length})</button><button class="chip" data-act="carFilter" data-k="ok" aria-pressed="${f==='ok'}">Изправни (${nOk})</button><button class="chip" data-act="carFilter" data-k="issue" aria-pressed="${f==='issue'}">С известия (${nIs})</button><button class="chip" data-act="toggleInactive" aria-pressed="${R.showInactive}">Неактивни (${nOff})</button></div>`;
   }
-  if(!cars.length)return h+`<div class="empty">${q||R.carFilter?'Няма автомобили по този филтър.':'Няма автомобили.'}</div>`;
+  if(!cars.length)return h+`<div class="empty">${R.showInactive&&isStaff()?'Няма неактивни автомобили. Кола става неактивна от зъбното колело → „Деактивирай автомобила“.':q||R.carFilter?'Няма автомобили по този филтър.':'Няма автомобили.'}</div>`;
   if(isStaff()&&DESK()){const cur=cars.find(c=>c.id===R.carId)||cars.find(c=>c.id===R.listCar)||cars[0];
     R.carId=R.listCar=cur.id;R.carBack='cars';if(!R.carSec)R.carSec='overview';const v=vCar();R.carBack='home';
     HEAD={title:'Автомобили',back:'home',plus:canAddCar()?'editCar':null};return h+v}
@@ -3543,7 +3544,7 @@ const ACT={
   myBook:d=>{R.carBack=R.tab;R.tab='car';R.carId=d.car;R.carSec='book';toTop();render()},
   openCar:d=>{R.carBack=R.tab==='car'?R.carBack:R.tab;R.tab='car';R.carId=d.car;R.listCar=d.car;R.carSec='overview';toTop();render()},
   carSec:d=>{R.carSec=d.k;render()},
-  carFilter:d=>{R.carFilter=d.k;render()},toggleInactive:()=>{R.showInactive=!R.showInactive;render()},
+  carFilter:d=>{R.carFilter=d.k;R.showInactive=false;render()},toggleInactive:()=>{R.showInactive=!R.showInactive;R.carFilter='';R.listCar=null;render()},
   rep:d=>{R.rep=d.k;render()},
   closeSheet:closeSheet,
   morning:d=>openTrip(d.car,true),trip:d=>openTrip(d.car,false),fuel:d=>openFuel(d.car),openFill:()=>openFill(),pushOn:()=>pushOn(),pushOff:()=>pushOff(),pushNo:()=>{lsS('pk_push_no',today().slice(0,7));render()},problem:d=>openProblem(d.car),check:d=>openCheck(d.car),editShop:d=>openEditShop(d.id),tyCheck:d=>openTyCheck(d.car),ltCheck:d=>openLtCheck(d.car),topup:d=>openTopup(d.car,d.fluid),tyres:d=>openTyres(d.car),
