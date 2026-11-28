@@ -924,6 +924,7 @@ html.lux .fillc small{color:#E9B66A}
 .pushc .pc-b{display:grid;grid-template-columns:2fr 1fr;gap:8px}
 html.lux .pushc{background:linear-gradient(160deg,rgba(198,166,107,.18),rgba(198,166,107,.05))!important;box-shadow:inset 0 0 0 1px rgba(198,166,107,.45)!important;color:var(--ink)}
 .pushhow{margin:0 0 10px;padding-left:22px;display:flex;flex-direction:column;gap:8px;font-size:15px;line-height:1.4}
+.msg-p{color:var(--accent);font-weight:700}html.lux .msg-p{color:#E2C68C}
 .nokm-l{display:flex;flex-direction:column;gap:8px}
 .nk-top{display:flex;align-items:center;gap:10px;width:100%;margin-bottom:12px;padding:12px 14px;border:2px solid #FFD8A8;border-radius:16px;background:linear-gradient(90deg,#FFF3E0,#fff 80%);font:inherit;color:inherit;text-align:left;cursor:pointer}
 .nk-top span{font-size:22px}.nk-top b{flex:1;color:#B45F00;font-size:15.5px}.nk-top i{font-style:normal;font-size:22px;color:#B45F00}
@@ -3340,15 +3341,18 @@ async function markAllRead(){
   const read={...((S.notif&&S.notif.read)||{})};const ts=new Date().toISOString();for(const a of allAlerts()){read[akey(a)]=ts;if(a.kind==='problem')read[npKey(a.id)]=ts}
   try{await db.doc('notif/'+meId).set({read});toast('Известията са маркирани като прочетени')}catch(e){toast(e.message||dbMsg(e))}
 }
-function visibleMsgs(){const u=me();return Object.values(S.messages||{}).filter(m=>!m.del&&(isAdmin()||!m.dept||m.dept===u.dept)).sort((a,b)=>(b.ts||'').localeCompare(a.ts||''))}
-function msgCard(m){return `<div class="msg">${avatar(S.users[m.by]||{name:'?'})}<div class="sec" style="gap:3px;flex:1;min-width:0"><p>${esc(m.text)}</p><span class="small muted">${esc(uname(m.by))} · ${fts(m.ts)} · ${m.dept?esc(dname(m.dept)):'Всички отдели'}</span></div>${(isAdmin()||m.by===meId)?`<button class="linkbtn small" data-act="delMsg" data-id="${m.id}">Изтрий</button>`:''}</div>`}
+function visibleMsgs(){const u=me();return Object.values(S.messages||{}).filter(m=>!m.del&&(m.to?(m.to===meId||m.by===meId):(isAdmin()||!m.dept||m.dept===u.dept))).sort((a,b)=>(b.ts||'').localeCompare(a.ts||''))}
+function msgCard(m){return `<div class="msg">${avatar(S.users[m.by]||{name:'?'})}<div class="sec" style="gap:3px;flex:1;min-width:0"><p>${esc(m.text)}</p><span class="small muted">${esc(uname(m.by))} · ${fts(m.ts)} · ${m.to?(m.to===meId?'<b class="msg-p">🔒 Лично за теб</b>':'<b class="msg-p">🔒 Лично до '+esc(uname(m.to))+'</b>'):m.dept?esc(dname(m.dept)):'Всички отдели'}</span></div>${(isAdmin()||m.by===meId)?`<button class="linkbtn small" data-act="delMsg" data-id="${m.id}">Изтрий</button>`:''}</div>`}
 function vMessages(){HEAD={title:'Съобщения',back:'home',plus:isStaff()&&mp('msg')?'newMsg':null};const l=visibleMsgs();
   return l.length?`<div class="sec">${l.map(msgCard).join('')}</div>`:`<div class="empty">${icon('bell')}<b>Няма съобщения.</b>${isStaff()?'Натисни + горе вдясно, за да пишеш на шофьорите.':''}</div>`}
 function openNewMsg(){
   const opts=isAdmin()?[['','Всички отдели'],...Object.values(S.depts).map(d=>[d.id,d.name])]:[[me().dept,dname(me().dept)]];
-  openSheet('Ново съобщение',fld('До',sel('dept',opts,isAdmin()?'':me().dept))+fld('Съобщение',ta('text'),'Шофьорите го виждат на началния си екран.'),async f=>{
+  const ppl=Object.values(S.users).filter(u=>u.id!==meId&&u.active!==false&&(isAdmin()||u.dept===me().dept)).sort((a,b)=>a.name.localeCompare(b.name,'bg'));
+  const o2=[...opts.map(([v,l])=>['d:'+v,'👥 '+l]),...ppl.map(u=>['u:'+u.id,'🔒 Лично: '+u.name+(u.role==='driver'?'':' ('+ROLES[u.role]+')')])];
+  openSheet('Ново съобщение',fld('До',sel('to',o2,isAdmin()?'d:':'d:'+me().dept),'„Лично“ вижда само този човек.')+fld('Съобщение',ta('text'),'Вижда се на началния екран и идва като известие.'),async f=>{
     if(!f.text.trim())fail('Напиши съобщението.');
-    await db.doc('messages/'+uid()).set({text:f.text.trim(),dept:f.dept||null,by:meId,ts:new Date().toISOString()});toast('Съобщението е изпратено');
+    const pu=f.to.startsWith('u:')?f.to.slice(2):null;
+    await db.doc('messages/'+uid()).set({text:f.text.trim(),dept:pu?null:(f.to.slice(2)||null),...(pu?{to:pu}:{}),by:meId,ts:new Date().toISOString()});toast(pu?'Съобщението е изпратено на '+uname(pu):'Съобщението е изпратено');
   },'Изпрати');
 }
 async function delMsg(id){try{await db.doc('messages/'+id).update({del:true});toast('Съобщението е изтрито')}catch(e){toast(e.message)}}
