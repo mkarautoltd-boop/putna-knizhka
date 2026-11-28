@@ -3212,7 +3212,7 @@ function pbanItems(){const when=ts=>ts&&fts(ts).slice(0,10)===fd(today())?'дн�
   for(const t of Object.values(S.tasks))if(t.type!=='svcbook'&&t.status!=='done'&&t.by!==meId&&(t.assignee===meId||(!t.assignee&&mc.has(t.carId)))&&(t.ts||'9')>=old)out.push({k:'t:'+t.id,ts:t.ts,ic:'📋',t:'Нова задача: '+(t.title||TTYPES[t.type]||''),s:`${regText(S.cars[t.carId]?.reg)}${t.due?' · до '+fd(t.due):''}`,w:when(t.ts),go:()=>{R.tab='tasks';toTop();render()}});
   return out.sort((a,b)=>String(b.ts).localeCompare(String(a.ts)))}
 function pbanCheck(){pushRefresh();if(!meId||document.getElementById('pban'))return;let shown=[];try{shown=JSON.parse(localStorage.getItem('pk_pban')||'[]')}catch(e){}
-  let fresh=pbanItems().filter(x=>!shown.includes(x.k)&&!shown.includes(x.k.slice(2)));if(fresh.length>1)fresh=fresh.filter(x=>!x.org);if(!fresh.length)return;
+  let fresh=pbanItems().filter(x=>!shown.includes(x.k)&&!shown.includes(x.k.slice(2)));if(fresh.length>1&&fresh.some(x=>!x.org))fresh=fresh.filter(x=>!x.org);if(!fresh.length)return;
   try{localStorage.setItem('pk_pban',JSON.stringify([...shown,...fresh.map(x=>x.k)].slice(-300)))}catch(e){}
   const x=fresh[0],one=fresh.length===1,el=document.createElement('div');el.id='pban';
   el.innerHTML=`${one&&x.img?`<img src="${x.img}" alt="">`:`<span class="pb-ic${x.red?'':x.org&&one?' or':' bl'}">${one||isStaff()?x.ic:'🔔'}</span>`}<div class="pb-t"><small>ПЪТНА КНИЖКА${x.w?' · '+esc(x.w):''}</small><b class="${x.red?'':x.org?'or':'bl'}">${one?esc(x.t):isStaff()?(fresh.every(y=>y.red)?fresh.length+' нови сигнала от шофьори':fresh.length+' нови известия'):fresh.length+' нови неща за теб'}</b><span>${esc(x.s)}${one?'':' · и още '+(fresh.length-1)}</span></div><button class="pb-x" aria-label="Затвори">✕</button>`;
@@ -3656,7 +3656,7 @@ const oldBtn=c=>LOGFROM&&!OLDK.has('car:'+c.id)?`<button class="btn wide" data-a
 async function refresh(){if(!TOKEN)return;try{const d=await gs('getAll',TOKEN);if(CACHE&&!WQ.length&&JSON.stringify(d)===JSON.stringify(CACHE))return;applyServer(d)}catch(e){const m=mapErr(e);if(TOKEN)toast(m.message)}}
 setInterval(()=>{if(TOKEN&&document.visibilityState==='visible'&&$('#sheet').hidden)refresh()},45000);
 /* само обновяване: при всяка промяна вдигай APP_VER */
-const APP_VER='111';let _verAt=0;
+const APP_VER='112';let _verAt=0;
 async function checkUpdate(){
   if(location.protocol==='file:'||Date.now()-_verAt<60000)return;_verAt=Date.now();
   try{const t=await(await fetch(location.pathname.replace(/[^/]*$/,'')+'ver.txt?'+Date.now(),{cache:'no-store'})).text();
